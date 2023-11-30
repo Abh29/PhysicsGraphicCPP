@@ -1,6 +1,12 @@
-#include "includes/ft_headers.h"
+#include "include.h"
 
 int main() {
-	std::cout << "hello graphics engine!" << std::endl;
+	try {
+		ft::Application firstApp{};
+		firstApp.run();
+	} catch (const std::exception& e) {
+		std::cerr << e.what() << std::endl;
+	}
+
 	return 0;
 }

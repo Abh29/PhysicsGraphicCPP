@@ -14,6 +14,8 @@ find_program(GLSL_VALIDATOR glslangValidator)
 
 file(GLOB_RECURSE GLSL_SOURCE_FILES
 #    add the shader files here
+        shaders/shader.vert
+        shaders/shader.frag
         )
 
 foreach(GLSL_F ${GLSL_SOURCE_FILES})
@@ -34,24 +36,14 @@ add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES})
 # copy texture folder to build
 file(COPY textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 add_custom_target(Texture)
-#add_custom_command(
-#        TARGET Texture
-#        POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-#)
 
 # copy model folder to build
 file(COPY models DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 add_custom_target(Models)
-#add_custom_command(
-#        TARGET Models
-#        POST_BUILD
-#        COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
-#)
 
 
 
 add_link_options( -lglfw -lGL -lGLEW -lvulkan -ldl -lpthread )
-add_executable(ftGraphics main.cpp includes/ft_headers.h)
+add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp src/ft_callbacks.cpp includes/ft_callbacks.h)
 
 add_dependencies(ftGraphics Shaders)
