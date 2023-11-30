@@ -4,6 +4,7 @@
 
 #include "ft_headers.h"
 #include "ft_window.h"
+#include "ft_instance.h"
 
 namespace ft {
 
@@ -21,8 +22,10 @@ namespace ft {
 		void initApplication();
 
 
-		Window			_ftWindow;
-
+		Window								_ftWindow;
+		Instance*							_ftInstance;
+		std::vector<const char*> 			_validationLayers;
+		std::vector<const char*> 			_deviceExtensions;
 	};
 
 }

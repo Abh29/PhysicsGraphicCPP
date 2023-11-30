@@ -44,6 +44,6 @@ add_custom_target(Models)
 
 
 add_link_options( -lglfw -lGL -lGLEW -lvulkan -ldl -lpthread )
-add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp src/ft_callbacks.cpp includes/ft_callbacks.h)
+add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp src/ft_callbacks.cpp includes/ft_callbacks.h src/ft_shader.cpp src/ft_instance.cpp src/ft_physicalDevice.cpp src/ft_device.cpp)
 
 add_dependencies(ftGraphics Shaders)
