@@ -17,7 +17,8 @@ namespace ft {
 	public:
 		Instance(
 				VkApplicationInfo& applicationInfo,
-				const std::vector<const char *>& validationLayers
+				const std::vector<const char *>& validationLayers,
+				const std::vector<const char *>& requiredExtensions
 				);
 
 		~Instance();
@@ -29,7 +30,6 @@ namespace ft {
 	private:
 
 		bool checkValidationLayerSupport();
-		void getRequiredExtensions();
 		void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfoExt);
 		void setupDebugMessenger();
 
@@ -37,8 +37,8 @@ namespace ft {
 
 		VkInstance 						_instance;
 		VkDebugUtilsMessengerEXT		_debugMessenger;
-		std::vector<const char *>		_extensions;
 		std::vector<const char *>		_layers;
+		std::vector<const char *>		_extensions;
 
 	};
 }

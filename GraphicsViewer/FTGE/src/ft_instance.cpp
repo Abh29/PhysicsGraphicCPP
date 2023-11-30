@@ -1,14 +1,19 @@
 #include "../include.h"
 
 ft::Instance::Instance(VkApplicationInfo &applicationInfo,
-					   const std::vector<const char *> &validationLayers) :
-					   _layers(validationLayers)
+					   const std::vector<const char *> &validationLayers,
+					   const std::vector<const char *> &requiredExtensions
+					   ) :
+					   _layers(validationLayers),
+					   _extensions(requiredExtensions)
 					   {
 						   if (enableValidationLayers && !checkValidationLayerSupport()) {
 							   throw std::runtime_error("validation layers requested, but not available!");
 						   }
 
-						   getRequiredExtensions();
+						   if (enableValidationLayers) {
+							   _extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+						   }
 
 						   VkDebugUtilsMessengerCreateInfoEXT debugCreateInfoExt{};
 						   VkInstanceCreateInfo	createInfo{};
@@ -43,18 +48,6 @@ ft::Instance::~Instance() {
 }
 
 VkInstance ft::Instance::getVKInstance() const {return _instance;}
-
-void ft::Instance::getRequiredExtensions() {
-	uint32_t glfwExtensionCount = 0;
-	const char** glfwExtensions;
-
-	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
-	_extensions = {glfwExtensions, glfwExtensions + glfwExtensionCount};
-
-	if (enableValidationLayers) {
-		_extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-	}
-}
 
 bool ft::Instance::checkValidationLayerSupport() {
 	uint32_t layerCount;

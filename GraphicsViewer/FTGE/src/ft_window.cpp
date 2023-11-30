@@ -32,4 +32,23 @@ void ft::Window::pollEvents() {
 	glfwPollEvents();
 }
 
+// this should fire an event if v == true
 void ft::Window::setResized(bool v) {_resized = v;}
+
+std::vector<const char* > ft::Window::getRequiredExtensions() const{
+	uint32_t glfwExtensionCount = 0;
+	const char** glfwExtensions;
+	glfwExtensions = glfwGetRequiredInstanceExtensions(&glfwExtensionCount);
+
+	std::vector<const char*> extensions(glfwExtensions, glfwExtensions + glfwExtensionCount);
+
+	return extensions;
+}
+
+VkSurfaceKHR ft::Window::createVKSurface(const Instance &instance) {
+	VkSurfaceKHR surface;
+	if (glfwCreateWindowSurface(instance.getVKInstance(), _window, nullptr, &surface) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create a window surface!");
+	}
+	return surface;
+}

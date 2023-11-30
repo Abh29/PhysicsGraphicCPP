@@ -2,7 +2,7 @@
 #include "../includes/ft_callbacks.h"
 
 ft::Application::Application() :
-_ftWindow{W_WIDTH, W_HEIGHT, "applicationWindow", nullptr, ft::Callback::keyCallback}
+_ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow", nullptr, ft::Callback::keyCallback)}
 {
 	_validationLayers = {
 			"VK_LAYER_KHRONOS_validation",
@@ -16,14 +16,12 @@ _ftWindow{W_WIDTH, W_HEIGHT, "applicationWindow", nullptr, ft::Callback::keyCall
 	initApplication();
 }
 
-ft::Application::~Application() {
-	delete _ftInstance;
-}
+ft::Application::~Application() {}
 
 void ft::Application::run() {
 
-	while(!_ftWindow.shouldClose()) {
-		_ftWindow.pollEvents();
+	while(!_ftWindow->shouldClose()) {
+		_ftWindow->pollEvents();
 	}
 }
 
@@ -38,5 +36,6 @@ void ft::Application::initApplication() {
 	applicationInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 0, 0);
 	applicationInfo.pNext = nullptr;
 
-	_ftInstance = new Instance(applicationInfo, _validationLayers);
+	_ftInstance = std::make_shared<Instance>(applicationInfo, _validationLayers, _ftWindow->getRequiredExtensions());
+	_ftSurface = std::make_shared<Surface>(_ftInstance, _ftWindow);
 }

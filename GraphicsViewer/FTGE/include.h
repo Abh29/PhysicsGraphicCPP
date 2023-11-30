@@ -12,5 +12,6 @@
 #include "includes/ft_callbacks.h"
 #include "includes/ft_swapChain.h"
 #include "includes/ft_instance.h"
+#include "includes/ft_surface.h"
 
 #endif //FTGRAPHICS_INCLUDE_H

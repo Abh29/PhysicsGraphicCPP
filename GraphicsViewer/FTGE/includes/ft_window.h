@@ -2,8 +2,11 @@
 #define FTGRAPHICS_FT_WINDOW_H
 
 #include "ft_headers.h"
+#include "ft_instance.h"
 
 namespace ft {
+
+	class Instance;
 
 	class Window {
 
@@ -16,9 +19,9 @@ namespace ft {
 
 		bool shouldClose();
 		void pollEvents();
-		// this could fire an event on resize 
 		void setResized(bool v);
-
+		std::vector<const char *> getRequiredExtensions() const;
+		VkSurfaceKHR createVKSurface(const Instance& instance);
 
 	private:
 

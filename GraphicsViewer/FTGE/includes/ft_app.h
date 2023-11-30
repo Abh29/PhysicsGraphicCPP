@@ -5,6 +5,7 @@
 #include "ft_headers.h"
 #include "ft_window.h"
 #include "ft_instance.h"
+#include "ft_surface.h"
 
 namespace ft {
 
@@ -22,8 +23,9 @@ namespace ft {
 		void initApplication();
 
 
-		Window								_ftWindow;
-		Instance*							_ftInstance;
+		std::shared_ptr<Window>				_ftWindow;
+		std::shared_ptr<Instance>			_ftInstance;
+		std::shared_ptr<Surface>			_ftSurface;
 		std::vector<const char*> 			_validationLayers;
 		std::vector<const char*> 			_deviceExtensions;
 	};
