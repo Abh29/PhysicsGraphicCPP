@@ -38,4 +38,5 @@ void ft::Application::initApplication() {
 
 	_ftInstance = std::make_shared<Instance>(applicationInfo, _validationLayers, _ftWindow->getRequiredExtensions());
 	_ftSurface = std::make_shared<Surface>(_ftInstance, _ftWindow);
+	_ftPhysicalDevice = std::make_shared<PhysicalDevice>(_ftInstance, _ftSurface, _deviceExtensions);
 }

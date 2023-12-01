@@ -6,6 +6,7 @@
 #include "ft_window.h"
 #include "ft_instance.h"
 #include "ft_surface.h"
+#include "ft_physicalDevice.h"
 
 namespace ft {
 
@@ -26,6 +27,7 @@ namespace ft {
 		std::shared_ptr<Window>				_ftWindow;
 		std::shared_ptr<Instance>			_ftInstance;
 		std::shared_ptr<Surface>			_ftSurface;
+		std::shared_ptr<PhysicalDevice>		_ftPhysicalDevice;
 		std::vector<const char*> 			_validationLayers;
 		std::vector<const char*> 			_deviceExtensions;
 	};
