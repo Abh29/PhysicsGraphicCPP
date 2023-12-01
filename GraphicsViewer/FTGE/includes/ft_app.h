@@ -7,6 +7,7 @@
 #include "ft_instance.h"
 #include "ft_surface.h"
 #include "ft_physicalDevice.h"
+#include "ft_device.h"
 
 namespace ft {
 
@@ -28,6 +29,7 @@ namespace ft {
 		std::shared_ptr<Instance>			_ftInstance;
 		std::shared_ptr<Surface>			_ftSurface;
 		std::shared_ptr<PhysicalDevice>		_ftPhysicalDevice;
+		std::shared_ptr<Device>				_ftDevice;
 		std::vector<const char*> 			_validationLayers;
 		std::vector<const char*> 			_deviceExtensions;
 	};

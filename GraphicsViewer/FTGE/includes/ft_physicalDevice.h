@@ -34,6 +34,7 @@ namespace ft {
 
 		VkPhysicalDevice getVKPhysicalDevice() const;
 		VkSampleCountFlagBits getMSAASamples() const;
+		QueueFamilyIndices 	getQueueFamilyIndices() const;
 
 
 	private:
@@ -53,6 +54,7 @@ namespace ft {
 		VkPhysicalDevice					_physicalDevice;
 		VkSampleCountFlagBits 				_msaaSamples;
 		std::vector<const char *>			_deviceExtensions;
+		QueueFamilyIndices					_queueFamilyIndices;
 
 	};
 

@@ -19,6 +19,8 @@ VkPhysicalDevice ft::PhysicalDevice::getVKPhysicalDevice() const {return _physic
 
 VkSampleCountFlagBits ft::PhysicalDevice::getMSAASamples() const {return _msaaSamples;}
 
+ft::PhysicalDevice::QueueFamilyIndices ft::PhysicalDevice::getQueueFamilyIndices() const {return _queueFamilyIndices;}
+
 void ft::PhysicalDevice::pickPhysicalDevice() {
 
 	uint32_t deviceCount = 0;
@@ -128,7 +130,6 @@ bool ft::PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 }
 
 ft::PhysicalDevice::QueueFamilyIndices ft::PhysicalDevice::findQueueFamilies(VkPhysicalDevice device) {
-	QueueFamilyIndices	indices;
 
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -139,23 +140,23 @@ ft::PhysicalDevice::QueueFamilyIndices ft::PhysicalDevice::findQueueFamilies(VkP
 	int i = 0;
 	for (const auto& queueFamily : queueFamilies) {
 		if (queueFamily.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
-			indices.graphicsFamily = i;
+			_queueFamilyIndices.graphicsFamily = i;
 		}
 
 		VkBool32 presentSupport = false;
 		vkGetPhysicalDeviceSurfaceSupportKHR(device, i, _ftSurface->getVKSurface(), &presentSupport);
 
 		if (presentSupport) {
-			indices.presentFamily = i;
+			_queueFamilyIndices.presentFamily = i;
 		}
 
-		if (indices.isComplete()) {
+		if (_queueFamilyIndices.isComplete()) {
 			break;
 		}
 		i++;
 	}
 
-	return indices;
+	return _queueFamilyIndices;
 }
 
 ft::PhysicalDevice::SwapChainSupportDetails ft::PhysicalDevice::querySwapChainSupport(VkPhysicalDevice device) {
