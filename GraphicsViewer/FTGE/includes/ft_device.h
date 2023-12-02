@@ -25,6 +25,7 @@ namespace ft {
 		VkDevice  getVKDevice() const;
 		VkQueue   getVKGraphicsQueue() const;
 		VkQueue   getVKPresentQueue() const;
+		uint32_t  findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
 
 	private:
 		std::shared_ptr<PhysicalDevice>		_ftPhysicalDevice;

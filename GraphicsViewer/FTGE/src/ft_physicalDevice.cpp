@@ -1,4 +1,6 @@
 #include "../include.h"
+#include "../includes/ft_physicalDevice.h"
+
 
 ft::PhysicalDevice::PhysicalDevice(
 		std::shared_ptr<Instance> &instance,
@@ -182,6 +184,12 @@ ft::SwapChainSupportDetails ft::PhysicalDevice::querySwapChainSupport(VkPhysical
 	}
 
 	return details;
+}
+
+VkPhysicalDeviceMemoryProperties ft::PhysicalDevice::getPhysicalDeviceMemoryProperties() const {
+	VkPhysicalDeviceMemoryProperties properties;
+	vkGetPhysicalDeviceMemoryProperties(_physicalDevice, &properties);
+	return properties;
 }
 
 

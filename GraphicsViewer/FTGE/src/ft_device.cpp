@@ -1,4 +1,6 @@
 #include "../include.h"
+#include "../includes/ft_device.h"
+
 
 ft::Device::Device(std::shared_ptr<PhysicalDevice>& physicalDevice,
 				   std::vector<const char *> &validationLayers,
@@ -55,3 +57,17 @@ ft::Device::~Device() {
 VkDevice ft::Device::getVKDevice() const {return _device;}
 VkQueue ft::Device::getVKGraphicsQueue() const {return _graphicsQueue;}
 VkQueue ft::Device::getVKPresentQueue() const {return _presentQueue;}
+
+uint32_t ft::Device::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties) {
+	VkPhysicalDeviceMemoryProperties deviceMemoryProperties = _ftPhysicalDevice->getPhysicalDeviceMemoryProperties();
+
+	for (uint32_t i = 0; i < deviceMemoryProperties.memoryTypeCount; ++i) {
+		if (typeFilter & (1 << i) &&
+			(deviceMemoryProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+			return i;
+		}
+	}
+
+	throw std::runtime_error("failed to find suitable memory type!");
+}
+

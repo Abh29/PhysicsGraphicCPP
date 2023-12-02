@@ -13,5 +13,8 @@
 #include "includes/ft_swapChain.h"
 #include "includes/ft_instance.h"
 #include "includes/ft_surface.h"
+#include "includes/ft_image.h"
+#include "includes/ft_buffer.h"
+#include "includes/ft_frameBuffer.h"
 
 #endif //FTGRAPHICS_INCLUDE_H

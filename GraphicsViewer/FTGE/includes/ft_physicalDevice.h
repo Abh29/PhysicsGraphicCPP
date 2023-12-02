@@ -35,7 +35,7 @@ namespace ft {
 		VkPhysicalDevice getVKPhysicalDevice() const;
 		VkSampleCountFlagBits getMSAASamples() const;
 		QueueFamilyIndices getQueueFamilyIndices() const;
-
+		VkPhysicalDeviceMemoryProperties getPhysicalDeviceMemoryProperties() const;
 
 	private:
 
