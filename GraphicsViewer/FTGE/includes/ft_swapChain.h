@@ -28,8 +28,7 @@ namespace ft {
 		[[nodiscard]] VkFormat	getVKSwapChainImageFormat() const;
 		[[nodiscard]] VkExtent2D	getVKSwapChainExtent() const;
 		[[nodiscard]] std::vector<VkImage> getVKSwapChainImages() const;
-
-
+		[[nodiscard]] std::vector<VkImageView>	getVKSwapChainImageViews() const;
 
 
 	private:
@@ -37,6 +36,7 @@ namespace ft {
 		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
 		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilitiesKhr);
+		void createImageViews();
 
 		std::shared_ptr<PhysicalDevice>		_ftPhysicalDevice;
 		std::shared_ptr<Device>				_ftDevice;
@@ -45,7 +45,7 @@ namespace ft {
 		VkFormat							_swapChainImageFormat;
 		VkExtent2D 							_swapChainExtent;
 		std::vector<VkImage>				_swapChainImages;
-//		std::vector<VkImageView>			_swapChainImageViews;
+		std::vector<VkImageView>			_swapChainImageViews;
 		uint32_t 							_width;
 		uint32_t 							_height;
 
