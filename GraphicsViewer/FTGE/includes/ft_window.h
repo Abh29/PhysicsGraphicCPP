@@ -20,8 +20,9 @@ namespace ft {
 		bool shouldClose();
 		void pollEvents();
 		void setResized(bool v);
-		std::vector<const char *> getRequiredExtensions() const;
+		[[nodiscard]] std::vector<const char *> getRequiredExtensions() const;
 		VkSurfaceKHR createVKSurface(const Instance& instance);
+		std::pair<uint32_t, uint32_t> queryCurrentWidthHeight();
 
 	private:
 

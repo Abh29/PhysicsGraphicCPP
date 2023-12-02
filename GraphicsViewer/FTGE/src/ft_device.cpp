@@ -5,7 +5,7 @@ ft::Device::Device(std::shared_ptr<PhysicalDevice>& physicalDevice,
 				   std::vector<const char *> &deviceExtensions):
 		_ftPhysicalDevice(physicalDevice)
 		{
-			PhysicalDevice::QueueFamilyIndices indices = _ftPhysicalDevice->getQueueFamilyIndices();
+			ft::QueueFamilyIndices indices = _ftPhysicalDevice->getQueueFamilyIndices();
 			std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
 			std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(), indices.presentFamily.value()};
 

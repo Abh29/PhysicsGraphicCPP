@@ -19,7 +19,7 @@ VkPhysicalDevice ft::PhysicalDevice::getVKPhysicalDevice() const {return _physic
 
 VkSampleCountFlagBits ft::PhysicalDevice::getMSAASamples() const {return _msaaSamples;}
 
-ft::PhysicalDevice::QueueFamilyIndices ft::PhysicalDevice::getQueueFamilyIndices() const {return _queueFamilyIndices;}
+ft::QueueFamilyIndices ft::PhysicalDevice::getQueueFamilyIndices() const {return _queueFamilyIndices;}
 
 void ft::PhysicalDevice::pickPhysicalDevice() {
 
@@ -129,7 +129,7 @@ bool ft::PhysicalDevice::checkDeviceExtensionSupport(VkPhysicalDevice device) {
 	return requiredExtensions.empty();
 }
 
-ft::PhysicalDevice::QueueFamilyIndices ft::PhysicalDevice::findQueueFamilies(VkPhysicalDevice device) {
+ft::QueueFamilyIndices ft::PhysicalDevice::findQueueFamilies(VkPhysicalDevice device) {
 
 	uint32_t queueFamilyCount = 0;
 	vkGetPhysicalDeviceQueueFamilyProperties(device, &queueFamilyCount, nullptr);
@@ -159,7 +159,7 @@ ft::PhysicalDevice::QueueFamilyIndices ft::PhysicalDevice::findQueueFamilies(VkP
 	return _queueFamilyIndices;
 }
 
-ft::PhysicalDevice::SwapChainSupportDetails ft::PhysicalDevice::querySwapChainSupport(VkPhysicalDevice device) {
+ft::SwapChainSupportDetails ft::PhysicalDevice::querySwapChainSupport(VkPhysicalDevice device) {
 	SwapChainSupportDetails details;
 
 	// querying surface capabilities
@@ -185,6 +185,6 @@ ft::PhysicalDevice::SwapChainSupportDetails ft::PhysicalDevice::querySwapChainSu
 }
 
 
-bool ft::PhysicalDevice::QueueFamilyIndices::isComplete() const {
+bool ft::QueueFamilyIndices::isComplete() const {
 	return graphicsFamily.has_value() && presentFamily.has_value();
 }

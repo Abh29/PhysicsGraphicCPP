@@ -40,4 +40,7 @@ void ft::Application::initApplication() {
 	_ftSurface = std::make_shared<Surface>(_ftInstance, _ftWindow);
 	_ftPhysicalDevice = std::make_shared<PhysicalDevice>(_ftInstance, _ftSurface, _deviceExtensions);
 	_ftDevice = std::make_shared<Device>(_ftPhysicalDevice, _validationLayers, _deviceExtensions);
+	_ftSwapChain = std::make_shared<SwapChain>(_ftPhysicalDevice, _ftDevice, _ftSurface,
+											   _ftWindow->queryCurrentWidthHeight().first,
+											   _ftWindow->queryCurrentWidthHeight().second);
 }

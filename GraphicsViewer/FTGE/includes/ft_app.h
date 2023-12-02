@@ -30,6 +30,7 @@ namespace ft {
 		std::shared_ptr<Surface>			_ftSurface;
 		std::shared_ptr<PhysicalDevice>		_ftPhysicalDevice;
 		std::shared_ptr<Device>				_ftDevice;
+		std::shared_ptr<SwapChain>			_ftSwapChain;
 		std::vector<const char*> 			_validationLayers;
 		std::vector<const char*> 			_deviceExtensions;
 	};

@@ -52,3 +52,8 @@ VkSurfaceKHR ft::Window::createVKSurface(const Instance &instance) {
 	}
 	return surface;
 }
+
+std::pair<uint32_t, uint32_t> ft::Window::queryCurrentWidthHeight() {
+	glfwGetFramebufferSize(_window, reinterpret_cast<int *>(&_width), reinterpret_cast<int *>(&_height));
+	return {_width, _height};
+}

@@ -10,22 +10,22 @@ namespace ft {
 	class Instance;
 	class Surface;
 
+	struct QueueFamilyIndices {
+		std::optional<uint32_t> graphicsFamily;
+		std::optional<uint32_t> presentFamily;
+
+		[[nodiscard]] bool isComplete() const;
+	};
+
+	struct SwapChainSupportDetails {
+		VkSurfaceCapabilitiesKHR capabilities;
+		std::vector<VkSurfaceFormatKHR> formats;
+		std::vector<VkPresentModeKHR> presentModes;
+	};
+
+
 	class PhysicalDevice {
 	public:
-
-		using QueueFamilyIndices = struct QueueFamilyIndices {
-			std::optional<uint32_t> graphicsFamily;
-			std::optional<uint32_t> presentFamily;
-
-			bool isComplete() const;
-		};
-
-		using SwapChainSupportDetails = struct SwapChainSupportDetails {
-			VkSurfaceCapabilitiesKHR capabilities;
-			std::vector<VkSurfaceFormatKHR> formats;
-			std::vector<VkPresentModeKHR> presentModes;
-		};
-
 
 		PhysicalDevice(std::shared_ptr<Instance> &instance,
 					   std::shared_ptr<Surface> &surface,
@@ -34,7 +34,7 @@ namespace ft {
 
 		VkPhysicalDevice getVKPhysicalDevice() const;
 		VkSampleCountFlagBits getMSAASamples() const;
-		QueueFamilyIndices 	getQueueFamilyIndices() const;
+		QueueFamilyIndices getQueueFamilyIndices() const;
 
 
 	private:
