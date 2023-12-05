@@ -6,8 +6,8 @@
 namespace ft {
 
 	class FrameBuffer {
-
-
+	public:
+		using pointer = std::shared_ptr<FrameBuffer>;
 
 	};
 

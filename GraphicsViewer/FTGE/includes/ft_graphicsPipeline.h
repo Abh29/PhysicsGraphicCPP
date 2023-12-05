@@ -7,6 +7,8 @@ namespace ft {
 
 class GraphicsPipeline {
 
+public:
+	using pointer = std::shared_ptr<GraphicsPipeline>;
 
 };
 }
