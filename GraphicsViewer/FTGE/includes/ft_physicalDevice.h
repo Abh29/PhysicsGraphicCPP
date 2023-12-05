@@ -2,40 +2,27 @@
 #define FTGRAPHICS_FT_PHYSICALDEVICE_H
 
 #include "ft_headers.h"
+#include "ft_defines.h"
 #include "ft_instance.h"
 #include "ft_swapChain.h"
 
 namespace ft {
 
-	class Instance;
-	class Surface;
-
-	struct QueueFamilyIndices {
-		std::optional<uint32_t> graphicsFamily;
-		std::optional<uint32_t> presentFamily;
-
-		[[nodiscard]] bool isComplete() const;
-	};
-
-	struct SwapChainSupportDetails {
-		VkSurfaceCapabilitiesKHR capabilities;
-		std::vector<VkSurfaceFormatKHR> formats;
-		std::vector<VkPresentModeKHR> presentModes;
-	};
-
-
 	class PhysicalDevice {
 	public:
+		using pointer = std::shared_ptr<PhysicalDevice>;
 
-		PhysicalDevice(std::shared_ptr<Instance> &instance,
-					   std::shared_ptr<Surface> &surface,
+		PhysicalDevice(Instance::pointer &instance,
+					   Surface::pointer &surface,
 					   std::vector<const char *> &deviceExtensions);
 		~PhysicalDevice();
 
-		VkPhysicalDevice getVKPhysicalDevice() const;
-		VkSampleCountFlagBits getMSAASamples() const;
-		QueueFamilyIndices getQueueFamilyIndices() const;
-		VkPhysicalDeviceMemoryProperties getPhysicalDeviceMemoryProperties() const;
+		[[nodiscard]] VkPhysicalDevice getVKPhysicalDevice() const;
+		[[nodiscard]] VkSampleCountFlagBits getMSAASamples() const;
+		[[nodiscard]] QueueFamilyIndices getQueueFamilyIndices() const;
+		[[nodiscard]] VkPhysicalDeviceMemoryProperties getPhysicalDeviceMemoryProperties() const;
+		[[nodiscard]] VkPhysicalDeviceProperties getPhysicalDeviceProperties() const;
+		VkFormatProperties getFormatProperties(VkFormat& format) const;
 
 	private:
 
@@ -49,8 +36,8 @@ namespace ft {
 
 
 
-		std::shared_ptr<Instance>			_ftInstance;
-		std::shared_ptr<Surface>			_ftSurface;
+		Instance::pointer 					_ftInstance;
+		Surface::pointer					_ftSurface;
 		VkPhysicalDevice					_physicalDevice;
 		VkSampleCountFlagBits 				_msaaSamples;
 		std::vector<const char *>			_deviceExtensions;

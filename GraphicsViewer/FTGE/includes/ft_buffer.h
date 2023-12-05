@@ -9,40 +9,55 @@ namespace ft {
 	class Device;
 
 	class Buffer {
-
 	public:
-		Buffer(std::shared_ptr<Device> &device, VkDeviceSize size,
-			   VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags	memoryProperties);
+
+		using pointer = std::shared_ptr<Buffer>;
+
+		Buffer(Device::pointer &device, VkDeviceSize size,
+			   VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags	memoryProperties,
+			   bool mapped,  VkDeviceSize mappedOffset, VkMemoryMapFlags mappedFlags);
 
 		~Buffer();
 
 
-		VkBuffer getVKBuffer() const;
+		[[nodiscard]] VkBuffer getVKBuffer() const;
+		[[nodiscard]] void* getMappedData() const;
+		void copyToMappedData(void *src, uint32_t size);
+		bool isMapped() const;
+
 
 	private:
-		std::shared_ptr<Device>				_ftDevice;
+		Device::pointer 					_ftDevice;
 		VkDeviceSize 						_size;
 		VkBuffer 							_buffer;
 		VkDeviceMemory 						_bufferMemory;
+		void*								_mappedData = nullptr;
+		bool								_isMapped = false;
 	};
 
 
 	class BufferBuilder {
 
 	public:
-		BufferBuilder();
+		BufferBuilder() = default;
 		~BufferBuilder() = default;
 
 		BufferBuilder& setSize(VkDeviceSize size);
 		BufferBuilder& setUsageFlags(VkBufferUsageFlags usageFlags);
 		BufferBuilder& setMemoryProperties(VkMemoryPropertyFlags memoryProperties);
-		std::unique_ptr<Buffer> build(std::shared_ptr<Device> &device);
+		BufferBuilder& setIsMapped(bool isMapped);
+		BufferBuilder& setMappedOffset(VkDeviceSize mappedOffset);
+		BufferBuilder& setMappedFlags(VkMemoryMapFlags mappedFlags);
+		Buffer::pointer build(Device::pointer &device);
 
 	private:
 		VkDeviceSize 						_size;
 		VkBufferUsageFlags 					_usageFlags;
 		VkMemoryPropertyFlags 				_memoryProperties;
 		std::unique_ptr<Buffer>				_ftBuffer;
+		bool 								_isMapped = false;
+		VkDeviceSize 						_mappedOffset = 0;
+		VkMemoryMapFlags 					_mappedFlags = 0;
 	};
 
 }
