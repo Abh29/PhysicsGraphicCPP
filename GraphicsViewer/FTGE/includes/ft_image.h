@@ -10,7 +10,9 @@ namespace ft {
 
 	class Image {
 	public:
-		Image(std::shared_ptr<Device> &device,
+		using pointer = std::shared_ptr<Image>;
+
+		Image(Device::pointer &device,
 			  uint32_t width, uint32_t height, uint32_t mipLevel,
 			  VkSampleCountFlagBits sampleCount, VkFormat format,
 			  VkImageTiling tiling, VkImageUsageFlags usage,
@@ -18,13 +20,12 @@ namespace ft {
 
 		~Image();
 
-
-		VkImage 			getVKImage() const;
-		VkImageView 		getVKImageView() const;
+		[[nodiscard]] VkImage 			getVKImage() const;
+		[[nodiscard]] VkImageView 		getVKImageView() const;
 
 	private:
 
-		std::shared_ptr<Device>			_ftDevice;
+		Device::pointer 				_ftDevice;
 		uint32_t 						_width;
 		uint32_t 						_height;
 		uint32_t 						_mipLevel;
@@ -51,7 +52,7 @@ namespace ft {
 		ImageBuilder& setMemoryProperties(VkMemoryPropertyFlags memoryProperties);
 		ImageBuilder& setAspectFlags(VkImageAspectFlags aspectFlags);
 
-		std::unique_ptr<Image> build(std::shared_ptr<Device> &device);
+		Image::pointer build(Device::pointer &device);
 
 	private:
 		uint32_t 						_width;
@@ -63,8 +64,8 @@ namespace ft {
 		VkImageUsageFlags 				_usageFlags;
 		VkMemoryPropertyFlags 			_memoryProperties;
 		VkImageAspectFlags 				_aspectFlags;
-		std::unique_ptr<Image>			_ftImage;
-		std::shared_ptr<Device>			_ftDevice;
+		Image::pointer 					_ftImage;
+		Device::pointer 				_ftDevice;
 	};
 
 }

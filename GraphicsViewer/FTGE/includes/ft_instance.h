@@ -15,6 +15,9 @@ namespace ft {
 	class Instance {
 
 	public:
+
+		using pointer = std::shared_ptr<Instance>;
+
 		Instance(
 				VkApplicationInfo& applicationInfo,
 				const std::vector<const char *>& validationLayers,
