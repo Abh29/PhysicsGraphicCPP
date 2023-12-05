@@ -18,7 +18,7 @@ namespace ft {
 		};
 
 
-		Shader(const std::string& shaderPath, ShaderType shaderType, std::shared_ptr<Device> device);
+		Shader(Device::pointer &device, const std::string& shaderPath, ShaderType shaderType);
 		~Shader();
 
 		Shader(const Shader& other) = delete;
