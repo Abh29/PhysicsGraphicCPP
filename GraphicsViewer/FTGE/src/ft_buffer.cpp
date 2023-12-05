@@ -3,8 +3,9 @@
 
 
 ft::Buffer::Buffer(std::shared_ptr<Device> &device, VkDeviceSize size, VkBufferUsageFlags usageFlags,
-				   VkMemoryPropertyFlags memoryProperties) :
-				   _ftDevice(device), _size(size)
+				   VkMemoryPropertyFlags memoryProperties, bool mapped, VkDeviceSize mappedOffset,
+				   VkMemoryMapFlags mappedFlags) :
+				   _ftDevice(device), _size(size), _isMapped(mapped)
 				   {
 						// create the buffer
 						VkBufferCreateInfo bufferCreateInfo{};
@@ -34,14 +35,28 @@ ft::Buffer::Buffer(std::shared_ptr<Device> &device, VkDeviceSize size, VkBufferU
 						// bind memory with the buffer
 						vkBindBufferMemory(_ftDevice->getVKDevice(), _buffer, _bufferMemory, 0);
 
+						if (_isMapped)
+							vkMapMemory(_ftDevice->getVKDevice(), _bufferMemory, mappedOffset, _size, mappedFlags, &_mappedData);
+
 				   }
 
 ft::Buffer::~Buffer() {
+	if (_mappedData)
+		vkUnmapMemory(_ftDevice->getVKDevice(), _bufferMemory);
 	vkDestroyBuffer(_ftDevice->getVKDevice(), _buffer, nullptr);
 	vkFreeMemory(_ftDevice->getVKDevice(), _bufferMemory, nullptr);
 }
 
 VkBuffer ft::Buffer::getVKBuffer() const { return _buffer;}
+
+void* ft::Buffer::getMappedData() const {
+	return _mappedData;
+}
+
+void ft::Buffer::copyToMappedData(void *src, uint32_t size) {
+	assert(_isMapped);
+	std::memcpy(_mappedData, src, size);
+}
 
 /*******************************BufferBuilder****************************************/
 
@@ -60,7 +75,24 @@ ft::BufferBuilder& ft::BufferBuilder::setMemoryProperties(VkMemoryPropertyFlags 
 	return *this;
 }
 
-std::unique_ptr<ft::Buffer> ft::BufferBuilder::build(std::shared_ptr<Device> &device) {
-	_ftBuffer = std::make_unique<Buffer>(device, _size, _usageFlags, _memoryProperties);
+ft::Buffer::pointer ft::BufferBuilder::build(std::shared_ptr<Device> &device) {
+	_ftBuffer = std::make_unique<Buffer>(device, _size, _usageFlags, _memoryProperties,
+										 _isMapped, _mappedOffset, _mappedFlags);
+	_isMapped = false;
 	return std::move(_ftBuffer);
+}
+
+ft::BufferBuilder& ft::BufferBuilder::setIsMapped(bool isMapped) {
+	_isMapped = isMapped;
+	return *this;
+}
+
+ft::BufferBuilder& ft::BufferBuilder::setMappedOffset(VkDeviceSize mappedOffset) {
+	_mappedOffset = mappedOffset;
+	return *this;
+}
+
+ft::BufferBuilder& ft::BufferBuilder::setMappedFlags(VkMemoryMapFlags mappedFlags) {
+	_mappedFlags = mappedFlags;
+	return *this;
 }

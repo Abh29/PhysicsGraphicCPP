@@ -84,7 +84,7 @@ ft::ImageBuilder::ImageBuilder() {
 	_ftImage = nullptr;
 }
 
-std::unique_ptr<ft::Image> ft::ImageBuilder::build(std::shared_ptr<Device> &device) {
+ft::Image::pointer ft::ImageBuilder::build(std::shared_ptr<Device> &device) {
 	_ftImage = std::make_unique<ft::Image>(device,
 			_width, _height, _mipLevel, _sampleCount, _format,
 			_tiling, _usageFlags, _memoryProperties, _aspectFlags);

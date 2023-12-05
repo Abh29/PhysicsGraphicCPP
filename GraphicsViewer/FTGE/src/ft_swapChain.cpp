@@ -132,10 +132,10 @@ VkExtent2D ft::SwapChain::chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capab
 		return capabilitiesKhr.currentExtent;
 	}
 
-	VkExtent2D actualExtent {_width, _height};
+	_width= std::clamp(_width, capabilitiesKhr.minImageExtent.width, capabilitiesKhr.maxImageExtent.width);
+	_height = std::clamp(_height, capabilitiesKhr.minImageExtent.height, capabilitiesKhr.maxImageExtent.height);
 
-	actualExtent.width = std::clamp(actualExtent.width, capabilitiesKhr.minImageExtent.width, capabilitiesKhr.maxImageExtent.width);
-	actualExtent.height = std::clamp(actualExtent.height, capabilitiesKhr.minImageExtent.height, capabilitiesKhr.maxImageExtent.height);
+	VkExtent2D actualExtent {_width, _height};
 
 	return actualExtent;
 }
@@ -165,6 +165,14 @@ void ft::SwapChain::createImageViews() {
 		}
 		++i;
 	}
+}
+
+uint32_t ft::SwapChain::getWidth() const {
+	return _width;
+}
+
+uint32_t ft::SwapChain::getHeight() const {
+	return _height;
 }
 
 

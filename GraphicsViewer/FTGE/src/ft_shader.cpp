@@ -1,6 +1,6 @@
 #include "../include.h"
 
-ft::Shader::Shader(const std::string& shaderPath, ShaderType shaderType, std::shared_ptr<Device> device) :
+ft::Shader::Shader(ft::Device::pointer &device, const std::string& shaderPath, ShaderType shaderType) :
 _shaderPath(shaderPath),
 _shaderType(shaderType),
 _device(device)

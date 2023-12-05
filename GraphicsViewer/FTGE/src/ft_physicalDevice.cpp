@@ -1,6 +1,4 @@
 #include "../include.h"
-#include "../includes/ft_physicalDevice.h"
-
 
 ft::PhysicalDevice::PhysicalDevice(
 		std::shared_ptr<Instance> &instance,
@@ -190,6 +188,18 @@ VkPhysicalDeviceMemoryProperties ft::PhysicalDevice::getPhysicalDeviceMemoryProp
 	VkPhysicalDeviceMemoryProperties properties;
 	vkGetPhysicalDeviceMemoryProperties(_physicalDevice, &properties);
 	return properties;
+}
+
+VkPhysicalDeviceProperties ft::PhysicalDevice::getPhysicalDeviceProperties() const {
+	VkPhysicalDeviceProperties properties{};
+	vkGetPhysicalDeviceProperties(_physicalDevice, &properties);
+	return properties;
+}
+
+VkFormatProperties ft::PhysicalDevice::getFormatProperties(VkFormat &format) const {
+	VkFormatProperties props;
+	vkGetPhysicalDeviceFormatProperties(_physicalDevice, format, &props);
+	return props;
 }
 
 
