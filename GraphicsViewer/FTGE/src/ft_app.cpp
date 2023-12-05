@@ -16,13 +16,17 @@ _ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow", nullp
 	initApplication();
 }
 
-ft::Application::~Application() {}
+ft::Application::~Application() {
+	cleanup();
+}
 
 void ft::Application::run() {
 
 	while(!_ftWindow->shouldClose()) {
 		_ftWindow->pollEvents();
+		drawFrame();
 	}
+	vkDeviceWaitIdle(_ftDevice->getVKDevice());
 }
 
 void ft::Application::initApplication() {
@@ -43,4 +47,28 @@ void ft::Application::initApplication() {
 	_ftSwapChain = std::make_shared<SwapChain>(_ftPhysicalDevice, _ftDevice, _ftSurface,
 											   _ftWindow->queryCurrentWidthHeight().first,
 											   _ftWindow->queryCurrentWidthHeight().second);
+	_ftCommandPool = std::make_shared<CommandPool>(_ftDevice);
+	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
+		_ftCommandBuffers.push_back(std::make_shared<CommandBuffer>(
+				_ftDevice, _ftCommandPool));
+	}
+
+	_ftImageBuilder = std::make_shared<ImageBuilder>();
+	_ftBufferBuilder = std::make_shared<BufferBuilder>();
+
+	createRenderPass();
+	createDescriptorSetLayout();
+	createGraphicsPipeline();
+	createColorResources();
+	createDepthResources();
+	createFramebuffers();
+	createTextureImage();
+	createTextureSampler();
+	loadModel();
+	createVertexBuffer();
+	createIndexBuffer();
+	createUniformBuffers();
+	createDescriptorPool();
+	createDescriptorSets();
+	createSyncObjects();
 }
