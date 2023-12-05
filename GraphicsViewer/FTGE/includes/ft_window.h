@@ -12,6 +12,8 @@ namespace ft {
 
 	public:
 
+		using pointer = std::shared_ptr<Window>;
+
 		Window(uint32_t w, uint32_t h, std::string name, GLFWframebuffersizefun resizeCallback = nullptr, GLFWkeyfun keyCallback = nullptr);
 		~Window();
 		Window(const Window& other) = delete;
@@ -23,6 +25,7 @@ namespace ft {
 		[[nodiscard]] std::vector<const char *> getRequiredExtensions() const;
 		VkSurfaceKHR createVKSurface(const Instance& instance);
 		std::pair<uint32_t, uint32_t> queryCurrentWidthHeight();
+		void waitEvents();
 
 	private:
 

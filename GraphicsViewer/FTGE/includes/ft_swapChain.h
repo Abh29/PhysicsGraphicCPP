@@ -2,20 +2,21 @@
 #define FTGRAPHICS_FT_SWAPCHAIN_H
 
 #include "ft_headers.h"
-#include "ft_physicalDevice.h"
-#include "ft_device.h"
+#include "ft_defines.h"
 #include "ft_surface.h"
+#include "ft_physicalDevice.h"
 
 
 namespace ft {
 
+	class PhysicalDevice;
 	class Device;
-	class Surface;
-	struct SwapChainSupportDetails;
 
 	class SwapChain {
-
 	public:
+
+		using pointer = std::shared_ptr<SwapChain>;
+
 		SwapChain(std::shared_ptr<PhysicalDevice> &physicalDevice,
 				  std::shared_ptr<Device> &device,
 				  std::shared_ptr<Surface> &surface,
@@ -29,7 +30,8 @@ namespace ft {
 		[[nodiscard]] VkExtent2D	getVKSwapChainExtent() const;
 		[[nodiscard]] std::vector<VkImage> getVKSwapChainImages() const;
 		[[nodiscard]] std::vector<VkImageView>	getVKSwapChainImageViews() const;
-
+		uint32_t getWidth() const;
+		uint32_t getHeight() const;
 
 	private:
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);

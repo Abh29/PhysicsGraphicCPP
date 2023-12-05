@@ -10,6 +10,9 @@ namespace ft {
 
 	class Surface {
 	public:
+
+		using pointer = std::shared_ptr<Surface>;
+
 		Surface(std::shared_ptr<Instance> instance,
 				std::shared_ptr<Window> window);
 		~Surface();
