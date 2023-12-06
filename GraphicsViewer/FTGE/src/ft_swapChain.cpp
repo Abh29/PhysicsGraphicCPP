@@ -5,12 +5,13 @@
 ft::SwapChain::SwapChain(std::shared_ptr<PhysicalDevice> &physicalDevice,
 						 std::shared_ptr<Device> &device,
 						 std::shared_ptr<Surface> &surface,
-						 uint32_t width, uint32_t height) :
+						 uint32_t width, uint32_t height,
+						 VkPresentModeKHR preferredMode) :
 						 _ftPhysicalDevice(physicalDevice),
 						 _ftDevice(device),
 						 _ftSurface(surface),
-						 _width(width),
-						 _height(height){
+						 _preferredMode(preferredMode),
+						 _width(width), _height(height){
 
 	SwapChainSupportDetails details = querySwapChainSupport(physicalDevice->getVKPhysicalDevice());
 
@@ -121,9 +122,10 @@ VkSurfaceFormatKHR ft::SwapChain::chooseSwapSurfaceFormat(const std::vector<VkSu
 
 VkPresentModeKHR ft::SwapChain::chooseSwapPresentMode(const std::vector<VkPresentModeKHR> &availablePresentModes) {
 	for (const auto& apm : availablePresentModes) {
-		if (apm == VK_PRESENT_MODE_MAILBOX_KHR)
+		if (apm == _preferredMode)
 			return apm;
 	}
+	std::cout << "the preferred present mode is not supported, reverting to fifo" << std::endl;
 	return VK_PRESENT_MODE_FIFO_KHR;
 }
 

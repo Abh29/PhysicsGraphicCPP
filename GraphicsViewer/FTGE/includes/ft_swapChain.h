@@ -20,7 +20,8 @@ namespace ft {
 		SwapChain(std::shared_ptr<PhysicalDevice> &physicalDevice,
 				  std::shared_ptr<Device> &device,
 				  std::shared_ptr<Surface> &surface,
-				  uint32_t width, uint32_t height);
+				  uint32_t width, uint32_t height,
+				  VkPresentModeKHR preferredMode = VK_PRESENT_MODE_MAILBOX_KHR);
 
 		~SwapChain();
 
@@ -48,6 +49,7 @@ namespace ft {
 		VkExtent2D 							_swapChainExtent;
 		std::vector<VkImage>				_swapChainImages;
 		std::vector<VkImageView>			_swapChainImageViews;
+		VkPresentModeKHR 					_preferredMode;
 		uint32_t 							_width;
 		uint32_t 							_height;
 
