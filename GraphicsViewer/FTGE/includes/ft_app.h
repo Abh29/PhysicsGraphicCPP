@@ -59,7 +59,7 @@ namespace ft {
 
 		/****************************triangle app ************************/
 		void printFPS();
-		qstatic std::vector<char> readFile(const std::string& filename);
+		static std::vector<char> readFile(const std::string& filename);
 		void cleanup();
 		void createGraphicsPipeline();
 		VkShaderModule createShaderModule(const std::vector<char>& code);
