@@ -3,6 +3,7 @@
 
 #include "ft_headers.h"
 #include "ft_device.h"
+#include "ft_command.h"
 
 namespace ft {
 
@@ -23,6 +24,9 @@ namespace ft {
 		[[nodiscard]] VkBuffer getVKBuffer() const;
 		[[nodiscard]] void* getMappedData() const;
 		void copyToMappedData(void *src, uint32_t size);
+		void copyToBuffer(CommandPool::pointer &commandPool, Buffer::pointer &other, VkDeviceSize size,
+						  VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0) const;
+		void copyToImage(CommandPool::pointer &commandPool, Image::pointer &image, uint32_t width, uint32_t height);
 		bool isMapped() const;
 
 
@@ -33,6 +37,7 @@ namespace ft {
 		VkDeviceMemory 						_bufferMemory;
 		void*								_mappedData = nullptr;
 		bool								_isMapped = false;
+		std::shared_ptr<Device>				_dd;
 	};
 
 

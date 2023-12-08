@@ -29,7 +29,7 @@
 #include "functional"
 #include "stb/stb_image.h"
 #include "tiny_obj_loader.h"
-
+#include "thread"
 
 
 

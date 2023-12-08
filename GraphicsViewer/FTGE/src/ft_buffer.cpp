@@ -5,7 +5,7 @@
 ft::Buffer::Buffer(std::shared_ptr<Device> &device, VkDeviceSize size, VkBufferUsageFlags usageFlags,
 				   VkMemoryPropertyFlags memoryProperties, bool mapped, VkDeviceSize mappedOffset,
 				   VkMemoryMapFlags mappedFlags) :
-				   _ftDevice(device), _size(size), _isMapped(mapped)
+				   _ftDevice{device}, _size(size), _isMapped(mapped)
 				   {
 						// create the buffer
 						VkBufferCreateInfo bufferCreateInfo{};
@@ -56,6 +56,47 @@ void* ft::Buffer::getMappedData() const {
 void ft::Buffer::copyToMappedData(void *src, uint32_t size) {
 	assert(_isMapped);
 	std::memcpy(_mappedData, src, size);
+}
+
+void ft::Buffer::copyToBuffer(ft::CommandPool::pointer &commandPool, ft::Buffer::pointer &dst,
+							  VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset) const {
+	VkBufferCopy	copyRegion{};
+	copyRegion.srcOffset = srcOffset;
+	copyRegion.dstOffset = dstOffset;
+	copyRegion.size = size;
+
+	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice, commandPool);
+	commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+	vkCmdCopyBuffer(commandBuffer->getVKCommandBuffer(), _buffer, dst->_buffer, 1, &copyRegion);
+	commandBuffer->end();
+	commandBuffer->submit(_ftDevice->getVKGraphicsQueue());
+}
+
+bool ft::Buffer::isMapped() const {
+	return _isMapped;
+}
+
+void ft::Buffer::copyToImage(ft::CommandPool::pointer &commandPool, ft::Image::pointer &image, uint32_t width,
+							 uint32_t height) {
+
+	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice, commandPool);
+	commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+	VkBufferImageCopy region{};
+	region.bufferOffset = 0;
+	region.bufferRowLength = 0;
+	region.bufferImageHeight = 0;
+	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageOffset = {0, 0, 0};
+	region.imageExtent = {width, height, 1};
+
+	vkCmdCopyBufferToImage(commandBuffer->getVKCommandBuffer(), _buffer, image->getVKImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+
+	commandBuffer->end();
+	commandBuffer->submit(_ftDevice->getVKGraphicsQueue());
 }
 
 /*******************************BufferBuilder****************************************/

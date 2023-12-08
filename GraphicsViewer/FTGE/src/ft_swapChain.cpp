@@ -177,4 +177,16 @@ uint32_t ft::SwapChain::getHeight() const {
 	return _height;
 }
 
+std::pair<VkResult, uint32_t> ft::SwapChain::acquireNextImage(VkSemaphore semaphore, VkFence fence) {
+	VkResult result = vkAcquireNextImageKHR(_ftDevice->getVKDevice(), _swapChain, UINT64_MAX, semaphore, fence, &_imageNext);
+	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+		throw std::runtime_error("failed to acquire the swap chain image!");
+	}
+	return {result, _imageNext};
+}
+
+VkPresentModeKHR ft::SwapChain::getPreferredPresentMode() const {
+	return _preferredMode;
+}
+
 

@@ -18,6 +18,26 @@ namespace ft {
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
+	struct UniformBufferObject {
+		alignas(16) glm::mat4	model;
+		alignas(16) glm::mat4 	view;
+		alignas(16) glm::mat4 	proj;
+	};
+
+//	static std::vector<char> readFile(const std::string& filename) {
+//		std::ifstream file(filename, std::ios::ate | std::ios::binary);
+//		if (!file.is_open()) {
+//			throw std::runtime_error("failed to open file " + filename);
+//		}
+//		std::streamsize fileSize = file.tellg();
+//		std::vector<char> buffer(fileSize);
+//		file.seekg(0);
+//		file.read(buffer.data(), fileSize);
+//		file.close();
+//		return buffer;
+//	}
+
+
 
 }
 

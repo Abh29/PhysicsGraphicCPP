@@ -11,7 +11,7 @@ namespace ft {
 
 		using pointer = std::shared_ptr<CommandPool>;
 
-		CommandPool(Device::pointer &device);
+		CommandPool(Device::pointer device);
 		~CommandPool();
 
 		[[nodiscard]] VkCommandPool getVKCommandPool() const;
@@ -28,7 +28,7 @@ namespace ft {
 
 		using pointer = std::shared_ptr<CommandBuffer>;
 
-		CommandBuffer(Device::pointer &device,
+		CommandBuffer(Device::pointer device,
 					  CommandPool::pointer &commandPool,
 					  VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		~CommandBuffer();

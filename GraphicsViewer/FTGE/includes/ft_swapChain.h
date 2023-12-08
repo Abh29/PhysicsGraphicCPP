@@ -24,7 +24,8 @@ namespace ft {
 				  VkPresentModeKHR preferredMode = VK_PRESENT_MODE_MAILBOX_KHR);
 
 		~SwapChain();
-
+		SwapChain(const SwapChain &other) = delete;
+		SwapChain operator=(const SwapChain &other) = delete;
 
 		[[nodiscard]] VkSwapchainKHR getVKSwapChain() const;
 		[[nodiscard]] VkFormat	getVKSwapChainImageFormat() const;
@@ -33,6 +34,8 @@ namespace ft {
 		[[nodiscard]] std::vector<VkImageView>	getVKSwapChainImageViews() const;
 		uint32_t getWidth() const;
 		uint32_t getHeight() const;
+		std::pair<VkResult, uint32_t> acquireNextImage(VkSemaphore semaphore = VK_NULL_HANDLE, VkFence fence = VK_NULL_HANDLE);
+		[[nodiscard]] VkPresentModeKHR getPreferredPresentMode() const;
 
 	private:
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -52,6 +55,7 @@ namespace ft {
 		VkPresentModeKHR 					_preferredMode;
 		uint32_t 							_width;
 		uint32_t 							_height;
+		uint32_t 							_imageNext = 0;
 
 	};
 

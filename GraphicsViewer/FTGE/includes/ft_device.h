@@ -15,6 +15,8 @@ namespace ft {
 			   std::vector<const char *> &validationLayers,
 			   std::vector<const char *> &deviceExtensions);
 		~Device();
+		Device(const Device& other) = delete;
+		Device operator=(const Device& other) = delete;
 
 
 		[[nodiscard]] VkDevice  getVKDevice() const;

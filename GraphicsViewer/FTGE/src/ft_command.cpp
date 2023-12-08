@@ -1,8 +1,10 @@
+#include <utility>
+
 #include "../include.h"
 #include "../includes/ft_command.h"
 
 
-ft::CommandPool::CommandPool(std::shared_ptr<Device>& device): _ftDevice(device) {
+ft::CommandPool::CommandPool(std::shared_ptr<Device> device): _ftDevice(std::move(device)) {
 
 	QueueFamilyIndices queueFamilyIndices = _ftDevice->getQueueFamilyIndices();
 	VkCommandPoolCreateInfo poolCreateInfo{};
@@ -24,10 +26,9 @@ VkCommandPool ft::CommandPool::getVKCommandPool() const {return _commandPool;}
 /****************************************Command Buffer***********************/
 
 
-ft::CommandBuffer::CommandBuffer(std::shared_ptr<Device> &device, std::shared_ptr<CommandPool> &commandPool,
+ft::CommandBuffer::CommandBuffer(std::shared_ptr<Device> device, std::shared_ptr<CommandPool> &commandPool,
 								 VkCommandBufferLevel level) :
-_ftDevice(device), _ftCommandPool(commandPool), _commandBufferLevel(level){
-
+_ftDevice(std::move(device)), _ftCommandPool(commandPool), _commandBufferLevel(level){
 	VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
 	commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	commandBufferAllocateInfo.commandPool = _ftCommandPool->getVKCommandPool();

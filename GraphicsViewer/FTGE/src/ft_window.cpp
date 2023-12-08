@@ -16,7 +16,7 @@ void ft::Window::initWindow() {
 		throw std::runtime_error("GLFW could not initialize a window!");
 
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // remove this later
+//	glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE); // remove this later
 
 	_window = glfwCreateWindow(_width, _height, _name.c_str(), nullptr, nullptr);
 	glfwSetWindowUserPointer(_window, this);
