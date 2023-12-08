@@ -20,5 +20,6 @@
 #include "includes/ft_renderPass.h"
 #include "includes/ft_attachment.h"
 #include "includes/ft_app.h"
+#include "includes/ft_event.h"
 
 #endif //FTGRAPHICS_INCLUDE_H

@@ -44,6 +44,6 @@ add_custom_target(Models)
 
 
 add_link_options( -lglfw -lGL -lGLEW -lvulkan -ldl -lpthread )
-add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp src/ft_callbacks.cpp includes/ft_callbacks.h src/ft_shader.cpp src/ft_instance.cpp src/ft_physicalDevice.cpp src/ft_device.cpp src/ft_surface.cpp src/ft_swapChain.cpp includes/ft_physicalDevice.h includes/ft_buffer.h includes/ft_frameBuffer.h src/ft_image.cpp src/ft_buffer.cpp src/ft_frameBuffer.cpp src/ft_vertex.cpp src/ft_command.cpp includes/ft_renderPass.h includes/ft_attachment.h src/ft_attachment.cpp src/ft_renderPass.cpp includes/ft_defines.h)
+add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp src/ft_callbacks.cpp includes/ft_callbacks.h src/ft_shader.cpp src/ft_instance.cpp src/ft_physicalDevice.cpp src/ft_device.cpp src/ft_surface.cpp src/ft_swapChain.cpp includes/ft_physicalDevice.h includes/ft_buffer.h includes/ft_frameBuffer.h src/ft_image.cpp src/ft_buffer.cpp src/ft_frameBuffer.cpp src/ft_vertex.cpp src/ft_command.cpp includes/ft_renderPass.h includes/ft_attachment.h src/ft_attachment.cpp src/ft_renderPass.cpp includes/ft_defines.h includes/ft_event.h src/ft_event.cpp)
 
 add_dependencies(ftGraphics Shaders)
