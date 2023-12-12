@@ -18,8 +18,8 @@ ft::KeyboardEvent::KeyboardEvent(int key, int scancode, int action, int mods) {
 ft::Event::EventType ft::KeyboardEvent::getType() const {return Event::EventType::KEYBOARD_EVENT;}
 
 /**********************************EventListener****************************/
-void ft::EventListener::addCallbackForEventType(Event::EventType et, std::function<void(Event&)> &callback) {
-	_callbacks.insert(std::make_pair(et, callback));
+void ft::EventListener::addCallbackForEventType(Event::EventType et, std::function<void(Event&)> &&callback) {
+	_callbacks.insert(std::make_pair(et, std::move(callback)));
 }
 
 void ft::EventListener::fireEvent(Event &ev) const {

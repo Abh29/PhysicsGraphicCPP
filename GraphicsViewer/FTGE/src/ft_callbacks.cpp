@@ -9,13 +9,14 @@ void ft::Callback::keyCallback(GLFWwindow *window, int key, int scancode, int ac
 				break;
 			default :
 				std::cout << "key pressed " << key << ", " << scancode << ", " << mods << std::endl;
+
 		}
 	}
 }
 
 void ft::Callback::resizeCallback(GLFWwindow *window, int w, int h) {
 	auto *ftw = reinterpret_cast<ft::Window*>(glfwGetWindowUserPointer(window));
-	ftw->setResized(true);
+	(void) ftw;
 	(void) w;
 	(void) h;
 }

@@ -24,10 +24,14 @@ ft::Device::Device(std::shared_ptr<PhysicalDevice>& physicalDevice,
 
 			VkPhysicalDeviceFeatures deviceFeatures{};
 			deviceFeatures.samplerAnisotropy = VK_TRUE;
-			//		deviceFeatures.sampleRateShading = VK_TRUE; // this is for sample shading
+
+			VkPhysicalDeviceExtendedDynamicStateFeaturesEXT ext{};
+			ext.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
+			ext.extendedDynamicState = VK_TRUE;
 
 			VkDeviceCreateInfo deviceCreateInfo{};
 			deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+			deviceCreateInfo.pNext = &ext;
 			deviceCreateInfo.pQueueCreateInfos = queueCreateInfos.data();
 			deviceCreateInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
 			deviceCreateInfo.pEnabledFeatures = &deviceFeatures;
