@@ -36,6 +36,8 @@ namespace ft {
 
 		void initWindow();
 		static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
+		static void cursorClickCallback(GLFWwindow* window, int button, int action, int mods);
+
 		void initKeys();
 
 		uint32_t 									_width;

@@ -5,7 +5,7 @@
 #define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE
 #define GLM_ENABLE_EXPERIMENTAL
-#define SHOW_FRAME_RATE
+//#define SHOW_FRAME_RATE
 #include <GLFW/glfw3.h>
 #include "cstdlib"
 #include "stdexcept"

@@ -21,6 +21,16 @@ _ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow", nullp
 			updatePushConstant(std::any_cast<int>(data[0]));
 	});
 
+	_ftEventListener->addCallbackForEventType(Event::EventType::MOUSE_EVENT, [&](ft::Event& ev) {
+		ft::CursorEvent& cev = dynamic_cast<CursorEvent&>(ev);
+		auto data = cev.getData();
+		if (std::any_cast<int>(data[1]) == _ftWindow->ACTION(KeyActions::KEY_PRESS)) {
+			double x = std::any_cast<double>(data[3]);
+			double y = std::any_cast<double>(data[4]);
+			std::cout << "mouse clicked: " << x << " , " << y << std::endl;
+		}
+	});
+
 	initApplication();
 	initPushConstants();
 }

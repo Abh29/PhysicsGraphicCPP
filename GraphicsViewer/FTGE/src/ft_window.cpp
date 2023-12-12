@@ -23,6 +23,7 @@ void ft::Window::initWindow() {
 	glfwSetWindowUserPointer(_window, this);
 	glfwSetFramebufferSizeCallback(_window, _resizeCallback);
 	glfwSetKeyCallback(_window, keyCallback);
+	glfwSetMouseButtonCallback(_window, cursorClickCallback);
 }
 
 bool ft::Window::shouldClose() {
@@ -68,6 +69,14 @@ void ft::Window::keyCallback(GLFWwindow *window, int key, int scancode, int acti
 		ft::KeyboardEvent kev(key, scancode, action, mods);
 		ftw->getEventListener()->fireEvent(kev);
 	}
+}
+
+void ft::Window::cursorClickCallback(GLFWwindow *window, int button, int action, int mods) {
+	auto *ftw = reinterpret_cast<ft::Window*>(glfwGetWindowUserPointer(window));
+	double x,y;
+	glfwGetCursorPos(window, &x, &y);
+	ft::CursorEvent cev(button, action, mods, x, y);
+	ftw->getEventListener()->fireEvent(cev);
 }
 
 ft::EventListener::pointer &ft::Window::getEventListener() {

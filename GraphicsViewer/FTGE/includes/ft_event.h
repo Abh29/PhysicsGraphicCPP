@@ -20,10 +20,10 @@ namespace ft {
 		std::vector<std::any>			_data;
 	};
 
-	class MouseEvent : public Event {
+	class CursorEvent : public Event {
 	public:
-		MouseEvent() = default;
-		~MouseEvent() override = default;
+		CursorEvent(int button, int action, int mods, double x, double y);
+		~CursorEvent() override = default;
 		[[nodiscard]] EventType getType() const override;
 	};
 

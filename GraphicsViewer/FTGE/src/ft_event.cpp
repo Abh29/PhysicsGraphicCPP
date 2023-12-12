@@ -4,7 +4,15 @@ std::vector<std::any> ft::Event::getData() const {return _data;}
 
 /******************************MouseEvent**************************************/
 
-ft::Event::EventType ft::MouseEvent::getType() const {return EventType::MOUSE_EVENT;}
+ft::CursorEvent::CursorEvent(int button, int action, int mods, double x, double y) {
+	_data.push_back(button);
+	_data.push_back(action);
+	_data.push_back(mods);
+	_data.push_back(x);
+	_data.push_back(y);
+}
+
+ft::Event::EventType ft::CursorEvent::getType() const {return EventType::MOUSE_EVENT;}
 
 /*******************************KeyBoardEvent**********************************/
 
