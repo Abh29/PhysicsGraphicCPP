@@ -36,10 +36,12 @@ namespace ft {
 
 	class EventListener {
 	public:
+		using pointer = std::shared_ptr<EventListener>;
+		friend class Application;
 		EventListener() = default;
 		~EventListener() = default;
 
-		void addCallbackForEventType(Event::EventType et, std::function<void(Event&)> &callback);
+		void addCallbackForEventType(Event::EventType et, std::function<void(Event&)> &&callback);
 		void fireEvent(Event &ev) const;
 	private:
 		std::map<Event::EventType, std::function<void(Event&)>> 	_callbacks;
