@@ -3,25 +3,37 @@
 
 #include "ft_headers.h"
 
-struct Vertex {
-	glm::vec3	pos;
-	glm::vec3 	color;
-	glm::vec2 	texCoord;
-	glm::vec3 	normal;
+namespace ft {
 
-	Vertex(glm::vec3 p = {}, glm::vec3 c = {0.1f, 1.0f, 0.5f}, glm::vec2 t = {});
+	struct Vertex {
+		alignas(8) glm::vec3	pos;
+		alignas(8) glm::vec3 	color;
+		alignas(8) glm::vec3 	normal;
+		alignas(8) glm::vec2 	texCoord;
 
-	static VkVertexInputBindingDescription getBindingDescription();
+		Vertex(glm::vec3 p = {}, glm::vec3 c = {0.1f, 1.0f, 0.5f}, glm::vec3 n = {}, glm::vec2 t = {});
 
-	static std::array<VkVertexInputAttributeDescription, 3> getAttributeDescription();
+		static VkVertexInputBindingDescription getBindingDescription();
+		static std::array<VkVertexInputAttributeDescription, 4> getAttributeDescription();
+		bool operator==(const Vertex& other) const;
+	};
 
-	bool operator==(const Vertex& other) const;
-};
+
+	struct InstanceData {
+		alignas(16) glm::mat4 model;
+		alignas(16) glm::vec3 color;
+
+		static VkVertexInputBindingDescription getBindingDescription();
+		static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescription();
+	};
+
+}
+
 
 
 namespace std {
-	template<> struct hash<Vertex> {
-		size_t operator()(const Vertex& vertex) const;
+	template<> struct hash<ft::Vertex> {
+		size_t operator()(const ft::Vertex& vertex) const;
 	};
 }
 
