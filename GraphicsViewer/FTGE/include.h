@@ -22,5 +22,6 @@
 #include "includes/ft_app.h"
 #include "includes/ft_event.h"
 #include "includes/ft_gui.h"
+#include "includes/ft_model.h"
 
 #endif //FTGRAPHICS_INCLUDE_H

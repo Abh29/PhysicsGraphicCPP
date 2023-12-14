@@ -44,6 +44,8 @@ namespace ft {
 	class BufferBuilder {
 
 	public:
+		using pointer = std::shared_ptr<BufferBuilder>;
+
 		BufferBuilder() = default;
 		~BufferBuilder() = default;
 

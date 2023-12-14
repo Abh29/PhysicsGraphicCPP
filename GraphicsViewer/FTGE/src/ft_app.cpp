@@ -216,7 +216,6 @@ void ft::Application::createGraphicsPipeline() {
 	std::vector<VkDynamicState> dynamicStates = {
 			VK_DYNAMIC_STATE_VIEWPORT,
 			VK_DYNAMIC_STATE_SCISSOR,
-//			VK_DYNAMIC_STATE_PRIMITIVE_TOPOLOGY
 	};
 
 	VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
@@ -228,8 +227,8 @@ void ft::Application::createGraphicsPipeline() {
 	auto bindingDescription = Vertex::getBindingDescription();
 	auto attributeDescriptions = Vertex::getAttributeDescription();
 
-	auto perIndexBindingDescription = ft::InstanceDataType::getBindingDescription();
-	auto perIndexattribsDescription = ft::InstanceDataType::getAttributeDescription();
+	auto perIndexBindingDescription = ft::InstanceData::getBindingDescription();
+	auto perIndexattribsDescription = ft::InstanceData::getAttributeDescription();
 
 	std::array<VkVertexInputBindingDescription, 2> bindings {
 		bindingDescription,
@@ -314,8 +313,8 @@ void ft::Application::createGraphicsPipeline() {
 
 	// color blending
 	VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
-	colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT
-											   | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	colorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+											   VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
 	colorBlendAttachmentState.blendEnable = VK_FALSE;
 	colorBlendAttachmentState.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
 	colorBlendAttachmentState.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
@@ -338,7 +337,7 @@ void ft::Application::createGraphicsPipeline() {
 	// push constants
 	VkPushConstantRange pushConstantRange{};
 	pushConstantRange.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-	pushConstantRange.size = static_cast<uint32_t>(sizeof(UniformBufferObject));
+	pushConstantRange.size = static_cast<uint32_t>(sizeof(ft::PushConstantObject));
 	pushConstantRange.offset = 0;
 
 	// pipeline layout
@@ -446,11 +445,11 @@ void ft::Application::recordCommandBuffer(const std::shared_ptr<CommandBuffer> &
 	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 
 	// bind the vertex buffer
-	VkBuffer vertexBuffers[] = {_ftVertexBuffer->getVKBuffer()};
-	VkDeviceSize offsets[] = {0};
-	VkBuffer perInstanceBuffers[] = {_ftInstanceDataBuffer->getVKBuffer()};
-	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 0, 1, vertexBuffers, offsets);
-	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 3, 1, perInstanceBuffers, offsets);
+	VkBuffer vertexBuffers[] = {_ftVertexBuffer->getVKBuffer(), _ftInstanceDataBuffer->getVKBuffer()};
+	VkDeviceSize offsets[] = {0, 0};
+//	VkBuffer perInstanceBuffers[] = {_ftInstanceDataBuffer->getVKBuffer()};
+	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 0, 2, vertexBuffers, offsets);
+//	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 0, 1, perInstanceBuffers, offsets);
 
 	// bind the index buffer
 	vkCmdBindIndexBuffer(commandBuffer->getVKCommandBuffer(), _ftIndexBuffer->getVKBuffer(), 0, VK_INDEX_TYPE_UINT32);
@@ -494,7 +493,7 @@ void ft::Application::recordCommandBuffer(const std::shared_ptr<CommandBuffer> &
 //	}
 
 	// issue the draw command
-	// vkCmdDraw(commandBuffer, static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+//	 vkCmdDraw(commandBuffer->getVKCommandBuffer(), static_cast<uint32_t>(_indices.size()), 3, 0, 0);
 	vkCmdDrawIndexed(commandBuffer->getVKCommandBuffer(), static_cast<uint32_t>(_indices.size()), 3, 0, 0, 0);
 
 
@@ -524,6 +523,7 @@ void ft::Application::drawFrame() {
 
 	// update the uniform buffer object data
 	updateUniformBuffer(_currentFrame);
+	updateInstanceData();
 
 
 	// recording the command buffer
@@ -711,7 +711,7 @@ void ft::Application::createDescriptorSetLayout() {
 
 // create uniform buffers
 void ft::Application::createUniformBuffers() {
-	VkDeviceSize bufferSize = sizeof(UniformBufferObject) * MAX_INSTANCE_COUNT;
+	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		_ftUniformBuffers.push_back(_ftBufferBuilder->setSize(bufferSize)
@@ -733,26 +733,12 @@ void ft::Application::updateUniformBuffer(uint32_t currentImage) {
 	// calculate the data
 	UniformBufferObject ubo{};
 //	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(10.0f), glm::linearRand(glm::vec3(0.0f), glm::vec3(1.0f)));
-	ubo.model = glm::rotate(glm::mat4(1.0f), time  * glm::radians(10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), (float)_ftSwapChain->getVKSwapChainExtent().width / (float)_ftSwapChain->getVKSwapChainExtent().height, 1.0f, 10.0f);
-	ubo.proj[1][1] *= -1;
+	ubo.camera.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.camera.proj = glm::perspective(glm::radians(45.0f), (float)_ftSwapChain->getVKSwapChainExtent().width / (float)_ftSwapChain->getVKSwapChainExtent().height, 1.0f, 10.0f);
+	ubo.camera.proj[1][1] *= -1;
 
-	UniformBufferObject ubo2{};
-	ubo2.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(15.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-	ubo2.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo2.proj = glm::perspective(glm::radians(45.0f), (float)_ftSwapChain->getVKSwapChainExtent().width / (float)_ftSwapChain->getVKSwapChainExtent().height, 1.0f, 10.0f);
-	ubo2.proj[1][1] *= -1;
-
-	UniformBufferObject ubo3{};
-	ubo3.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(25.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	ubo3.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo3.proj = glm::perspective(glm::radians(45.0f), (float)_ftSwapChain->getVKSwapChainExtent().width / (float)_ftSwapChain->getVKSwapChainExtent().height, 1.0f, 10.0f);
-	ubo3.proj[1][1] *= -1;
-
-	std::vector<UniformBufferObject> v{ubo, ubo2, ubo3};
 	// copy the data to the buffer
-	_ftUniformBuffers[currentImage]->copyToMappedData(v.data(), sizeof(ubo) * v.size());
+	_ftUniformBuffers[currentImage]->copyToMappedData(&ubo, sizeof(ubo));
 }
 
 // create descriptor pool
@@ -824,7 +810,7 @@ void ft::Application::createDescriptorSets() {
 		VkDescriptorBufferInfo descriptorBufferInfo{};
 		descriptorBufferInfo.buffer = _ftUniformBuffers[i]->getVKBuffer();
 		descriptorBufferInfo.offset = 0;
-		descriptorBufferInfo.range = sizeof(UniformBufferObject) * MAX_INSTANCE_COUNT;
+		descriptorBufferInfo.range = sizeof(UniformBufferObject);
 
 		std::array<VkWriteDescriptorSet, 2> writeDescriptorSets{};
 		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1031,10 +1017,18 @@ void ft::Application::loadModel() {
 					attrib.vertices[3 * index.vertex_index + 2],
 			};
 
-			vertex.texCoord =  {
-					attrib.texcoords[2 * index.texcoord_index + 0],
-					1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
-			};
+			if (index.normal_index >= 0)
+				vertex.normal = {
+						attrib.normals[3 * index.normal_index + 0],
+						attrib.normals[3 * index.normal_index + 1],
+						attrib.normals[3 * index.normal_index + 2],
+				};
+
+			if (index.texcoord_index >= 0)
+				vertex.texCoord =  {
+						attrib.texcoords[2 * index.texcoord_index + 0],
+						1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
+				};
 
 			vertex.color = {1.0f, 1.0f, 1.0f};
 
@@ -1162,46 +1156,49 @@ std::vector<char> ft::Application::readFile(const std::string& filename) {
 
 void ft::Application::updatePushConstant(int key) {
 	std::cout << "key: " << key << std::endl;
-	if (key == _ftWindow->KEY(KeyboardKeys::KEY_UP)) {
-		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {0.0f, 1.0f, 0.0f});
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_DOWN)) {
-		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {0.0f, -1.0f, 0.0f});
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_RIGHT)) {
-		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {1.0f, 0.0f, 0.0f});
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_LEFT)) {
-		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {-1.0f, 0.0f, 0.0f});
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_R)) {
-		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_W)) {
-		_push.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_A)) {
-		_push.view = glm::lookAt(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_S)) {
-		_push.view = glm::lookAt(glm::vec3(4.0f, 4.0f, 4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_D)) {
-		_push.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Q)) {
-		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_E)) {
-		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Z)) {
-		_topology = (_topology + 1) % 3;
-	}
+//	if (key == _ftWindow->KEY(KeyboardKeys::KEY_UP)) {
+//		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {0.0f, 1.0f, 0.0f});
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_DOWN)) {
+//		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {0.0f, -1.0f, 0.0f});
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_RIGHT)) {
+//		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {1.0f, 0.0f, 0.0f});
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_LEFT)) {
+//		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {-1.0f, 0.0f, 0.0f});
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_R)) {
+//		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_W)) {
+//		_push.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_A)) {
+//		_push.view = glm::lookAt(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_S)) {
+//		_push.view = glm::lookAt(glm::vec3(4.0f, 4.0f, 4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_D)) {
+//		_push.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Q)) {
+//		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_E)) {
+//		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Z)) {
+//		_topology = (_topology + 1) % 3;
+//	}
 }
 
 void ft::Application::initPushConstants() {
-	_push.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	_push.proj = glm::perspective(glm::radians(45.0f), (float)_ftSwapChain->getVKSwapChainExtent().width / (float)_ftSwapChain->getVKSwapChainExtent().height, 1.0f, 10.0f);
-	_push.proj[1][1] *= -1;
+	_push.lightColor = {1.0f, 1.0f, 1.0f};
+	_push.lightDirection = {10.0f, -5.0f, 1.0f};
+	_push.ambient = 0.2f;
 }
 
 void ft::Application::createPerInstanceBuffer() {
 	// data
-	std::vector<ft::InstanceDataType> v(2);
+	std::vector<ft::InstanceData> v(2);
 	v[0].model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	v[0].color = {1.0f, 0.2f, 0.0f};
+	v[0].model = glm::scale(v[0].model, {0.1f, 0.1f, 0.1f});
 	v[1].model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	v[1].model = glm::translate(v[1].model, glm::vec3{1.f, 1.f, 1.f});
+	v[1].model = glm::scale(v[1].model, {2.0f, 2.0f, 2.0f});
+	v[1].color = {0.0f, 1.0f, 0.2f};
 
 	// create a staging buffer with memory
 	VkDeviceSize bufferSize = sizeof(v[0]) * v.size();
@@ -1218,9 +1215,29 @@ void ft::Application::createPerInstanceBuffer() {
 	// create a dest buffer
 	_ftInstanceDataBuffer = _ftBufferBuilder->setSize(bufferSize)
 			.setUsageFlags(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
-			.setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+//			.setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+			.setMemoryProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+			.setIsMapped(true)
 			.build(_ftDevice);
 
 	// copy the data
 	stagingBuffer->copyToBuffer(_ftCommandPool, _ftInstanceDataBuffer, bufferSize);
+}
+
+void ft::Application::updateInstanceData() {
+	// data
+	static uint32_t u = 0;
+	std::vector<ft::InstanceData> v(2);
+	v[0].model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	v[0].color = {1.0f, 0.2f, 0.0f};
+	v[1].model = glm::rotate(glm::mat4(1.0f), glm::radians(u / 10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	v[1].model = glm::translate(v[1].model, glm::vec3{0.5f, 0.5f, 0.5f});
+	v[1].color = {0.0f, 1.0f, 0.2f};
+
+	u++;
+	if (u > 3600)
+		u = 0;
+
+	_ftInstanceDataBuffer->copyToMappedData(v.data(), sizeof(v[0]) * v.size());
+
 }
