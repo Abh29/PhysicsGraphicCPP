@@ -5,6 +5,8 @@
 
 namespace ft {
 
+	constexpr int POINT_LIGHT_MAX_COUNT = 100;
+
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
 		std::optional<uint32_t> presentFamily;
@@ -18,10 +20,31 @@ namespace ft {
 		std::vector<VkPresentModeKHR> presentModes;
 	};
 
-	struct UniformBufferObject {
-		alignas(16) glm::mat4	model;
+	struct PointLightObject {
+		alignas(16) glm::vec3 position;
+		alignas(16) glm::vec3 color;
+		alignas(16) glm::vec3 attenuation; // (constant, linear, quadratic)
+		float intensity;
+		float radius;
+		float angle; // (0.0 to 180.0)
+		float exponent;
+	};
+
+	struct CameraObject {
 		alignas(16) glm::mat4 	view;
 		alignas(16) glm::mat4 	proj;
+	};
+
+	struct UniformBufferObject {
+		alignas(4) uint32_t 			pLCount;
+		alignas(16) CameraObject		camera;
+		alignas(16) PointLightObject	lights[POINT_LIGHT_MAX_COUNT];
+	};
+
+	struct PushConstantObject {
+		alignas(16) glm::vec3 	lightColor;
+		alignas(16) glm::vec3 	lightDirection;
+		alignas(4)  float		ambient;
 	};
 
 	enum class KeyActions {
