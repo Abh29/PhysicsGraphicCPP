@@ -31,13 +31,15 @@ namespace ft {
 	};
 
 	struct CameraObject {
-		alignas(16) glm::mat4 	view;
-		alignas(16) glm::mat4 	proj;
+		glm::vec3 	eyePosition;
+		glm::vec3	targetPosition;
+		glm::vec3 	upDirection;
 	};
 
 	struct UniformBufferObject {
+		alignas(16) glm::mat4 			view;
+		alignas(16) glm::mat4 			proj;
 		alignas(4) uint32_t 			pLCount;
-		alignas(16) CameraObject		camera;
 		alignas(16) PointLightObject	lights[POINT_LIGHT_MAX_COUNT];
 	};
 

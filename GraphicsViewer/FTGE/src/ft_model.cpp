@@ -1,18 +1,32 @@
 #include "../include.h"
 
 ft::Model::Model(Device::pointer device, CommandPool::pointer commandPool,
-				 std::string filePath, ft::Buffer::pointer instanceBuffer) :
-		_ftDevice(device), _ftCommandPool(commandPool), _ftInstanceBuffer(instanceBuffer),
+				 std::string filePath, uint32_t bufferCount) :
+		_ftDevice(device), _ftCommandPool(commandPool),
 		_modelPath(filePath), _hasIndices(false) {
 	_ids[0] = ft::Model::ID();
 	_copiesCount = 1;
+	_selected.fill(false);
 	loadModel();
 	createVertexBuffer();
 	createIndexBuffer();
+
+	BufferBuilder bufferBuilder;
+	for (uint32_t i = 0; i < bufferCount; ++i) {
+		_ftInstanceBuffers.push_back(bufferBuilder.setSize(sizeof(ft::PointLightObject) * ft::POINT_LIGHT_MAX_COUNT)
+												.setUsageFlags(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
+												.setMemoryProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+												.setIsMapped(true)
+												.setMappedOffset(0)
+												.setMappedFlags(0)
+												.build(_ftDevice)
+		);
+	}
 }
 
-void ft::Model::bind(ft::CommandBuffer::pointer commandBuffer) {
-	VkBuffer vertexBuffers[] = {_ftVertexBuffer->getVKBuffer(), _ftInstanceBuffer->getVKBuffer()};
+void ft::Model::bind(ft::CommandBuffer::pointer commandBuffer, uint32_t index) {
+	writePerInstanceData(index);
+	VkBuffer vertexBuffers[] = {_ftVertexBuffer->getVKBuffer(), _ftInstanceBuffers[index]->getVKBuffer()};
 	VkDeviceSize offsets[] = {0, 0};
 	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 0, 2, vertexBuffers, offsets);
 	if (_hasIndices)
@@ -26,9 +40,11 @@ void ft::Model::draw(ft::CommandBuffer::pointer commandBuffer) {
 		vkCmdDraw(commandBuffer->getVKCommandBuffer(), static_cast<uint32_t>(_indices.size()), _copiesCount, 0, 0);
 }
 
-void ft::Model::addCopy(const ft::InstanceData &copyData) {
-	_ids[_copiesCount] = ID();
+uint32_t ft::Model::addCopy(const ft::InstanceData &copyData) {
+	uint32_t id = ID();
+	_ids[_copiesCount] = id;
 	_copies[_copiesCount++] = copyData;
+	return id;
 }
 
 void ft::Model::loadModel() {
@@ -74,11 +90,11 @@ void ft::Model::loadModel() {
 			_indices.push_back(uniqueVertices[vertex]);
 		}
 	}
-
+	_hasIndices = true;
 }
 
-void ft::Model::writePerInstanceData() {
-	_ftInstanceBuffer->copyToMappedData(_copies.data(), sizeof(InstanceData) * _copiesCount);
+void ft::Model::writePerInstanceData(uint32_t index) {
+	_ftInstanceBuffers[index]->copyToMappedData(_copies.data(), sizeof(InstanceData) * _copiesCount);
 }
 
 void ft::Model::createVertexBuffer() {
@@ -162,5 +178,36 @@ bool ft::Model::findID(uint32_t id) const {
 	return false;
 }
 
+uint32_t ft::Model::getFirstId() const {return _ids[0];}
+std::array<uint32_t, 100> &ft::Model::getIds() {return _ids;}
+
 std::array<ft::InstanceData, 100>& ft::Model::getCopies() {return _copies;}
 
+bool ft::Model::select(uint32_t id) {
+	for (size_t i = 0; i < _copiesCount ; ++i) {
+		if (_ids[i] == id) {
+			_selected[i] = true;
+			return true;
+		}
+	}
+	return false;
+}
+bool ft::Model::unselect(uint32_t id) {
+	for (size_t i = 0; i < _copiesCount ; ++i) {
+		if (_ids[i] == id) {
+			_selected[i] = false;
+			return true;
+		}
+	}
+	return false;
+}
+bool ft::Model::isSelected(uint32_t id) const {
+	for (size_t i = 0; i < _copiesCount ; ++i) {
+		if (_ids[i] == id)
+			return _selected[i];
+	}
+	return false;
+}
+
+void ft::Model::selectAll() {_selected.fill(true);}
+void ft::Model::unselectAll() {_selected.fill(false);}

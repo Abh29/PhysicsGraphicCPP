@@ -21,10 +21,11 @@ namespace ft {
 
 	struct InstanceData {
 		alignas(16) glm::mat4 model;
+		alignas(16) glm::mat4 normalMatrix;
 		alignas(16) glm::vec3 color;
 
 		static VkVertexInputBindingDescription getBindingDescription();
-		static std::array<VkVertexInputAttributeDescription, 5> getAttributeDescription();
+		static std::array<VkVertexInputAttributeDescription, 9> getAttributeDescription();
 	};
 
 }

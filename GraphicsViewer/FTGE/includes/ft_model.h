@@ -13,22 +13,31 @@ namespace ft {
 
 	class Model {
 	public:
+		using pointer = std::shared_ptr<Model>;
 		Model(Device::pointer device, CommandPool::pointer commandPool,
-			  std::string filePath, Buffer::pointer instanceBuffer);
+			  std::string filePath, uint32_t bufferCount);
 		~Model() = default;
 
-		void bind(CommandBuffer::pointer commandBuffer);
+		static uint32_t ID();
+		void bind(CommandBuffer::pointer commandBuffer, uint32_t index);
 		void draw(CommandBuffer::pointer commandBuffer);
-		void addCopy(const InstanceData &copyData = {});
+
+		uint32_t addCopy(const InstanceData &copyData = {});
 		[[nodiscard]] InstanceData* getInstanceData(uint32_t id);
 		bool setInstanceData(InstanceData &copyData, uint32_t id);
 		[[nodiscard]] bool findID(uint32_t id) const;
 		[[nodiscard]] std::array<InstanceData, MAX_COPY_COUNT>& getCopies();
-		static uint32_t ID();
+		[[nodiscard]] bool isSelected(uint32_t id) const;
+		uint32_t getFirstId() const;
+		std::array<uint32_t, MAX_COPY_COUNT>& getIds();
+		bool select(uint32_t id);
+		bool unselect(uint32_t id);
+		void selectAll();
+		void unselectAll();
 
 	private:
 		void loadModel();
-		void writePerInstanceData();
+		void writePerInstanceData(uint32_t index);
 		void createVertexBuffer();
 		void createIndexBuffer();
 
@@ -39,11 +48,12 @@ namespace ft {
 		uint32_t 									_copiesCount;
 		Buffer::pointer 							_ftVertexBuffer;
 		Buffer::pointer 							_ftIndexBuffer;
-		Buffer::pointer 							_ftInstanceBuffer;
+		std::vector<Buffer::pointer> 				_ftInstanceBuffers;
 		std::vector<Vertex>							_vertices;
 		std::vector<uint32_t>						_indices;
 		std::string 								_modelPath;
 		bool 										_hasIndices;
+		std::array<bool, MAX_COPY_COUNT>			_selected;
 	};
 
 }

@@ -177,6 +177,10 @@ uint32_t ft::SwapChain::getHeight() const {
 	return _height;
 }
 
+float ft::SwapChain::getAspect() const {
+	return (float) _swapChainExtent.width / (float) _swapChainExtent.height;
+}
+
 std::pair<VkResult, uint32_t> ft::SwapChain::acquireNextImage(VkSemaphore semaphore, VkFence fence) {
 	VkResult result = vkAcquireNextImageKHR(_ftDevice->getVKDevice(), _swapChain, UINT64_MAX, semaphore, fence, &_imageNext);
 	if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {

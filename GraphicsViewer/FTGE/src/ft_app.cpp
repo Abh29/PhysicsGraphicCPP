@@ -33,6 +33,7 @@ _ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow", nullp
 
 	initApplication();
 	initPushConstants();
+	createScene();
 }
 
 ft::Application::~Application() {
@@ -95,13 +96,82 @@ void ft::Application::initApplication() {
 	createFramebuffers();
 	createTextureSampler();
 	loadModel();
-	createVertexBuffer();
-	createIndexBuffer();
-	createPerInstanceBuffer();
+//	createVertexBuffer();
+//	createIndexBuffer();
+//	createPerInstanceBuffer();
 	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
 	createSyncObjects();
+
+}
+
+void ft::Application::createScene() {
+	CameraBuilder cameraBuilder;
+	_ftScene = std::make_shared<Scene>(_ftDevice, _ftCommandPool, _ftUniformBuffers);
+	_ftScene->setCamera(cameraBuilder.setEyePosition({5,0,0})
+				.setTarget({0,0,0})
+				.setUpDirection({0,0,1})
+				.setFOV(90)
+				.setZNearFar(1.0f, 10.0f)
+				.setAspect(_ftSwapChain->getAspect())
+				.build());
+	ft::InstanceData data;
+	uint32_t  id;	(void) id;
+
+//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	data.model = glm::translate(data.model, glm::vec3{1.0f, 0.0f, 1.0f});
+//	data.color = {0.0f, 2.0f, 0.9f};
+//	auto id = _ftScene->addObjectToTheScene("models/viking_room.obj", data);
+//
+//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	data.model = glm::translate(data.model, glm::vec3{0.0f, 0.0f, 3.0f});
+//	data.color = {0.9f, 2.0f, 0.9f};
+//	id = _ftScene->addObjectCopyToTheScene(id, data);
+
+	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	data.model = glm::scale(data.model, {1.0f, 0.1f, 0.1f});
+	data.color = {1.0f, 0.0f, 0.0f};
+	data.normalMatrix = glm::mat4(1.0f);
+
+	id = _ftScene->addObjectToTheScene("models/arrow.obj", data);
+
+	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	data.model = glm::scale(data.model, {1.0f, 0.1f, 0.1f});
+	data.color = {0.0f, 1.0f, 0.0f};
+	data.normalMatrix = glm::mat4(1.0f);
+
+	id = _ftScene->addObjectCopyToTheScene(id, data);
+
+	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	data.model = glm::scale(data.model, {1.0f, 0.1f, 0.1f});
+	data.color = {0.0f, 0.0f, 1.0f};
+	data.normalMatrix = glm::mat4(1.0f);
+
+	id = _ftScene->addObjectCopyToTheScene(id, data);
+
+	data.model = glm::mat4(1.0f);
+	data.color = {0.95f, 0.2f, 0.0f};
+	data.normalMatrix = glm::mat4(1.0f);
+	data.model = glm::scale(data.model, {10, 10, 10});
+	data.model = glm::rotate(data.model, glm::radians(90.0f), {-1,0,0});
+	id = _ftScene->addObjectToTheScene("models/flat_vase.obj", data);
+
+//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	data.model = glm::translate(data.model, glm::vec3{1.0f, -2.0f, 0.0f});
+//	data.color = {0.5f, 0.95f, 0.2f};
+//	id = _ftScene->addObjectCopyToTheScene(id, data);
+//
+//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	data.model = glm::translate(data.model, glm::vec3{0.0f, 3.0f, 0.0f});
+//	data.color = {0.7f, 0.2f, 0.4f};
+//	id = _ftScene->addObjectCopyToTheScene(id, data);
+//
+//	id = _ftScene->addObjectToTheScene("models/smooth_vase.obj", {
+//			glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
+//			glm::mat4(1.0f),
+//			{0.95f, 0.2f, 0.0f}
+//	});
 
 }
 
@@ -445,14 +515,13 @@ void ft::Application::recordCommandBuffer(const std::shared_ptr<CommandBuffer> &
 	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
 
 	// bind the vertex buffer
-	VkBuffer vertexBuffers[] = {_ftVertexBuffer->getVKBuffer(), _ftInstanceDataBuffer->getVKBuffer()};
-	VkDeviceSize offsets[] = {0, 0};
+//	VkBuffer vertexBuffers[] = {_ftVertexBuffer->getVKBuffer(), _ftInstanceDataBuffer->getVKBuffer()};
+//	VkDeviceSize offsets[] = {0, 0};
 //	VkBuffer perInstanceBuffers[] = {_ftInstanceDataBuffer->getVKBuffer()};
-	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 0, 2, vertexBuffers, offsets);
+//	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 0, 2, vertexBuffers, offsets);
 //	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 0, 1, perInstanceBuffers, offsets);
-
 	// bind the index buffer
-	vkCmdBindIndexBuffer(commandBuffer->getVKCommandBuffer(), _ftIndexBuffer->getVKBuffer(), 0, VK_INDEX_TYPE_UINT32);
+//	vkCmdBindIndexBuffer(commandBuffer->getVKCommandBuffer(), _ftIndexBuffer->getVKBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
 	// set viewport and scissor
 	VkViewport viewport{};
@@ -475,8 +544,8 @@ void ft::Application::recordCommandBuffer(const std::shared_ptr<CommandBuffer> &
 							0, nullptr);
 
 	// push constants
-	vkCmdPushConstants(commandBuffer->getVKCommandBuffer(), _pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-					   0, static_cast<uint32_t>(sizeof(_push)), &_push);
+//	vkCmdPushConstants(commandBuffer->getVKCommandBuffer(), _pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
+//					   0, static_cast<uint32_t>(sizeof(_push)), &_push);
 
 
 	// topology
@@ -494,9 +563,10 @@ void ft::Application::recordCommandBuffer(const std::shared_ptr<CommandBuffer> &
 
 	// issue the draw command
 //	 vkCmdDraw(commandBuffer->getVKCommandBuffer(), static_cast<uint32_t>(_indices.size()), 3, 0, 0);
-	vkCmdDrawIndexed(commandBuffer->getVKCommandBuffer(), static_cast<uint32_t>(_indices.size()), 3, 0, 0, 0);
+//	vkCmdDrawIndexed(commandBuffer->getVKCommandBuffer(), static_cast<uint32_t>(_indices.size()), 3, 0, 0, 0);
 
-
+	// scene
+	_ftScene->drawScene(commandBuffer, _pipelineLayout, _currentFrame);
 	// gui
 	_ftGui->render(commandBuffer);
 
@@ -522,15 +592,13 @@ void ft::Application::drawFrame() {
 	}
 
 	// update the uniform buffer object data
-	updateUniformBuffer(_currentFrame);
-	updateInstanceData();
+//	updateUniformBuffer(_currentFrame);
+//	updateInstanceData();
 
 
 	// recording the command buffer
 //	_ftCommandBuffers[_currentFrame]->reset();
 	recordCommandBuffer(_ftCommandBuffers[_currentFrame], result.second);
-
-
 
 	// submitting the command buffer
 	VkSemaphore waitSemaphores[] = {_imageAvailableSemaphores[_currentFrame]};
@@ -733,9 +801,9 @@ void ft::Application::updateUniformBuffer(uint32_t currentImage) {
 	// calculate the data
 	UniformBufferObject ubo{};
 //	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(10.0f), glm::linearRand(glm::vec3(0.0f), glm::vec3(1.0f)));
-	ubo.camera.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.camera.proj = glm::perspective(glm::radians(45.0f), (float)_ftSwapChain->getVKSwapChainExtent().width / (float)_ftSwapChain->getVKSwapChainExtent().height, 1.0f, 10.0f);
-	ubo.camera.proj[1][1] *= -1;
+	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	ubo.proj = glm::perspective(glm::radians(45.0f), (float)_ftSwapChain->getVKSwapChainExtent().width / (float)_ftSwapChain->getVKSwapChainExtent().height, 1.0f, 10.0f);
+	ubo.proj[1][1] *= -1;
 
 	// copy the data to the buffer
 	_ftUniformBuffers[currentImage]->copyToMappedData(&ubo, sizeof(ubo));

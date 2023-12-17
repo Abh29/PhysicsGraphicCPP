@@ -34,6 +34,7 @@ namespace ft {
 		[[nodiscard]] std::vector<VkImageView>	getVKSwapChainImageViews() const;
 		uint32_t getWidth() const;
 		uint32_t getHeight() const;
+		float getAspect() const;
 		std::pair<VkResult, uint32_t> acquireNextImage(VkSemaphore semaphore = VK_NULL_HANDLE, VkFence fence = VK_NULL_HANDLE);
 		[[nodiscard]] VkPresentModeKHR getPreferredPresentMode() const;
 

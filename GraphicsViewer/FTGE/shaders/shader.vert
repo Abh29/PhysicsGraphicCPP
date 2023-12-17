@@ -1,10 +1,5 @@
 #version 450
 
-struct Camera {
-    mat4 view;
-    mat4 proj;
-};
-
 struct PointLight {
     vec3    position;
     vec3    color;
@@ -17,8 +12,9 @@ struct PointLight {
 
 // uniform for camera infor and lights
 layout(binding = 0) uniform UniformBufferOject {
+    mat4 view;
+    mat4 proj;
     uint            lightCount;
-    Camera          camera;
     PointLight      lights[100];
 } ubo;
 
@@ -37,7 +33,8 @@ layout(location = 3) in vec2 inTexCoord;
 
 // per instance data
 layout(location = 4) in mat4 modelMatrix;
-layout(location = 8) in vec3 inColor2;
+layout(location = 8) in mat4 normalMatrix;
+layout(location = 12) in vec3 inColor2;
 
 // output
 layout(location = 0) out vec3 fragColor;
@@ -63,7 +60,8 @@ void main() {
     // Transform the vertex position, normal, and calculate the light direction in view space
     vec4 worldPos = modelMatrix * vec4(inPosition, 1.0);
     vec3 worldNormal = mat3(transpose(inverse(modelMatrix))) * normal;
-    vec3 viewDir = normalize(-vec3(ubo.camera.view * worldPos));
+//    vec3 worldNormal = mat3(normalMatrix) * normal;
+    vec3 viewDir = normalize(-vec3(ubo.view * worldPos));
 
     // Calculate diffuse reflection
     float diffuseStrength = max(dot(worldNormal, -push.lightDirection), 0.0);
@@ -74,5 +72,5 @@ void main() {
     // Calculate final color by combining ambient and diffuse components
     fragColor = ambient + diffuse;
     // Transform the vertex position to clip space for later use in the fragment shader
-    gl_Position = ubo.camera.proj * ubo.camera.view * worldPos;
+    gl_Position = ubo.proj * ubo.view * worldPos;
 }

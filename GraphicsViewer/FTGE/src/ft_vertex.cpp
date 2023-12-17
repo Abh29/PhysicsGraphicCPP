@@ -56,8 +56,8 @@ VkVertexInputBindingDescription ft::InstanceData::getBindingDescription() {
 	return bindingDescription;
 }
 
-std::array<VkVertexInputAttributeDescription, 5> ft::InstanceData::getAttributeDescription() {
-	std::array<VkVertexInputAttributeDescription, 5> attributeDescriptions{};
+std::array<VkVertexInputAttributeDescription, 9> ft::InstanceData::getAttributeDescription() {
+	std::array<VkVertexInputAttributeDescription, 9> attributeDescriptions{};
 	attributeDescriptions[0].binding = 1;
 	attributeDescriptions[0].location = 4;
 	attributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -80,8 +80,28 @@ std::array<VkVertexInputAttributeDescription, 5> ft::InstanceData::getAttributeD
 
 	attributeDescriptions[4].binding = 1;
 	attributeDescriptions[4].location = 8;
-	attributeDescriptions[4].format = VK_FORMAT_R32G32B32_SFLOAT;
-	attributeDescriptions[4].offset = offsetof(ft::InstanceData, color);
+	attributeDescriptions[4].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	attributeDescriptions[4].offset = offsetof(ft::InstanceData, normalMatrix);
+
+	attributeDescriptions[5].binding = 1;
+	attributeDescriptions[5].location = 9;
+	attributeDescriptions[5].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	attributeDescriptions[5].offset = offsetof(ft::InstanceData, normalMatrix) + 16;
+
+	attributeDescriptions[6].binding = 1;
+	attributeDescriptions[6].location = 10;
+	attributeDescriptions[6].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	attributeDescriptions[6].offset = offsetof(ft::InstanceData, normalMatrix) + 32;
+
+	attributeDescriptions[7].binding = 1;
+	attributeDescriptions[7].location = 11;
+	attributeDescriptions[7].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+	attributeDescriptions[7].offset = offsetof(ft::InstanceData, normalMatrix) + 48;
+
+	attributeDescriptions[8].binding = 1;
+	attributeDescriptions[8].location = 12;
+	attributeDescriptions[8].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[8].offset = offsetof(ft::InstanceData, color);
 
 	return attributeDescriptions;
 }

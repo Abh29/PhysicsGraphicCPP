@@ -1,0 +1,68 @@
+#ifndef FTGRAPHICS_FT_CAMERA_H
+#define FTGRAPHICS_FT_CAMERA_H
+
+#include "ft_headers.h"
+#include "ft_defines.h"
+
+namespace ft {
+
+
+	class Camera {
+
+	public:
+		using pointer = std::shared_ptr<Camera>;
+		Camera(float fov, float aspect, float nearZ, float farZ,
+			   glm::vec3 eye, glm::vec3 target,
+			   glm::vec3 up);
+		~Camera() = default;
+
+		[[nodiscard]] const glm::mat4& 	getViewMatrix() const;
+		glm::mat4& 			getViewMatrix();
+		[[nodiscard]] const glm::mat4& 	getProjMatrix() const;
+		glm::mat4& 			getProjMatrix();
+
+		void hRotate(float deg);
+		void vRotate(float deg);
+		void rotate(float deg, glm::vec3 v);
+		void translate(glm::vec3 v);
+
+	private:
+		glm::vec3 					_eyePosition;
+		glm::vec3 					_targetPosition;
+		glm::vec3 					_upDirection;
+		float 						_fov;
+		float 						_aspect;
+		float						_nearZ;
+		float 						_farZ;
+		glm::mat4 					_viewMatrix;
+		glm::mat4 					_projMatrix;
+
+	};
+
+
+	class CameraBuilder {
+	public:
+		CameraBuilder() = default;
+		~CameraBuilder() = default;
+
+		CameraBuilder& setFOV(float fov);
+		CameraBuilder& setAspect(float aspect);
+		CameraBuilder& setZNearFar(float zNear, float zFar);
+		CameraBuilder& setEyePosition(glm::vec3 v);
+		CameraBuilder& setTarget(glm::vec3 v);
+		CameraBuilder& setUpDirection(glm::vec3 v);
+		Camera::pointer build();
+
+	private:
+		glm::vec3 					_eyePosition = {0,0,0};
+		glm::vec3 					_target = {1,0,0};
+		glm::vec3 					_upDirection = {0,0,1};
+		float 						_fov = 90;
+		float 						_aspect = 1.0f;
+		float						_nearZ = 1.0f;
+		float 						_farZ = 10.0f;
+	};
+
+}
+
+#endif //FTGRAPHICS_FT_CAMERA_H

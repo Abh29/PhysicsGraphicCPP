@@ -15,6 +15,7 @@
 #include "ft_attachment.h"
 #include "ft_event.h"
 #include "ft_gui.h"
+#include "ft_scene.h"
 
 namespace ft {
 
@@ -23,8 +24,8 @@ namespace ft {
 		static constexpr uint32_t W_WIDTH = 800;
 		static constexpr uint32_t W_HEIGHT = 600;
 		static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-//		const std::string MODEL_PATH = "models/viking_room.obj";
-		const std::string MODEL_PATH = "models/Sphere.obj";
+		const std::string MODEL_PATH = "models/viking_room.obj";
+//		const std::string MODEL_PATH = "models/Sphere.obj";
 		const std::string TEXTURE_PATH = "textures/viking_room.png";
 		const uint32_t MAX_INSTANCE_COUNT = 100;
 
@@ -38,6 +39,7 @@ namespace ft {
 		void initRenderPass();
 		void initPushConstants();
 		void createPerInstanceBuffer();
+		void createScene();
 
 		EventListener::pointer				_ftEventListener;
 		Window::pointer						_ftWindow;
@@ -53,6 +55,7 @@ namespace ft {
 		CommandPool::pointer				_ftCommandPool;
 		std::vector<CommandBuffer::pointer>	_ftCommandBuffers;
 		Gui::pointer 						_ftGui;
+		Scene::pointer 						_ftScene;
 
 		Image::pointer						_ftTextureImage;
 		Image::pointer						_ftDepthImage;

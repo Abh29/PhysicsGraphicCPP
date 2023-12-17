@@ -1,0 +1,8 @@
+//
+// Created by abh29 on 12/15/23.
+//
+
+#ifndef FTGRAPHICS_FT_RENDERPASS_H
+#define FTGRAPHICS_FT_RENDERPASS_H
+
+#endif //FTGRAPHICS_FT_RENDERPASS_H

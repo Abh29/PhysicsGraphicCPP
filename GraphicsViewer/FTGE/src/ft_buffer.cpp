@@ -53,9 +53,9 @@ void* ft::Buffer::getMappedData() const {
 	return _mappedData;
 }
 
-void ft::Buffer::copyToMappedData(void *src, uint32_t size) {
+void ft::Buffer::copyToMappedData(void *src, uint32_t size, uint32_t offset) {
 	assert(_isMapped);
-	std::memcpy(_mappedData, src, size);
+	std::memcpy((u_char *)_mappedData + offset, src, size);
 }
 
 void ft::Buffer::copyToBuffer(ft::CommandPool::pointer &commandPool, ft::Buffer::pointer &dst,

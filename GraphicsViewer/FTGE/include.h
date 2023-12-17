@@ -23,5 +23,13 @@
 #include "includes/ft_event.h"
 #include "includes/ft_gui.h"
 #include "includes/ft_model.h"
+#include "includes/ft_scene.h"
+#include "includes/ft_scene_rendering_system.h"
+#include "includes/ft_pipeline.h"
+#include "includes/ft_renderer.h"
+#include "includes/ft_descriptor.h"
+#include "includes/ft_renderpass.h"
+#include "includes/ft_camera.h"
+
 
 #endif //FTGRAPHICS_INCLUDE_H
