@@ -24,6 +24,8 @@ namespace ft {
 		void hRotate(float deg);
 		void vRotate(float deg);
 		void rotate(float deg, glm::vec3 v);
+		void forward(float step);
+		void backward(float step);
 		void translate(glm::vec3 v);
 
 	private:

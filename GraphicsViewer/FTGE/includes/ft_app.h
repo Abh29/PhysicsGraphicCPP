@@ -35,10 +35,10 @@ namespace ft {
 		void run();
 
 	private:
+		void initEventListener();
 		void initApplication();
 		void initRenderPass();
 		void initPushConstants();
-		void createPerInstanceBuffer();
 		void createScene();
 
 		EventListener::pointer				_ftEventListener;
@@ -61,9 +61,6 @@ namespace ft {
 		Image::pointer						_ftDepthImage;
 		Image::pointer						_ftColorImage;
 		std::vector<Buffer::pointer>		_ftUniformBuffers;
-		Buffer::pointer						_ftVertexBuffer;
-		Buffer::pointer						_ftIndexBuffer;
-		Buffer::pointer						_ftInstanceDataBuffer;
 		RenderPass::pointer					_ftRenderPass;
 		PushConstantObject					_push{};
 		int									_topology = 0;
@@ -71,8 +68,7 @@ namespace ft {
 
 		/****************************triangle app ************************/
 		void printFPS();
-		void updatePushConstant(int key);
-		void updateInstanceData();
+		void updateScene(int key);
 		static std::vector<char> readFile(const std::string& filename);
 		void cleanup();
 		void createGraphicsPipeline();
@@ -83,8 +79,6 @@ namespace ft {
 		void createSyncObjects();
 		void recreateSwapChain();
 		void cleanUpSwapChain();
-		void createVertexBuffer();
-		void createIndexBuffer();
 		void createDescriptorSetLayout();
 		void createUniformBuffers();
 		void updateUniformBuffer(uint32_t currentImage);

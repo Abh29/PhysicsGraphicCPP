@@ -13,24 +13,7 @@ _ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow", nullp
 			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 	};
 
-	_ftEventListener->addCallbackForEventType(Event::EventType::KEYBOARD_EVENT, [&](ft::Event& ev) {
-		ft::KeyboardEvent& kev = dynamic_cast<KeyboardEvent&>(ev);
-		auto data = kev.getData();
-		if (std::any_cast<int>(data[2]) == _ftWindow->ACTION(KeyActions::KEY_PRESS) ||
-			std::any_cast<int>(data[2]) == _ftWindow->ACTION(KeyActions::KEY_REPEAT))
-			updatePushConstant(std::any_cast<int>(data[0]));
-	});
-
-	_ftEventListener->addCallbackForEventType(Event::EventType::MOUSE_EVENT, [&](ft::Event& ev) {
-		ft::CursorEvent& cev = dynamic_cast<CursorEvent&>(ev);
-		auto data = cev.getData();
-		if (std::any_cast<int>(data[1]) == _ftWindow->ACTION(KeyActions::KEY_PRESS)) {
-			double x = std::any_cast<double>(data[3]);
-			double y = std::any_cast<double>(data[4]);
-			std::cout << "mouse clicked: " << x << " , " << y << std::endl;
-		}
-	});
-
+	initEventListener();
 	initApplication();
 	initPushConstants();
 	createScene();
@@ -52,6 +35,38 @@ void ft::Application::run() {
 		#endif
 	}
 	vkDeviceWaitIdle(_ftDevice->getVKDevice());
+}
+
+void ft::Application::initEventListener() {
+	_ftEventListener->addCallbackForEventType(Event::EventType::KEYBOARD_EVENT, [&](ft::Event& ev) {
+		ft::KeyboardEvent& kev = dynamic_cast<KeyboardEvent&>(ev);
+		auto data = kev.getData();
+		if (std::any_cast<int>(data[2]) == _ftWindow->ACTION(KeyActions::KEY_PRESS) ||
+			std::any_cast<int>(data[2]) == _ftWindow->ACTION(KeyActions::KEY_REPEAT))
+			updateScene(std::any_cast<int>(data[0]));
+	});
+
+	_ftEventListener->addCallbackForEventType(Event::EventType::MOUSE_BUTTON, [&](ft::Event& ev) {
+		ft::CursorEvent& cev = dynamic_cast<CursorEvent&>(ev);
+		auto data = cev.getData();
+		if (std::any_cast<int>(data[1]) == _ftWindow->ACTION(KeyActions::KEY_PRESS)) {
+			double x = std::any_cast<double>(data[3]);
+			double y = std::any_cast<double>(data[4]);
+			std::cout << "mouse clicked: " << x << " , " << y << std::endl;
+		}
+	});
+
+	_ftEventListener->addCallbackForEventType(Event::EventType::MOUSE_SCROLL, [&](ft::Event& ev) {
+		ft::ScrollEvent& sev = dynamic_cast<ScrollEvent&>(ev);
+		auto data = sev.getData();
+		double xoff = std::any_cast<double>(data[0]);
+		double yoff = std::any_cast<double>(data[1]);
+		double x = std::any_cast<double>(data[2]);
+		double y = std::any_cast<double>(data[3]);
+
+		std::cout << "mouse scroll at : " << x << " , " << y << std::endl;
+		std::cout << "mouse scroll offset: " << xoff << " , " << yoff << std::endl;
+	});
 }
 
 void ft::Application::initApplication() {
@@ -96,9 +111,6 @@ void ft::Application::initApplication() {
 	createFramebuffers();
 	createTextureSampler();
 	loadModel();
-//	createVertexBuffer();
-//	createIndexBuffer();
-//	createPerInstanceBuffer();
 	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
@@ -131,21 +143,21 @@ void ft::Application::createScene() {
 
 	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	data.model = glm::scale(data.model, {1.0f, 0.1f, 0.1f});
-	data.color = {1.0f, 0.0f, 0.0f};
+	data.color = {0.9f, 0.0f, 0.0f};
 	data.normalMatrix = glm::mat4(1.0f);
 
 	id = _ftScene->addObjectToTheScene("models/arrow.obj", data);
 
 	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	data.model = glm::scale(data.model, {1.0f, 0.1f, 0.1f});
-	data.color = {0.0f, 1.0f, 0.0f};
+	data.color = {0.0f, 0.0f, 0.9f};
 	data.normalMatrix = glm::mat4(1.0f);
 
 	id = _ftScene->addObjectCopyToTheScene(id, data);
 
 	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	data.model = glm::scale(data.model, {1.0f, 0.1f, 0.1f});
-	data.color = {0.0f, 0.0f, 1.0f};
+	data.color = {0.0f, 0.9f, 0.0f};
 	data.normalMatrix = glm::mat4(1.0f);
 
 	id = _ftScene->addObjectCopyToTheScene(id, data);
@@ -154,7 +166,7 @@ void ft::Application::createScene() {
 	data.color = {0.95f, 0.2f, 0.0f};
 	data.normalMatrix = glm::mat4(1.0f);
 	data.model = glm::scale(data.model, {10, 10, 10});
-	data.model = glm::rotate(data.model, glm::radians(90.0f), {-1,0,0});
+	data.model = glm::rotate(data.model, glm::radians(90.0f), {1,0,0});
 	id = _ftScene->addObjectToTheScene("models/flat_vase.obj", data);
 
 //	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -695,55 +707,6 @@ void ft::Application::cleanUpSwapChain() {
 	_ftSwapChain.reset();
 }
 
-// create and fill the input buffer
-void ft::Application::createVertexBuffer() {
-	// create a staging buffer with memory
-	VkDeviceSize bufferSize = sizeof(_vertices[0]) * _vertices.size();
-	auto stagingBuffer = _ftBufferBuilder->setSize(bufferSize)
-			.setUsageFlags(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-			.setMemoryProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-			.setIsMapped(true)
-			.build(_ftDevice);
-
-	// fill the staging vertex buffer
-	stagingBuffer->copyToMappedData(_vertices.data(), bufferSize);
-
-
-	// create a dest buffer
-	_ftVertexBuffer = _ftBufferBuilder->setSize(bufferSize)
-			.setUsageFlags(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
-			.setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-			.build(_ftDevice);
-
-	// copy the data
-	stagingBuffer->copyToBuffer(_ftCommandPool, _ftVertexBuffer, bufferSize);
-}
-
-// create Index Buffer
-void ft::Application::createIndexBuffer() {
-	VkDeviceSize bufferSize = sizeof(_indices[0]) * _indices.size();
-
-	// create a staging buffer
-	auto stagingBuffer = _ftBufferBuilder->setSize(bufferSize)
-			.setUsageFlags(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-			.setMemoryProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-			.setIsMapped(true)
-			.build(_ftDevice);
-
-	// write the data to the staging buffer
-	stagingBuffer->copyToMappedData(_indices.data(), bufferSize);
-
-	// create the index buffer
-	_ftIndexBuffer = _ftBufferBuilder->setSize(bufferSize)
-			.setUsageFlags(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT)
-			.setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-			.setIsMapped(false)
-			.build(_ftDevice);
-
-	// copy buffer
-	stagingBuffer->copyToBuffer(_ftCommandPool, _ftIndexBuffer, bufferSize);
-}
-
 // create descriptor set layout
 void ft::Application::createDescriptorSetLayout() {
 	// create a descriptor binding for the uniform buffer object layout
@@ -1222,17 +1185,25 @@ std::vector<char> ft::Application::readFile(const std::string& filename) {
 	return buffer;
 }
 
-void ft::Application::updatePushConstant(int key) {
+void ft::Application::updateScene(int key) {
 	std::cout << "key: " << key << std::endl;
-//	if (key == _ftWindow->KEY(KeyboardKeys::KEY_UP)) {
-//		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {0.0f, 1.0f, 0.0f});
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_DOWN)) {
-//		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {0.0f, -1.0f, 0.0f});
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_RIGHT)) {
-//		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {1.0f, 0.0f, 0.0f});
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_LEFT)) {
-//		_push.view = glm::rotate(_push.view, glm::radians(5.0f), {-1.0f, 0.0f, 0.0f});
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_R)) {
+	if (key == _ftWindow->KEY(KeyboardKeys::KEY_UP)) {
+		std::cout << "vRotate" << std::endl;
+		_ftScene->getCamera()->vRotate(10.0f);
+		_ftScene->updateCameraUBO();
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_DOWN)) {
+		std::cout << "vRotate" << std::endl;
+		_ftScene->getCamera()->vRotate(-10.0f);
+		_ftScene->updateCameraUBO();
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_RIGHT)) {
+		std::cout << "hRotate" << std::endl;
+		_ftScene->getCamera()->hRotate(10.0f);
+		_ftScene->updateCameraUBO();
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_LEFT)) {
+		std::cout << "hRotate" << std::endl;
+		_ftScene->getCamera()->hRotate(-10.0f);
+		_ftScene->updateCameraUBO();
+	}// else if (key == _ftWindow->KEY(KeyboardKeys::KEY_R)) {
 //		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 //	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_W)) {
 //		_push.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -1255,57 +1226,4 @@ void ft::Application::initPushConstants() {
 	_push.lightColor = {1.0f, 1.0f, 1.0f};
 	_push.lightDirection = {10.0f, -5.0f, 1.0f};
 	_push.ambient = 0.2f;
-}
-
-void ft::Application::createPerInstanceBuffer() {
-	// data
-	std::vector<ft::InstanceData> v(2);
-	v[0].model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	v[0].color = {1.0f, 0.2f, 0.0f};
-	v[0].model = glm::scale(v[0].model, {0.1f, 0.1f, 0.1f});
-	v[1].model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	v[1].model = glm::translate(v[1].model, glm::vec3{1.f, 1.f, 1.f});
-	v[1].model = glm::scale(v[1].model, {2.0f, 2.0f, 2.0f});
-	v[1].color = {0.0f, 1.0f, 0.2f};
-
-	// create a staging buffer with memory
-	VkDeviceSize bufferSize = sizeof(v[0]) * v.size();
-	auto stagingBuffer = _ftBufferBuilder->setSize(bufferSize)
-			.setUsageFlags(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
-			.setMemoryProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-			.setIsMapped(true)
-			.build(_ftDevice);
-
-	// fill the staging vertex buffer
-	stagingBuffer->copyToMappedData(v.data(), bufferSize);
-
-
-	// create a dest buffer
-	_ftInstanceDataBuffer = _ftBufferBuilder->setSize(bufferSize)
-			.setUsageFlags(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT)
-//			.setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-			.setMemoryProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-			.setIsMapped(true)
-			.build(_ftDevice);
-
-	// copy the data
-	stagingBuffer->copyToBuffer(_ftCommandPool, _ftInstanceDataBuffer, bufferSize);
-}
-
-void ft::Application::updateInstanceData() {
-	// data
-	static uint32_t u = 0;
-	std::vector<ft::InstanceData> v(2);
-	v[0].model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	v[0].color = {1.0f, 0.2f, 0.0f};
-	v[1].model = glm::rotate(glm::mat4(1.0f), glm::radians(u / 10.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	v[1].model = glm::translate(v[1].model, glm::vec3{0.5f, 0.5f, 0.5f});
-	v[1].color = {0.0f, 1.0f, 0.2f};
-
-	u++;
-	if (u > 3600)
-		u = 0;
-
-	_ftInstanceDataBuffer->copyToMappedData(v.data(), sizeof(v[0]) * v.size());
-
 }

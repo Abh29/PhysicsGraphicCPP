@@ -12,7 +12,7 @@ ft::CursorEvent::CursorEvent(int button, int action, int mods, double x, double 
 	_data.push_back(y);
 }
 
-ft::Event::EventType ft::CursorEvent::getType() const {return EventType::MOUSE_EVENT;}
+ft::Event::EventType ft::CursorEvent::getType() const {return EventType::MOUSE_BUTTON;}
 
 /*******************************KeyBoardEvent**********************************/
 
@@ -35,3 +35,13 @@ void ft::EventListener::fireEvent(Event &ev) const {
 	if (f == _callbacks.end()) return;
 	f->second(ev);
 }
+
+/***********************************ScrollEvent******************************/
+ft::ScrollEvent::ScrollEvent(double xOffset, double yOffset, double x, double y) {
+	_data.push_back(xOffset);
+	_data.push_back(yOffset);
+	_data.push_back(x);
+	_data.push_back(y);
+}
+
+ft::Event::EventType ft::ScrollEvent::getType() const {return EventType::MOUSE_SCROLL;}

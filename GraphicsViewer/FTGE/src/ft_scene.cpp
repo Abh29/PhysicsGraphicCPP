@@ -10,7 +10,7 @@ _ftDevice(device), _ftCommandPool(pool), _ftUniformBuffers(ubos) {
 
 	// general lighting
 	_generalLighting.lightColor = {1.0f, 1.0f, 1.0f};
-	_generalLighting.lightDirection = {10.0f, -5.0f, 1.0f};
+	_generalLighting.lightDirection = {10.0f, 10.0f, 10.0f};
 	_generalLighting.ambient = 0.2f;
 }
 
@@ -54,7 +54,7 @@ ft::Camera::pointer ft::Scene::getCamera() const {
 }
 
 void ft::Scene::setCamera(ft::Camera::pointer camera) {
-	_camera = camera;
+	_camera = std::move(camera);
 	_ubo.view = _camera->getViewMatrix();
 	_ubo.proj = _camera->getProjMatrix();
 }

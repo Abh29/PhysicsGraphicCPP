@@ -9,8 +9,9 @@ namespace ft {
 	class Event {
 	public:
 		using EventType = enum class et {
-			MOUSE_EVENT,
-			KEYBOARD_EVENT
+			MOUSE_BUTTON,
+			KEYBOARD_EVENT,
+			MOUSE_SCROLL,
 		};
 		virtual ~Event() = default;
 		virtual std::vector<std::any> getData() const;
@@ -31,6 +32,14 @@ namespace ft {
 	public:
 		KeyboardEvent(int key, int scancode, int action, int mods);
 		~KeyboardEvent() override = default;
+		[[nodiscard]] EventType getType() const override;
+	};
+
+	class ScrollEvent: public Event {
+	public:
+		ScrollEvent(double xOffset, double yOffset, double x, double y);
+		~ScrollEvent() override = default;
+
 		[[nodiscard]] EventType getType() const override;
 	};
 
