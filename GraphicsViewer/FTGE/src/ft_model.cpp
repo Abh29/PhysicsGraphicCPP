@@ -75,10 +75,11 @@ void ft::Model::loadModel() {
 					attrib.normals[3 * index.normal_index + 2],
 			};
 
-			vertex.texCoord =  {
-					attrib.texcoords[2 * index.texcoord_index + 0],
-					1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
-			};
+			if (index.texcoord_index >= 0)
+				vertex.texCoord =  {
+						attrib.texcoords[2 * index.texcoord_index + 0],
+						1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
+				};
 
 			vertex.color = {1.0f, 1.0f, 1.0f};
 

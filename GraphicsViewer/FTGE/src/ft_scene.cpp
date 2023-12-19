@@ -59,6 +59,12 @@ void ft::Scene::setCamera(ft::Camera::pointer camera) {
 	_ubo.proj = _camera->getProjMatrix();
 }
 
+void ft::Scene::setGeneralLight(glm::vec3 color, glm::vec3 direction, float ambient) {
+	_generalLighting.lightColor = color;
+	_generalLighting.lightDirection = direction;
+	_generalLighting.ambient = ambient;
+}
+
 void ft::Scene::updateCameraUBO() {
 	_ubo.view = _camera->getViewMatrix();
 	_ubo.proj = _camera->getProjMatrix();

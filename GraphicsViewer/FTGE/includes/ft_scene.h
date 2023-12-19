@@ -25,8 +25,9 @@ namespace ft {
 		uint32_t addObjectToTheScene(std::string objectPath, InstanceData data);
 		uint32_t addObjectCopyToTheScene(uint32_t id, InstanceData data);
 		void addPointLightToTheScene(PointLightObject& pl);
-		Camera::pointer getCamera() const;
+		[[nodiscard]] Camera::pointer getCamera() const;
 		void setCamera(Camera::pointer camera);
+		void setGeneralLight(glm::vec3 color, glm::vec3 direction, float ambient);
 		void updateCameraUBO();
 		PointLightObject* getLights();
 		PushConstantObject& getGeneralLighting();

@@ -56,8 +56,8 @@ VkVertexInputBindingDescription ft::InstanceData::getBindingDescription() {
 	return bindingDescription;
 }
 
-std::array<VkVertexInputAttributeDescription, 9> ft::InstanceData::getAttributeDescription() {
-	std::array<VkVertexInputAttributeDescription, 9> attributeDescriptions{};
+std::array<VkVertexInputAttributeDescription, 10> ft::InstanceData::getAttributeDescription() {
+	std::array<VkVertexInputAttributeDescription, 10> attributeDescriptions{};
 	attributeDescriptions[0].binding = 1;
 	attributeDescriptions[0].location = 4;
 	attributeDescriptions[0].format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -102,6 +102,11 @@ std::array<VkVertexInputAttributeDescription, 9> ft::InstanceData::getAttributeD
 	attributeDescriptions[8].location = 12;
 	attributeDescriptions[8].format = VK_FORMAT_R32G32B32_SFLOAT;
 	attributeDescriptions[8].offset = offsetof(ft::InstanceData, color);
+
+	attributeDescriptions[9].binding = 1;
+	attributeDescriptions[9].location = 13;
+	attributeDescriptions[9].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[9].offset = offsetof(ft::InstanceData, id);
 
 	return attributeDescriptions;
 }

@@ -59,13 +59,11 @@ void ft::Application::initEventListener() {
 	_ftEventListener->addCallbackForEventType(Event::EventType::MOUSE_SCROLL, [&](ft::Event& ev) {
 		ft::ScrollEvent& sev = dynamic_cast<ScrollEvent&>(ev);
 		auto data = sev.getData();
-		double xoff = std::any_cast<double>(data[0]);
-		double yoff = std::any_cast<double>(data[1]);
-		double x = std::any_cast<double>(data[2]);
-		double y = std::any_cast<double>(data[3]);
+		auto yOff = std::any_cast<double>(data[1]);
 
-		std::cout << "mouse scroll at : " << x << " , " << y << std::endl;
-		std::cout << "mouse scroll offset: " << xoff << " , " << yoff << std::endl;
+		_ftScene->getCamera()->forward(yOff / 10);
+		_ftScene->updateCameraUBO();
+
 	});
 }
 
@@ -87,7 +85,7 @@ void ft::Application::initApplication() {
 	_ftSwapChain = std::make_shared<SwapChain>(_ftPhysicalDevice, _ftDevice, _ftSurface,
 											   _ftWindow->queryCurrentWidthHeight().first,
 											   _ftWindow->queryCurrentWidthHeight().second,
-											   VK_PRESENT_MODE_IMMEDIATE_KHR);
+											   VK_PRESENT_MODE_FIFO_KHR);
 	_ftCommandPool = std::make_shared<CommandPool>(_ftDevice);
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		_ftCommandBuffers.push_back(std::make_shared<CommandBuffer>(
@@ -121,13 +119,14 @@ void ft::Application::initApplication() {
 void ft::Application::createScene() {
 	CameraBuilder cameraBuilder;
 	_ftScene = std::make_shared<Scene>(_ftDevice, _ftCommandPool, _ftUniformBuffers);
-	_ftScene->setCamera(cameraBuilder.setEyePosition({5,0,0})
-				.setTarget({0,0,0})
-				.setUpDirection({0,0,1})
+	_ftScene->setCamera(cameraBuilder.setEyePosition({5,-1,0})
+				.setTarget({1,-1,0})
+				.setUpDirection({0,1,0})
 				.setFOV(90)
-				.setZNearFar(1.0f, 10.0f)
+				.setZNearFar(0.5f, 30.0f)
 				.setAspect(_ftSwapChain->getAspect())
 				.build());
+	_ftScene->setGeneralLight({1.0f,1.0f,1.0f}, {10.0, -50.0, 10.0}, 0.2f);
 	ft::InstanceData data;
 	uint32_t  id;	(void) id;
 
@@ -142,37 +141,44 @@ void ft::Application::createScene() {
 //	id = _ftScene->addObjectCopyToTheScene(id, data);
 
 	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	data.model = glm::scale(data.model, {1.0f, 0.1f, 0.1f});
+	data.model = glm::scale(data.model, {10.0f, 0.1f, 0.1f});
 	data.color = {0.9f, 0.0f, 0.0f};
 	data.normalMatrix = glm::mat4(1.0f);
-
 	id = _ftScene->addObjectToTheScene("models/arrow.obj", data);
 
 	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	data.model = glm::scale(data.model, {1.0f, 0.1f, 0.1f});
+	data.model = glm::scale(data.model, {10.0f, 0.1f, 0.1f});
 	data.color = {0.0f, 0.0f, 0.9f};
 	data.normalMatrix = glm::mat4(1.0f);
-
 	id = _ftScene->addObjectCopyToTheScene(id, data);
 
 	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	data.model = glm::scale(data.model, {1.0f, 0.1f, 0.1f});
+	data.model = glm::scale(data.model, {10.0f, 0.1f, 0.1f});
 	data.color = {0.0f, 0.9f, 0.0f};
 	data.normalMatrix = glm::mat4(1.0f);
-
 	id = _ftScene->addObjectCopyToTheScene(id, data);
+
+	// plane
+	data.model = glm::mat4(1.0f);
+	data.color = {0.95f, .95f, .95f};
+	data.normalMatrix = glm::mat4(1.0f);
+	data.model = glm::scale(data.model, {100, 100, 100});
+	id = _ftScene->addObjectToTheScene("models/plane.mtl.obj", data);
+
+
 
 	data.model = glm::mat4(1.0f);
 	data.color = {0.95f, 0.2f, 0.0f};
 	data.normalMatrix = glm::mat4(1.0f);
-	data.model = glm::scale(data.model, {10, 10, 10});
+//	data.model = glm::scale(data.model, {10, 10, 10});
 	data.model = glm::rotate(data.model, glm::radians(90.0f), {1,0,0});
-	id = _ftScene->addObjectToTheScene("models/flat_vase.obj", data);
+	id = _ftScene->addObjectToTheScene("models/cube.mtl.obj", data);
 
-//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	data.model = glm::translate(data.model, glm::vec3{1.0f, -2.0f, 0.0f});
-//	data.color = {0.5f, 0.95f, 0.2f};
-//	id = _ftScene->addObjectCopyToTheScene(id, data);
+	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	data.model = glm::translate(data.model, glm::vec3{1.0f, -2.0f, 0.0f});
+	data.color = {0.5f, 0.95f, 0.2f};
+	id = _ftScene->addObjectCopyToTheScene(id, data);
+
 //
 //	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 //	data.model = glm::translate(data.model, glm::vec3{0.0f, 3.0f, 0.0f});
@@ -375,7 +381,8 @@ void ft::Application::createGraphicsPipeline() {
 	rasterizerCreateInfo.rasterizerDiscardEnable = VK_FALSE;
 	rasterizerCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizerCreateInfo.lineWidth = 1.0f;
-	rasterizerCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+//	rasterizerCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
+	rasterizerCreateInfo.cullMode = VK_CULL_MODE_NONE;
 	rasterizerCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
 	rasterizerCreateInfo.depthBiasEnable = VK_FALSE;
 	rasterizerCreateInfo.depthBiasConstantFactor = 0.0f;
@@ -1188,38 +1195,43 @@ std::vector<char> ft::Application::readFile(const std::string& filename) {
 void ft::Application::updateScene(int key) {
 	std::cout << "key: " << key << std::endl;
 	if (key == _ftWindow->KEY(KeyboardKeys::KEY_UP)) {
-		std::cout << "vRotate" << std::endl;
-		_ftScene->getCamera()->vRotate(10.0f);
-		_ftScene->updateCameraUBO();
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_DOWN)) {
-		std::cout << "vRotate" << std::endl;
 		_ftScene->getCamera()->vRotate(-10.0f);
-		_ftScene->updateCameraUBO();
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_DOWN)) {
+		_ftScene->getCamera()->vRotate(10.0f);
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_RIGHT)) {
-		std::cout << "hRotate" << std::endl;
 		_ftScene->getCamera()->hRotate(10.0f);
-		_ftScene->updateCameraUBO();
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_LEFT)) {
-		std::cout << "hRotate" << std::endl;
 		_ftScene->getCamera()->hRotate(-10.0f);
-		_ftScene->updateCameraUBO();
-	}// else if (key == _ftWindow->KEY(KeyboardKeys::KEY_R)) {
-//		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_W)) {
-//		_push.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_A)) {
-//		_push.view = glm::lookAt(glm::vec3(3.0f, 3.0f, 3.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_S)) {
-//		_push.view = glm::lookAt(glm::vec3(4.0f, 4.0f, 4.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_D)) {
-//		_push.view = glm::lookAt(glm::vec3(5.0f, 5.0f, 5.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Q)) {
-//		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_E)) {
-//		_push.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Z)) {
-//		_topology = (_topology + 1) % 3;
-//	}
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_R)) {
+		_ftScene->getCamera()->hardSet({5,-1,0}, {1,-1,0}, {0,1,0});
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_W)) {
+		_ftScene->getCamera()->forward(0.5f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Q)){
+		_ftScene->getCamera()->translateUp(0.5f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_E)) {
+		_ftScene->getCamera()->translateUp(-0.5f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_A)) {
+		_ftScene->getCamera()->translateSide(-0.5f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_S)) {
+		_ftScene->getCamera()->forward(-0.5f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_D)) {
+		_ftScene->getCamera()->translateSide(0.5f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_KP_7)) {
+		_ftScene->getCamera()->rotateWorldX(10.0f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_KP_9)) {
+		_ftScene->getCamera()->rotateWorldX(-10.0f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_KP_4)) {
+		_ftScene->getCamera()->rotateWorldY(10.0f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_KP_6)) {
+		_ftScene->getCamera()->rotateWorldY(-10.0f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_KP_1)) {
+		_ftScene->getCamera()->rotateWorldZ(10.0f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_KP_3)) {
+		_ftScene->getCamera()->rotateWorldZ(-10.0f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Z)) {
+
+	}
+	_ftScene->updateCameraUBO();
 }
 
 void ft::Application::initPushConstants() {

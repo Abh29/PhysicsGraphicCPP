@@ -12,3 +12,7 @@ void main() {
 //        outColor = texture(texSampler, fragTexCoord);
     //    outColor = vec4(fragColor * texture(texSampler, fragTexCoord).rgb, 1.0f);
 }
+
+void picker_main() {
+    outColor = vec4(fragColor, 1.0f);
+}

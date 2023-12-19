@@ -30,12 +30,6 @@ namespace ft {
 		float exponent;
 	};
 
-	struct CameraObject {
-		glm::vec3 	eyePosition;
-		glm::vec3	targetPosition;
-		glm::vec3 	upDirection;
-	};
-
 	struct UniformBufferObject {
 		alignas(16) glm::mat4 			view;
 		alignas(16) glm::mat4 			proj;
@@ -193,5 +187,6 @@ namespace ft {
 		MOUSE_BUTTON_MIDDLE,
 	};
 }
+
 
 #endif //FTGRAPHICS_FT_DEFINES_H

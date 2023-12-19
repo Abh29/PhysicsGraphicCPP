@@ -6,6 +6,9 @@ ft::Camera::Camera(float fov, float aspect, float nearZ, float farZ, glm::vec3 e
 _eyePosition(eye), _targetPosition(direction), _upDirection(up),
 _fov(fov), _aspect(aspect), _nearZ(nearZ), _farZ(farZ)
 {
+	_frontVec = glm::normalize(_targetPosition - _eyePosition);
+	_rightVec = glm::normalize(glm::cross(_frontVec, _upDirection));
+	_cameraUp = glm::normalize(glm::cross(_frontVec, _rightVec));
 	_viewMatrix = glm::lookAt(_eyePosition, _targetPosition, _upDirection);
 	_projMatrix = glm::perspective(fov, aspect, nearZ, farZ);
 }
@@ -18,19 +21,19 @@ glm::mat4 &ft::Camera::getViewMatrix() { return _viewMatrix;}
 
 const glm::mat4 &ft::Camera::getProjMatrix() const { return _projMatrix;}
 
-void ft::Camera::hRotate(float deg) {
-	auto rM = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(deg), {0.0f, 1.0f, 0.0f}));
-	std::cout << _eyePosition.x << " " << _eyePosition.y << " " << _eyePosition.z << std::endl;
-	_eyePosition = rM * _eyePosition;
-	std::cout << _eyePosition.x << " " << _eyePosition.y << " " << _eyePosition.z << std::endl;
+void ft::Camera::vRotate(float deg) {
+	auto m = glm::rotate(glm::mat4(1.0f), glm::radians(deg), _rightVec);
+	_frontVec = glm::vec3(m * glm::vec4(_frontVec, 1.0f));
+	_cameraUp = glm::vec3(m * glm::vec4(_cameraUp, 1.0f));
+	_targetPosition = _eyePosition + _frontVec;
 	_viewMatrix = glm::lookAt(_eyePosition, _targetPosition, _upDirection);
 }
 
-void ft::Camera::vRotate(float deg) {
-	auto rM = glm::mat3(glm::rotate(glm::mat4(1.0f), glm::radians(deg), {1.0f, 0.0f, 0.0f}));
-	std::cout << _eyePosition.x << " " << _eyePosition.y << " " << _eyePosition.z << std::endl;
-	_eyePosition = rM * _eyePosition;
-	std::cout << _eyePosition.x << " " << _eyePosition.y << " " << _eyePosition.z << std::endl;
+void ft::Camera::hRotate(float deg) {
+	auto m = glm::rotate(glm::mat4(1.0f), glm::radians(deg), _cameraUp);
+	_frontVec = glm::vec3(m * glm::vec4(_frontVec, 1.0f));
+	_rightVec = glm::vec3(m * glm::vec4(_rightVec, 1.0f));
+	_targetPosition = _eyePosition + _frontVec;
 	_viewMatrix = glm::lookAt(_eyePosition, _targetPosition, _upDirection);
 }
 
@@ -43,18 +46,44 @@ void ft::Camera::rotate(float deg, glm::vec3 v) {
 void ft::Camera::translate(glm::vec3 v) {
 	_eyePosition += v;
 	_viewMatrix = glm::lookAt(_eyePosition, _targetPosition, _upDirection);
+
 }
 
 void ft::Camera::forward(float step) {
-	_eyePosition += _targetPosition * step;
-	_targetPosition += _targetPosition * step;
+	_eyePosition += (_frontVec) * step;
+	_targetPosition = _eyePosition + _frontVec;
 	_viewMatrix = glm::lookAt(_eyePosition, _targetPosition, _upDirection);
 }
 
-void ft::Camera::backward(float step) {
-	_eyePosition += _targetPosition * -step;
-	_targetPosition += _targetPosition * -step;
+void ft::Camera::translateSide(float step) {
+	_eyePosition += (_rightVec) * step;
+	_targetPosition = _eyePosition + _frontVec;
 	_viewMatrix = glm::lookAt(_eyePosition, _targetPosition, _upDirection);
+}
+
+void ft::Camera::translateUp(float step) {
+	_eyePosition += (_cameraUp) * step;
+	_targetPosition = _eyePosition + _frontVec;
+	_viewMatrix = glm::lookAt(_eyePosition, _targetPosition, _upDirection);
+}
+
+void ft::Camera::hardSet(glm::vec3 eye, glm::vec3 target, glm::vec3 up) {
+	_eyePosition = eye;
+	_targetPosition = target;
+	_upDirection = up;
+	_viewMatrix = glm::lookAt(_eyePosition, _targetPosition, _upDirection);
+}
+
+void ft::Camera::rotateWorldX(float deg) {
+	_viewMatrix = glm::rotate(_viewMatrix, glm::radians(deg), {1,0,0});
+}
+
+void ft::Camera::rotateWorldY(float deg) {
+	_viewMatrix = glm::rotate(_viewMatrix, glm::radians(deg), {0,1,0});
+}
+
+void ft::Camera::rotateWorldZ(float deg) {
+	_viewMatrix = glm::rotate(_viewMatrix, glm::radians(deg), {0,0,1});
 }
 
 /**********************************CameraBuilder*******************************/

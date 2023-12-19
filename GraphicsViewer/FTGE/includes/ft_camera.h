@@ -20,18 +20,26 @@ namespace ft {
 		glm::mat4& 			getViewMatrix();
 		[[nodiscard]] const glm::mat4& 	getProjMatrix() const;
 		glm::mat4& 			getProjMatrix();
+		void hardSet(glm::vec3 eye, glm::vec3 target, glm::vec3 up);
 
 		void hRotate(float deg);
 		void vRotate(float deg);
 		void rotate(float deg, glm::vec3 v);
+		void rotateWorldX(float deg);
+		void rotateWorldY(float deg);
+		void rotateWorldZ(float deg);
 		void forward(float step);
-		void backward(float step);
+		void translateUp(float step);
+		void translateSide(float step);
 		void translate(glm::vec3 v);
 
 	private:
 		glm::vec3 					_eyePosition;
 		glm::vec3 					_targetPosition;
 		glm::vec3 					_upDirection;
+		glm::vec3 					_frontVec;
+		glm::vec3 					_rightVec;
+		glm::vec3 					_cameraUp;
 		float 						_fov;
 		float 						_aspect;
 		float						_nearZ;
