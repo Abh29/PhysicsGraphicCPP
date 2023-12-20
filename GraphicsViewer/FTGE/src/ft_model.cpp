@@ -1,9 +1,8 @@
 #include "../include.h"
 
-ft::Model::Model(Device::pointer device, CommandPool::pointer commandPool,
+ft::Model::Model(Device::pointer device,
 				 std::string filePath, uint32_t bufferCount) :
-		_ftDevice(device), _ftCommandPool(commandPool),
-		_modelPath(filePath), _hasIndices(false) {
+		_ftDevice(device), _modelPath(filePath), _hasIndices(false) {
 	_ids[0] = ft::Model::ID();
 	_copiesCount = 1;
 	_selected.fill(false);
@@ -43,7 +42,9 @@ void ft::Model::draw(ft::CommandBuffer::pointer commandBuffer) {
 uint32_t ft::Model::addCopy(const ft::InstanceData &copyData) {
 	uint32_t id = ID();
 	_ids[_copiesCount] = id;
-	_copies[_copiesCount++] = copyData;
+	_copies[_copiesCount] = copyData;
+	_copies[_copiesCount].id = Model::uint32ToVec3(id);
+	++_copiesCount;
 	return id;
 }
 
@@ -120,7 +121,7 @@ void ft::Model::createVertexBuffer() {
 			.build(_ftDevice);
 
 	// copy the data
-	stagingBuffer->copyToBuffer(_ftCommandPool, _ftVertexBuffer, bufferSize);
+	stagingBuffer->copyToBuffer(_ftVertexBuffer, bufferSize);
 }
 
 void ft::Model::createIndexBuffer() {
@@ -145,11 +146,11 @@ void ft::Model::createIndexBuffer() {
 			.build(_ftDevice);
 
 	// copy buffer
-	stagingBuffer->copyToBuffer(_ftCommandPool, _ftIndexBuffer, bufferSize);
+	stagingBuffer->copyToBuffer(_ftIndexBuffer, bufferSize);
 }
 
 uint32_t ft::Model::ID() {
-	static uint32_t  id = 0;
+	static uint32_t  id = 1;
 	return id++;
 }
 
@@ -212,3 +213,30 @@ bool ft::Model::isSelected(uint32_t id) const {
 
 void ft::Model::selectAll() {_selected.fill(true);}
 void ft::Model::unselectAll() {_selected.fill(false);}
+
+glm::vec3 ft::Model::uint32ToVec3(uint32_t value)  {
+	// Extract R, G, B components from the uint32 value
+	uint8_t r = (value >> 16) & 0xFF; // Red component
+	uint8_t g = (value >> 8) & 0xFF;  // Green component
+	uint8_t b = value & 0xFF;         // Blue component
+
+	// Normalize each component to the range [0, 1]
+	float normR = static_cast<float>(r) / 255.0f;
+	float normG = static_cast<float>(g) / 255.0f;
+	float normB = static_cast<float>(b) / 255.0f;
+
+	// Create a vec3 from the normalized components
+	return glm::vec3(normR, normG, normB);
+}
+
+uint32_t ft::Model::vec3ToUint32(glm::vec3 &v) {
+
+	// Scale the color components to [0, 255] range and convert to uint8_t
+	uint8_t r = static_cast<uint8_t>(v.r * 255.0f);
+	uint8_t g = static_cast<uint8_t>(v.g * 255.0f);
+	uint8_t b = static_cast<uint8_t>(v.b * 255.0f);
+
+	// Pack R, G, B components into a single uint32_t value
+	uint32_t packedColor = (r << 16) | (g << 8) | b;
+	return packedColor;
+}

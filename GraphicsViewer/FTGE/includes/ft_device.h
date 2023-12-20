@@ -1,6 +1,7 @@
 #ifndef FTGRAPHICS_FT_DEVICE_H
 #define FTGRAPHICS_FT_DEVICE_H
 
+#include "ft_headers.h"
 #include "ft_physicalDevice.h"
 #include "ft_instance.h"
 
@@ -11,7 +12,7 @@ namespace ft {
 
 		using pointer = std::shared_ptr<Device>;
 
-		Device(PhysicalDevice::pointer &physicalDevice,
+		Device(PhysicalDevice::pointer physicalDevice,
 			   std::vector<const char *> &validationLayers,
 			   std::vector<const char *> &deviceExtensions);
 		~Device();
@@ -30,12 +31,16 @@ namespace ft {
 		[[nodiscard]] VkFormat findDepthFormat() const;
 		[[nodiscard]] bool hasStencilComponent(VkFormat format) const;
 		[[nodiscard]] QueueFamilyIndices getQueueFamilyIndices() const;
+		[[nodiscard]] VkCommandPool getVKCommandPool() const;
 
 	private:
+		void createCommandPool();
+
 		PhysicalDevice::pointer				_ftPhysicalDevice;
 		VkDevice 							_device;
 		VkQueue 							_graphicsQueue;
 		VkQueue 							_presentQueue;
+		VkCommandPool 						_commandPool;
 	};
 
 }

@@ -16,6 +16,8 @@
 #include "ft_event.h"
 #include "ft_gui.h"
 #include "ft_scene.h"
+#include "ft_pipeline.h"
+#include "ft_sampler.h"
 
 namespace ft {
 
@@ -52,14 +54,15 @@ namespace ft {
 		std::vector<const char*> 			_deviceExtensions;
 		std::shared_ptr<ImageBuilder>		_ftImageBuilder;
 		std::shared_ptr<BufferBuilder>		_ftBufferBuilder;
-		CommandPool::pointer				_ftCommandPool;
 		std::vector<CommandBuffer::pointer>	_ftCommandBuffers;
 		Gui::pointer 						_ftGui;
 		Scene::pointer 						_ftScene;
+		GraphicsPipeline::pointer 			_ftGraphicsPipeline;
 
 		Image::pointer						_ftTextureImage;
 		Image::pointer						_ftDepthImage;
 		Image::pointer						_ftColorImage;
+		Sampler::pointer					_ftSampler;
 		std::vector<Buffer::pointer>		_ftUniformBuffers;
 		RenderPass::pointer					_ftRenderPass;
 		PushConstantObject					_push{};
@@ -69,32 +72,20 @@ namespace ft {
 		/****************************triangle app ************************/
 		void printFPS();
 		void updateScene(int key);
-		static std::vector<char> readFile(const std::string& filename);
 		void cleanup();
 		void createGraphicsPipeline();
-		VkShaderModule createShaderModule(const std::vector<char>& code);
-		void createFramebuffers();
 		void recordCommandBuffer(const std::shared_ptr<CommandBuffer> &commandBuffer, uint32_t imageIndex);
 		void drawFrame();
 		void createSyncObjects();
 		void recreateSwapChain();
-		void cleanUpSwapChain();
 		void createDescriptorSetLayout();
 		void createUniformBuffers();
-		void updateUniformBuffer(uint32_t currentImage);
 		void createDescriptorPool();
 		void createDescriptorSets();
 		void createTextureImage();
 		void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
-		void createTextureSampler();
-		void createDepthResources();
-		void loadModel();
 		void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
-		void createColorResources();
 
-		VkPipelineLayout 						_pipelineLayout;
-		VkPipeline 								_graphicsPipeline;
-		std::vector<VkFramebuffer>				_swapChainFramebuffers;
 		std::vector<VkSemaphore>				_imageAvailableSemaphores;
 		std::vector<VkSemaphore>				_renderFinishedSemaphores;
 		std::vector<VkFence>					_inFlightFences;
@@ -103,9 +94,6 @@ namespace ft {
 		VkDescriptorPool 						_descriptorPool;
 		std::vector<VkDescriptorSet>			_descriptorSets;
 		uint32_t 								_mipLevels;
-		VkSampler 								_textureSampler;
-		std::vector<Vertex>						_vertices;
-		std::vector<uint32_t>					_indices;
 
 	};
 

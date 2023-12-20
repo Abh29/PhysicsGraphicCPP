@@ -24,9 +24,9 @@ namespace ft {
 		[[nodiscard]] VkBuffer getVKBuffer() const;
 		[[nodiscard]] void* getMappedData() const;
 		void copyToMappedData(void *src, uint32_t size, uint32_t offset = 0);
-		void copyToBuffer(CommandPool::pointer &commandPool, Buffer::pointer &other, VkDeviceSize size,
+		void copyToBuffer(Buffer::pointer &other, VkDeviceSize size,
 						  VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0) const;
-		void copyToImage(CommandPool::pointer &commandPool, Image::pointer &image, uint32_t width, uint32_t height);
+		void copyToImage(Image::pointer &image, uint32_t width, uint32_t height);
 		bool isMapped() const;
 
 

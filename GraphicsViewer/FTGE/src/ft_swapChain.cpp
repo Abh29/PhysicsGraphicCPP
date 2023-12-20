@@ -66,9 +66,14 @@ ft::SwapChain::SwapChain(std::shared_ptr<PhysicalDevice> &physicalDevice,
 	_swapChainExtent = extent;
 
 	createImageViews();
+	createColorResources();
+	createDepthResources();
 }
 
 ft::SwapChain::~SwapChain() {
+	for (auto fb : _frameBuffers) {
+		vkDestroyFramebuffer(_ftDevice->getVKDevice(), fb, nullptr);
+	}
 	for (auto & _swapChainImageView : _swapChainImageViews) {
 		vkDestroyImageView(_ftDevice->getVKDevice(), _swapChainImageView, nullptr);
 	}
@@ -192,5 +197,61 @@ std::pair<VkResult, uint32_t> ft::SwapChain::acquireNextImage(VkSemaphore semaph
 VkPresentModeKHR ft::SwapChain::getPreferredPresentMode() const {
 	return _preferredMode;
 }
+
+void ft::SwapChain::createColorResources() {
+	ImageBuilder imageBuilder;
+	_ftColorImage = imageBuilder.setWidthHeight(_width, _height)
+			.setMipLevel(1)
+			.setSampleCount(_ftDevice->getMSAASamples())
+			.setFormat(_swapChainImageFormat)
+			.setTiling(VK_IMAGE_TILING_OPTIMAL)
+			.setUsageFlags(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+			.setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+			.setAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT)
+			.build(_ftDevice);
+}
+
+void ft::SwapChain::createDepthResources() {
+	ImageBuilder imageBuilder;
+	VkFormat depthFormat = _ftDevice->findDepthFormat();
+	_ftDepthImage = imageBuilder.setWidthHeight(_width, _height)
+			.setMipLevel(1)
+			.setSampleCount(_ftDevice->getMSAASamples())
+			.setFormat(depthFormat)
+			.setTiling(VK_IMAGE_TILING_OPTIMAL)
+			.setUsageFlags(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+			.setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
+			.setAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT)
+			.build(_ftDevice);
+
+	Image::transitionImageLayout(_ftDevice, _ftDepthImage->getVKImage(), depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+}
+
+void ft::SwapChain::createFrameBuffers(ft::RenderPass::pointer renderPass) {
+	_frameBuffers.resize(_swapChainImages.size());
+	for (size_t i = 0; i < _swapChainImages.size(); ++i) {
+		std::array<VkImageView, 3> attachments = {
+				_ftColorImage->getVKImageView(),
+				_ftDepthImage->getVKImageView(),
+				_swapChainImageViews[i]
+		};
+
+		VkFramebufferCreateInfo framebufferCreateInfo{};
+		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+		framebufferCreateInfo.renderPass = renderPass->getVKRenderPass();
+		framebufferCreateInfo.attachmentCount = (uint32_t) attachments.size();
+		framebufferCreateInfo.pAttachments = attachments.data();
+		framebufferCreateInfo.width = _swapChainExtent.width;
+		framebufferCreateInfo.height = _swapChainExtent.height;
+		framebufferCreateInfo.layers = 1;
+
+		if (vkCreateFramebuffer(_ftDevice->getVKDevice(), &framebufferCreateInfo, nullptr,
+								&_frameBuffers[i]) != VK_SUCCESS) {
+			throw std::runtime_error("failed to create a framebuffer!");
+		}
+	}
+}
+
+std::vector<VkFramebuffer> &ft::SwapChain::getFrameBuffers() {return _frameBuffers;}
 
 

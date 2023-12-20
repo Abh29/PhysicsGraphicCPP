@@ -9,6 +9,7 @@
 #include "ft_buffer.h"
 #include "ft_swapChain.h"
 #include "ft_camera.h"
+#include "ft_pipeline.h"
 
 namespace ft {
 
@@ -18,10 +19,10 @@ namespace ft {
 	public:
 		using pointer = std::shared_ptr<Scene>;
 
-		Scene(Device::pointer device, CommandPool::pointer pool, std::vector<Buffer::pointer> ubos);
+		Scene(Device::pointer device, std::vector<Buffer::pointer> ubos);
 		~Scene() = default;
 
-		void drawScene(CommandBuffer::pointer commandBuffer, VkPipelineLayout layout, uint32_t index);
+		void drawScene(CommandBuffer::pointer commandBuffer, GraphicsPipeline::pointer pipeline, uint32_t index);
 		uint32_t addObjectToTheScene(std::string objectPath, InstanceData data);
 		uint32_t addObjectCopyToTheScene(uint32_t id, InstanceData data);
 		void addPointLightToTheScene(PointLightObject& pl);
@@ -36,7 +37,6 @@ namespace ft {
 	private:
 
 		Device::pointer												_ftDevice;
-		CommandPool::pointer										_ftCommandPool;
 		std::vector<Model::pointer>									_models;
 		std::vector<Buffer::pointer>								_ftUniformBuffers;
 		PushConstantObject											_generalLighting;

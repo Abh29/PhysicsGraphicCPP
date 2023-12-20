@@ -2,9 +2,9 @@
 
 ft::Gui::Gui(Instance::pointer instance, PhysicalDevice::pointer physicalDevice,
 			 Device::pointer device, Window::pointer window,
-			 RenderPass::pointer renderPass, CommandPool::pointer commandPool, uint32_t imageCount) :
+			 RenderPass::pointer renderPass, uint32_t imageCount) :
 			 _ftInstance(instance), _ftPhysicalDevice(physicalDevice), _ftDevice(device),
-			 _ftWindow(window), _ftRenderPass(renderPass), _ftCommandPool(commandPool) {
+			 _ftWindow(window), _ftRenderPass(renderPass) {
 
 		//1: create descriptor pool for IMGUI
 			VkDescriptorPoolSize pool_sizes[] =
@@ -53,7 +53,7 @@ ft::Gui::Gui(Instance::pointer instance, PhysicalDevice::pointer physicalDevice,
 			ImGui_ImplVulkan_Init(&init_info, _ftRenderPass->getVKRenderPass());
 
 			// load fonts
-			CommandBuffer::pointer commandBuffer = std::make_shared<CommandBuffer>(_ftDevice, _ftCommandPool);
+			CommandBuffer::pointer commandBuffer = std::make_shared<CommandBuffer>(_ftDevice);
 			commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 			ImGui_ImplVulkan_CreateFontsTexture(commandBuffer->getVKCommandBuffer());
 			commandBuffer->end();

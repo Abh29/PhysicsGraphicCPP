@@ -21,8 +21,7 @@ public:
 
 	Gui(Instance::pointer instance, PhysicalDevice::pointer physicalDevice,
 		Device::pointer device, Window::pointer window,
-		RenderPass::pointer renderPass, CommandPool::pointer commandPool,
-		uint32_t imageCount);
+		RenderPass::pointer renderPass, uint32_t imageCount);
 	~Gui();
 
 	void newFrame();
@@ -36,7 +35,6 @@ private:
 	Device::pointer 						_ftDevice;
 	Window::pointer							_ftWindow;
 	RenderPass::pointer						_ftRenderPass;
-	CommandPool::pointer 					_ftCommandPool;
 	VkDescriptorPool						_descriptorPool;
 
 };

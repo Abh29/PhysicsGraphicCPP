@@ -6,13 +6,11 @@
 
 namespace ft {
 
-	class Device;
-
 	class Image {
 	public:
 		using pointer = std::shared_ptr<Image>;
 
-		Image(Device::pointer &device,
+		Image(Device::pointer device,
 			  uint32_t width, uint32_t height, uint32_t mipLevel,
 			  VkSampleCountFlagBits sampleCount, VkFormat format,
 			  VkImageTiling tiling, VkImageUsageFlags usage,
@@ -22,10 +20,13 @@ namespace ft {
 
 		[[nodiscard]] VkImage 			getVKImage() const;
 		[[nodiscard]] VkImageView 		getVKImageView() const;
+		static void transitionImageLayout(Device::pointer device, VkImage image, VkFormat format,
+										  VkImageLayout oldLayout, VkImageLayout newLayout,
+										  uint32_t mipLevels);
 
 	private:
 
-		Device::pointer 				_ftDevice;
+		Device::pointer					_ftDevice;
 		uint32_t 						_width;
 		uint32_t 						_height;
 		uint32_t 						_mipLevel;

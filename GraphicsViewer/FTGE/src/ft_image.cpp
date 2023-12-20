@@ -1,11 +1,11 @@
 #include "../include.h"
 
-ft::Image::Image(std::shared_ptr<Device> &device,
+ft::Image::Image(ft::Device::pointer device,
 uint32_t width, uint32_t height, uint32_t mipLevel,
 VkSampleCountFlagBits sampleCount, VkFormat format,
 VkImageTiling tiling, VkImageUsageFlags usage,
 VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags) :
-_ftDevice(device), _width(width), _height(height),
+_ftDevice(std::move(device)), _width(width), _height(height),
 _mipLevel(mipLevel), _sampleCount(sampleCount){
 
 	// create an image on the device
@@ -78,6 +78,65 @@ VkImage ft::Image::getVKImage() const {return _image;}
 
 VkImageView ft::Image::getVKImageView() const {return _imageView;}
 
+void ft::Image::transitionImageLayout(ft::Device::pointer device, VkImage image, VkFormat format,
+									  VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
+
+	// create a command buffer for transition
+	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(device);
+	commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+
+	// create a barrier for sync
+	VkImageMemoryBarrier barrier{};
+	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	barrier.oldLayout = oldLayout;
+	barrier.newLayout = newLayout;
+	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	barrier.image = image;
+	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	barrier.subresourceRange.baseMipLevel = 0;
+	barrier.subresourceRange.levelCount = mipLevels;
+	barrier.subresourceRange.baseArrayLayer = 0;
+	barrier.subresourceRange.layerCount = 1;
+
+	// transition barrier masks
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags destinationStage;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	} else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	} else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+		// set the right aspectMask
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+		barrier.subresourceRange.aspectMask |= device->hasStencilComponent(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_NONE;
+		barrier.srcAccessMask = VK_ACCESS_NONE;
+		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+								VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	}else {
+		throw std::invalid_argument("unsopported layout transition!");
+	}
+
+	// submit the barrier
+	vkCmdPipelineBarrier(commandBuffer->getVKCommandBuffer(),
+						 sourceStage, destinationStage,
+						 0, 0, nullptr, 0, nullptr,
+						 1,&barrier);
+
+	// execution and clean up
+	commandBuffer->end();
+	commandBuffer->submit(device->getVKGraphicsQueue());
+}
 
 /****************************** ImageBuilder *********************************/
 ft::ImageBuilder::ImageBuilder() {

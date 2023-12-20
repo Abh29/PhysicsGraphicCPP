@@ -4,34 +4,11 @@
 #include "../includes/ft_command.h"
 
 
-ft::CommandPool::CommandPool(std::shared_ptr<Device> device): _ftDevice(std::move(device)) {
-
-	QueueFamilyIndices queueFamilyIndices = _ftDevice->getQueueFamilyIndices();
-	VkCommandPoolCreateInfo poolCreateInfo{};
-	poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	poolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	poolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
-
-	if (vkCreateCommandPool(_ftDevice->getVKDevice(), &poolCreateInfo, nullptr, &_commandPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create a command pool!");
-	}
-}
-
-ft::CommandPool::~CommandPool() {
-	vkDestroyCommandPool(_ftDevice->getVKDevice(), _commandPool, nullptr);
-}
-
-VkCommandPool ft::CommandPool::getVKCommandPool() const {return _commandPool;}
-
-/****************************************Command Buffer***********************/
-
-
-ft::CommandBuffer::CommandBuffer(std::shared_ptr<Device> device, std::shared_ptr<CommandPool> &commandPool,
-								 VkCommandBufferLevel level) :
-_ftDevice(std::move(device)), _ftCommandPool(commandPool), _commandBufferLevel(level){
+ft::CommandBuffer::CommandBuffer(std::shared_ptr<Device> device, VkCommandBufferLevel level) :
+_ftDevice(std::move(device)), _commandBufferLevel(level){
 	VkCommandBufferAllocateInfo commandBufferAllocateInfo{};
 	commandBufferAllocateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	commandBufferAllocateInfo.commandPool = _ftCommandPool->getVKCommandPool();
+	commandBufferAllocateInfo.commandPool = _ftDevice->getVKCommandPool();
 	commandBufferAllocateInfo.level = _commandBufferLevel;
 	commandBufferAllocateInfo.commandBufferCount = 1;
 
@@ -41,7 +18,7 @@ _ftDevice(std::move(device)), _ftCommandPool(commandPool), _commandBufferLevel(l
 }
 
 ft::CommandBuffer::~CommandBuffer() {
-	vkFreeCommandBuffers(_ftDevice->getVKDevice(), _ftCommandPool->getVKCommandPool(), 1, &_commandBuffer);
+	vkFreeCommandBuffers(_ftDevice->getVKDevice(), _ftDevice->getVKCommandPool(), 1, &_commandBuffer);
 }
 
 VkCommandBuffer ft::CommandBuffer::getVKCommandBuffer() const {

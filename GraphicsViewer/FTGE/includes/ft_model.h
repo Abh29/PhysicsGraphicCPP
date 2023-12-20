@@ -14,11 +14,13 @@ namespace ft {
 	class Model {
 	public:
 		using pointer = std::shared_ptr<Model>;
-		Model(Device::pointer device, CommandPool::pointer commandPool,
-			  std::string filePath, uint32_t bufferCount);
+		Model(Device::pointer device, std::string filePath,
+			  uint32_t bufferCount);
 		~Model() = default;
 
 		static uint32_t ID();
+		static glm::vec3 uint32ToVec3(uint32_t value);
+		static uint32_t  vec3ToUint32(glm::vec3 &v);
 		void bind(CommandBuffer::pointer commandBuffer, uint32_t index);
 		void draw(CommandBuffer::pointer commandBuffer);
 
@@ -42,7 +44,6 @@ namespace ft {
 		void createIndexBuffer();
 
 		Device::pointer								_ftDevice;
-		CommandPool::pointer						_ftCommandPool;
 		std::array<uint32_t, MAX_COPY_COUNT>		_ids;
 		std::array<InstanceData, MAX_COPY_COUNT>	_copies;
 		uint32_t 									_copiesCount;

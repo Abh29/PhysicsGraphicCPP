@@ -86,29 +86,23 @@ void ft::Application::initApplication() {
 											   _ftWindow->queryCurrentWidthHeight().first,
 											   _ftWindow->queryCurrentWidthHeight().second,
 											   VK_PRESENT_MODE_FIFO_KHR);
-	_ftCommandPool = std::make_shared<CommandPool>(_ftDevice);
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		_ftCommandBuffers.push_back(std::make_shared<CommandBuffer>(
-				_ftDevice, _ftCommandPool));
+		_ftCommandBuffers.push_back(std::make_shared<CommandBuffer>(_ftDevice));
 	}
 
 	_ftImageBuilder = std::make_shared<ImageBuilder>();
 	_ftBufferBuilder = std::make_shared<BufferBuilder>();
 
-	createColorResources();
-	createDepthResources();
 	initRenderPass();
+	_ftSwapChain->createFrameBuffers(_ftRenderPass);
 
 	_ftGui = std::make_shared<Gui>(_ftInstance, _ftPhysicalDevice, _ftDevice,
-								   _ftWindow, _ftRenderPass, _ftCommandPool,
-								   MAX_FRAMES_IN_FLIGHT);
+								   _ftWindow, _ftRenderPass, MAX_FRAMES_IN_FLIGHT);
+	_ftSampler = std::make_shared<ft::Sampler>(_ftDevice);
 
 	createTextureImage();
 	createDescriptorSetLayout();
 	createGraphicsPipeline();
-	createFramebuffers();
-	createTextureSampler();
-	loadModel();
 	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
@@ -118,7 +112,7 @@ void ft::Application::initApplication() {
 
 void ft::Application::createScene() {
 	CameraBuilder cameraBuilder;
-	_ftScene = std::make_shared<Scene>(_ftDevice, _ftCommandPool, _ftUniformBuffers);
+	_ftScene = std::make_shared<Scene>(_ftDevice, _ftUniformBuffers);
 	_ftScene->setCamera(cameraBuilder.setEyePosition({5,-1,0})
 				.setTarget({1,-1,0})
 				.setUpDirection({0,1,0})
@@ -252,14 +246,9 @@ void ft::Application::printFPS() {
 }
 
 void ft::Application::cleanup() {
-	cleanUpSwapChain();
-	vkDestroyPipeline(_ftDevice->getVKDevice(), _graphicsPipeline, nullptr);
-	vkDestroyPipelineLayout(_ftDevice->getVKDevice(), _pipelineLayout, nullptr);
-
+	_ftSwapChain.reset();
 	vkDestroyDescriptorPool(_ftDevice->getVKDevice(), _descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(_ftDevice->getVKDevice(), _descriptorSetLayout, nullptr);
-
-	vkDestroySampler(_ftDevice->getVKDevice(), _textureSampler, nullptr);
 
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		vkDestroySemaphore(_ftDevice->getVKDevice(), _renderFinishedSemaphores[i], nullptr);
@@ -271,134 +260,83 @@ void ft::Application::cleanup() {
 
 // graphics pipeline
 void ft::Application::createGraphicsPipeline() {
-	// create shader modules
-	auto vertShaderCode = readFile("shaders/shader.vert.spv");
-	auto fragShaderCode = readFile("shaders/shader.frag.spv");
 
-	VkShaderModule vertShaderModule = createShaderModule(vertShaderCode);
-	VkShaderModule fragShaderModule = createShaderModule(fragShaderCode);
+	ft::PipelineConfig pipelineConfig{};
 
-	// vertex shader stage
-	VkPipelineShaderStageCreateInfo vertShaderStageCreateInfo{};
-	vertShaderStageCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageCreateInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageCreateInfo.module = vertShaderModule;
-	vertShaderStageCreateInfo.pName = "main";
-	vertShaderStageCreateInfo.pSpecializationInfo = nullptr; // for specifying constants
-
-	// fragment shader stage
-	VkPipelineShaderStageCreateInfo fragShaderStageCreationInfo{};
-	fragShaderStageCreationInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageCreationInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageCreationInfo.module = fragShaderModule;
-	fragShaderStageCreationInfo.pName = "main";
-	fragShaderStageCreationInfo.pSpecializationInfo = nullptr;
-
-
-	VkPipelineShaderStageCreateInfo shaderStages[] = {
-			vertShaderStageCreateInfo,
-			fragShaderStageCreationInfo
-	};
+	// shader modules
+	pipelineConfig.vertShaderPath = "shaders/shader.vert.spv";
+	pipelineConfig.fragShaderPath = "shaders/shader.frag.spv";
+	pipelineConfig.vertShaderEntryPoint = "main";
+	pipelineConfig.vertShaderEntryPoint = "main";
 
 	// dynamic states
-	std::vector<VkDynamicState> dynamicStates = {
-			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR,
-	};
-
-	VkPipelineDynamicStateCreateInfo dynamicStateCreateInfo{};
-	dynamicStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	dynamicStateCreateInfo.dynamicStateCount = static_cast<uint32_t>(dynamicStates.size());
-	dynamicStateCreateInfo.pDynamicStates = dynamicStates.data();
+	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+	pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_SCISSOR);
 
 	// vertex input state
-	auto bindingDescription = Vertex::getBindingDescription();
-	auto attributeDescriptions = Vertex::getAttributeDescription();
+	pipelineConfig.bindings.push_back(ft::Vertex::getBindingDescription());
+	pipelineConfig.bindings.push_back(ft::InstanceData::getBindingDescription());
 
-	auto perIndexBindingDescription = ft::InstanceData::getBindingDescription();
-	auto perIndexattribsDescription = ft::InstanceData::getAttributeDescription();
+	auto vertexAttributes = ft::Vertex::getAttributeDescription();
+	auto instanceAttributes = ft::InstanceData::getAttributeDescription();
 
-	std::array<VkVertexInputBindingDescription, 2> bindings {
-		bindingDescription,
-		perIndexBindingDescription
-	};
-
-	std::vector<VkVertexInputAttributeDescription> attribs {attributeDescriptions.begin(), attributeDescriptions.end()};
-	for(const auto& a : perIndexattribsDescription)
-		attribs.push_back(a);
-
-	VkPipelineVertexInputStateCreateInfo vertexInputStateCreateInfo{};
-	vertexInputStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	vertexInputStateCreateInfo.vertexBindingDescriptionCount = 2;
-	vertexInputStateCreateInfo.pVertexBindingDescriptions = bindings.data();
-	vertexInputStateCreateInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attribs.size());
-	vertexInputStateCreateInfo.pVertexAttributeDescriptions = attribs.data();
+	pipelineConfig.attributes.insert(pipelineConfig.attributes.begin(),
+									 instanceAttributes.begin(),
+									 instanceAttributes.end());
+	pipelineConfig.attributes.insert(pipelineConfig.attributes.begin(),
+									 vertexAttributes.begin(),
+									 vertexAttributes.end());
 
 	// depth and stencil state
-	VkPipelineDepthStencilStateCreateInfo depthStencilStateCreateInfo{};
-	depthStencilStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	depthStencilStateCreateInfo.depthTestEnable = VK_TRUE;
-	depthStencilStateCreateInfo.depthWriteEnable = VK_TRUE;
-	depthStencilStateCreateInfo.depthCompareOp = VK_COMPARE_OP_LESS;
-	depthStencilStateCreateInfo.depthBoundsTestEnable = VK_FALSE;
-	depthStencilStateCreateInfo.minDepthBounds = 0.0f;
-	depthStencilStateCreateInfo.maxDepthBounds = 1.0f;
-	depthStencilStateCreateInfo.stencilTestEnable = VK_FALSE;
-	depthStencilStateCreateInfo.front = {};
-	depthStencilStateCreateInfo.back = {};
+	pipelineConfig.depthStencilState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	pipelineConfig.depthStencilState.depthTestEnable = VK_TRUE;
+	pipelineConfig.depthStencilState.depthWriteEnable = VK_TRUE;
+	pipelineConfig.depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
+	pipelineConfig.depthStencilState.depthBoundsTestEnable = VK_FALSE;
+	pipelineConfig.depthStencilState.minDepthBounds = 0.0f;
+	pipelineConfig.depthStencilState.maxDepthBounds = 1.0f;
+	pipelineConfig.depthStencilState.stencilTestEnable = VK_FALSE;
+	pipelineConfig.depthStencilState.front = {};
+	pipelineConfig.depthStencilState.back = {};
 
 	// input assembly
-	VkPipelineInputAssemblyStateCreateInfo inputAssemblyStateCreateInfo{};
-	inputAssemblyStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	inputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-//		inputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-//		inputAssemblyStateCreateInfo.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-	inputAssemblyStateCreateInfo.primitiveRestartEnable = VK_FALSE;
+	pipelineConfig.inputAssemblyState.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	pipelineConfig.inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	pipelineConfig.inputAssemblyState.primitiveRestartEnable = VK_FALSE;
+//		pipelineConfig.inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+//		pipelineConfig.inputAssemblyState.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
 	// view port and scissors
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = (float) _ftSwapChain->getVKSwapChainExtent().width;
-	viewport.height = (float) _ftSwapChain->getVKSwapChainExtent().height;
+	pipelineConfig.viewport.x = 0.0f;
+	pipelineConfig.viewport.y = 0.0f;
+	pipelineConfig.viewport.width = (float) _ftSwapChain->getVKSwapChainExtent().width;
+	pipelineConfig.viewport.height = (float) _ftSwapChain->getVKSwapChainExtent().height;
 
-	VkRect2D scissor{};
-	scissor.offset = {0, 0};
-	scissor.extent = _ftSwapChain->getVKSwapChainExtent();
-
-	VkPipelineViewportStateCreateInfo viewportStateCreateInfo{};
-	viewportStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	viewportStateCreateInfo.viewportCount = 1;
-	viewportStateCreateInfo.pViewports = &viewport;
-	viewportStateCreateInfo.scissorCount = 1;
-	viewportStateCreateInfo.pScissors = &scissor;
-
+	pipelineConfig.scissor.offset = {0, 0};
+	pipelineConfig.scissor.extent = _ftSwapChain->getVKSwapChainExtent();
 
 	// rasterizer
-	VkPipelineRasterizationStateCreateInfo rasterizerCreateInfo{};
-	rasterizerCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	rasterizerCreateInfo.depthBiasClamp = VK_FALSE;
-	rasterizerCreateInfo.rasterizerDiscardEnable = VK_FALSE;
-	rasterizerCreateInfo.polygonMode = VK_POLYGON_MODE_FILL;
-	rasterizerCreateInfo.lineWidth = 1.0f;
-//	rasterizerCreateInfo.cullMode = VK_CULL_MODE_BACK_BIT;
-	rasterizerCreateInfo.cullMode = VK_CULL_MODE_NONE;
-	rasterizerCreateInfo.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-	rasterizerCreateInfo.depthBiasEnable = VK_FALSE;
-	rasterizerCreateInfo.depthBiasConstantFactor = 0.0f;
-	rasterizerCreateInfo.depthBiasClamp = 0.0f;
-	rasterizerCreateInfo.depthBiasSlopeFactor = 0.0f;
+	pipelineConfig.rasterizerState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	pipelineConfig.rasterizerState.depthBiasClamp = VK_FALSE;
+	pipelineConfig.rasterizerState.rasterizerDiscardEnable = VK_FALSE;
+	pipelineConfig.rasterizerState.polygonMode = VK_POLYGON_MODE_FILL;
+	pipelineConfig.rasterizerState.lineWidth = 1.0f;
+	pipelineConfig.rasterizerState.cullMode = VK_CULL_MODE_NONE; // mode_back_bit
+	pipelineConfig.rasterizerState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	pipelineConfig.rasterizerState.depthBiasEnable = VK_FALSE;
+	pipelineConfig.rasterizerState.depthBiasConstantFactor = 0.0f;
+	pipelineConfig.rasterizerState.depthBiasClamp = 0.0f;
+	pipelineConfig.rasterizerState.depthBiasSlopeFactor = 0.0f;
 
 	// multisampling
-	VkPipelineMultisampleStateCreateInfo multisampleStateCreateInfo{};
-	multisampleStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	//		multisampleStateCreateInfo.sampleShadingEnable = VK_TRUE;
-	//		multisampleStateCreateInfo.minSampleShading = 0.2f;
-	multisampleStateCreateInfo.sampleShadingEnable = VK_FALSE;
-	multisampleStateCreateInfo.rasterizationSamples = _ftDevice->getMSAASamples();
-	multisampleStateCreateInfo.pSampleMask = nullptr;
-	multisampleStateCreateInfo.alphaToCoverageEnable = VK_FALSE;
-	multisampleStateCreateInfo.alphaToOneEnable = VK_FALSE;
+	pipelineConfig.multisampleState.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	//		pipelineConfig.multisampleState.sampleShadingEnable = VK_TRUE;
+	//		pipelineConfig.multisampleState.minSampleShading = 0.2f;
+	pipelineConfig.multisampleState.sampleShadingEnable = VK_FALSE;
+	pipelineConfig.multisampleState.rasterizationSamples = _ftDevice->getMSAASamples();
+	pipelineConfig.multisampleState.pSampleMask = nullptr;
+	pipelineConfig.multisampleState.alphaToCoverageEnable = VK_FALSE;
+	pipelineConfig.multisampleState.alphaToOneEnable = VK_FALSE;
 
 	// color blending
 	VkPipelineColorBlendAttachmentState colorBlendAttachmentState{};
@@ -412,16 +350,15 @@ void ft::Application::createGraphicsPipeline() {
 	colorBlendAttachmentState.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
 	colorBlendAttachmentState.alphaBlendOp = VK_BLEND_OP_ADD;
 
-	VkPipelineColorBlendStateCreateInfo colorBlendStateCreateInfo{};
-	colorBlendStateCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	colorBlendStateCreateInfo.logicOpEnable = VK_FALSE;
-	colorBlendStateCreateInfo.logicOp = VK_LOGIC_OP_COPY;
-	colorBlendStateCreateInfo.attachmentCount = 1;
-	colorBlendStateCreateInfo.pAttachments = &colorBlendAttachmentState;
-	colorBlendStateCreateInfo.blendConstants[0] = 0.0f;
-	colorBlendStateCreateInfo.blendConstants[1] = 0.0f;
-	colorBlendStateCreateInfo.blendConstants[2] = 0.0f;
-	colorBlendStateCreateInfo.blendConstants[3] = 0.0f;
+	pipelineConfig.colorBlendAttachments.push_back(colorBlendAttachmentState);
+
+	pipelineConfig.colorBlendState.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	pipelineConfig.colorBlendState.logicOpEnable = VK_FALSE;
+	pipelineConfig.colorBlendState.logicOp = VK_LOGIC_OP_COPY;
+	pipelineConfig.colorBlendState.blendConstants[0] = 0.0f;
+	pipelineConfig.colorBlendState.blendConstants[1] = 0.0f;
+	pipelineConfig.colorBlendState.blendConstants[2] = 0.0f;
+	pipelineConfig.colorBlendState.blendConstants[3] = 0.0f;
 
 	// push constants
 	VkPushConstantRange pushConstantRange{};
@@ -429,83 +366,11 @@ void ft::Application::createGraphicsPipeline() {
 	pushConstantRange.size = static_cast<uint32_t>(sizeof(ft::PushConstantObject));
 	pushConstantRange.offset = 0;
 
-	// pipeline layout
-	VkPipelineLayoutCreateInfo pipelineLayoutCreateInfo{};
-	pipelineLayoutCreateInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	pipelineLayoutCreateInfo.setLayoutCount = 1;
-	pipelineLayoutCreateInfo.pSetLayouts = &_descriptorSetLayout;
-	pipelineLayoutCreateInfo.pushConstantRangeCount = 1;
-	pipelineLayoutCreateInfo.pPushConstantRanges = &pushConstantRange;
+	pipelineConfig.pushConstantRanges.push_back(pushConstantRange);
 
-	if (vkCreatePipelineLayout(_ftDevice->getVKDevice(), &pipelineLayoutCreateInfo, nullptr, &_pipelineLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create a pipeline layout!");
-	}
-
-	// creating the pipeline
-	VkGraphicsPipelineCreateInfo pipelineCreateInfo{};
-	pipelineCreateInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineCreateInfo.stageCount = 2;
-	pipelineCreateInfo.pStages = shaderStages;
-	pipelineCreateInfo.pVertexInputState = &vertexInputStateCreateInfo;
-	pipelineCreateInfo.pInputAssemblyState = &inputAssemblyStateCreateInfo;
-	pipelineCreateInfo.pViewportState = &viewportStateCreateInfo;
-	pipelineCreateInfo.pRasterizationState = &rasterizerCreateInfo;
-	pipelineCreateInfo.pMultisampleState = &multisampleStateCreateInfo;
-	pipelineCreateInfo.pDepthStencilState = &depthStencilStateCreateInfo;
-	pipelineCreateInfo.pColorBlendState = &colorBlendStateCreateInfo;
-	pipelineCreateInfo.pDynamicState = &dynamicStateCreateInfo;
-	pipelineCreateInfo.layout = _pipelineLayout;
-	pipelineCreateInfo.renderPass = _ftRenderPass->getVKRenderPass();
-	pipelineCreateInfo.subpass = 0; // index of sub pass
-	pipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
-	pipelineCreateInfo.basePipelineIndex = -1;
-
-	if (vkCreateGraphicsPipelines(_ftDevice->getVKDevice(), VK_NULL_HANDLE, 1, &pipelineCreateInfo, nullptr, &_graphicsPipeline) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create a graphics pipeline!");
-	}
-
-	vkDestroyShaderModule(_ftDevice->getVKDevice(), vertShaderModule, nullptr);
-	vkDestroyShaderModule(_ftDevice->getVKDevice(), fragShaderModule, nullptr);
+	_ftGraphicsPipeline = std::make_shared<ft::GraphicsPipeline>(_ftDevice, _ftRenderPass, _descriptorSetLayout, pipelineConfig);
 }
 
-// render module
-VkShaderModule ft::Application::createShaderModule(const std::vector<char>& code) {
-	VkShaderModuleCreateInfo createInfo{};
-	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-	createInfo.codeSize = code.size();
-	createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
-	// the alignment requirements are satisfied by std::allocator in std::vector
-	VkShaderModule shaderModule;
-	if (vkCreateShaderModule(_ftDevice->getVKDevice(), &createInfo, nullptr, &shaderModule) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create a shader module!");
-	}
-	return shaderModule;
-}
-
-// framebuffers
-void ft::Application::createFramebuffers() {
-	_swapChainFramebuffers.resize(_ftSwapChain->getVKSwapChainImageViews().size());
-	for (size_t i = 0; i < _ftSwapChain->getVKSwapChainImageViews().size(); ++i) {
-		std::array<VkImageView, 3> attachments = {
-				_ftColorImage->getVKImageView(),
-				_ftDepthImage->getVKImageView(),
-				_ftSwapChain->getVKSwapChainImageViews()[i]
-		};
-
-		VkFramebufferCreateInfo framebufferCreateInfo{};
-		framebufferCreateInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferCreateInfo.renderPass = _ftRenderPass->getVKRenderPass();
-		framebufferCreateInfo.attachmentCount = (uint32_t) attachments.size() ;
-		framebufferCreateInfo.pAttachments = attachments.data();
-		framebufferCreateInfo.width = _ftSwapChain->getVKSwapChainExtent().width;
-		framebufferCreateInfo.height = _ftSwapChain->getVKSwapChainExtent().height;
-		framebufferCreateInfo.layers = 1;
-
-		if (vkCreateFramebuffer(_ftDevice->getVKDevice(), &framebufferCreateInfo, nullptr, &_swapChainFramebuffers[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create a framebuffer!");
-		}
-	}
-}
 
 // command buffer recording
 void ft::Application::recordCommandBuffer(const std::shared_ptr<CommandBuffer> &commandBuffer, uint32_t imageIndex) {
@@ -522,25 +387,15 @@ void ft::Application::recordCommandBuffer(const std::shared_ptr<CommandBuffer> &
 	VkRenderPassBeginInfo renderPassBeginInfo{};
 	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	renderPassBeginInfo.renderPass = _ftRenderPass->getVKRenderPass();
-	renderPassBeginInfo.framebuffer = _swapChainFramebuffers[imageIndex];
+	renderPassBeginInfo.framebuffer = _ftSwapChain->getFrameBuffers()[imageIndex];
 	renderPassBeginInfo.renderArea.offset = {0, 0};
 	renderPassBeginInfo.renderArea.extent = _ftSwapChain->getVKSwapChainExtent();
 	renderPassBeginInfo.clearValueCount = (uint32_t) clearValues.size();
 	renderPassBeginInfo.pClearValues = clearValues.data();
 
 	vkCmdBeginRenderPass(commandBuffer->getVKCommandBuffer(), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-
 	// bind the graphics pipeline
-	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _graphicsPipeline);
-
-	// bind the vertex buffer
-//	VkBuffer vertexBuffers[] = {_ftVertexBuffer->getVKBuffer(), _ftInstanceDataBuffer->getVKBuffer()};
-//	VkDeviceSize offsets[] = {0, 0};
-//	VkBuffer perInstanceBuffers[] = {_ftInstanceDataBuffer->getVKBuffer()};
-//	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 0, 2, vertexBuffers, offsets);
-//	vkCmdBindVertexBuffers(commandBuffer->getVKCommandBuffer(), 0, 1, perInstanceBuffers, offsets);
-	// bind the index buffer
-//	vkCmdBindIndexBuffer(commandBuffer->getVKCommandBuffer(), _ftIndexBuffer->getVKBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftGraphicsPipeline->getVKPipeline());
 
 	// set viewport and scissor
 	VkViewport viewport{};
@@ -559,33 +414,11 @@ void ft::Application::recordCommandBuffer(const std::shared_ptr<CommandBuffer> &
 
 	// bind the descriptor sets
 	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-							_pipelineLayout, 0, 1, &_descriptorSets[_currentFrame],
+							_ftGraphicsPipeline->getVKPipelineLayout(), 0, 1, &_descriptorSets[_currentFrame],
 							0, nullptr);
 
-	// push constants
-//	vkCmdPushConstants(commandBuffer->getVKCommandBuffer(), _pipelineLayout, VK_SHADER_STAGE_VERTEX_BIT,
-//					   0, static_cast<uint32_t>(sizeof(_push)), &_push);
-
-
-	// topology
-//	switch (_topology) {
-//		case 0:
-//			vkCmdSetPrimitiveTopology(commandBuffer->getVKCommandBuffer(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST);
-//			break;
-//		case 1:
-//			vkCmdSetPrimitiveTopology(commandBuffer->getVKCommandBuffer(), VK_PRIMITIVE_TOPOLOGY_LINE_STRIP);
-//			break;
-//		case 2:
-//			vkCmdSetPrimitiveTopology(commandBuffer->getVKCommandBuffer(), VK_PRIMITIVE_TOPOLOGY_LINE_LIST_WITH_ADJACENCY);
-//			break;
-//	}
-
-	// issue the draw command
-//	 vkCmdDraw(commandBuffer->getVKCommandBuffer(), static_cast<uint32_t>(_indices.size()), 3, 0, 0);
-//	vkCmdDrawIndexed(commandBuffer->getVKCommandBuffer(), static_cast<uint32_t>(_indices.size()), 3, 0, 0, 0);
-
 	// scene
-	_ftScene->drawScene(commandBuffer, _pipelineLayout, _currentFrame);
+	_ftScene->drawScene(commandBuffer, _ftGraphicsPipeline, _currentFrame);
 	// gui
 	_ftGui->render(commandBuffer);
 
@@ -610,13 +443,7 @@ void ft::Application::drawFrame() {
 		return;
 	}
 
-	// update the uniform buffer object data
-//	updateUniformBuffer(_currentFrame);
-//	updateInstanceData();
-
-
 	// recording the command buffer
-//	_ftCommandBuffers[_currentFrame]->reset();
 	recordCommandBuffer(_ftCommandBuffers[_currentFrame], result.second);
 
 	// submitting the command buffer
@@ -692,26 +519,13 @@ void ft::Application::recreateSwapChain() {
 	// handle resize
 	vkDeviceWaitIdle(_ftDevice->getVKDevice());
 	auto preferredMode = _ftSwapChain->getPreferredPresentMode();
-	cleanUpSwapChain();
 
+	_ftSwapChain.reset();
 	_ftSwapChain = std::make_shared<SwapChain>(_ftPhysicalDevice, _ftDevice, _ftSurface,
 											   _ftWindow->queryCurrentWidthHeight().first,
 											   _ftWindow->queryCurrentWidthHeight().second,
 											   preferredMode);
-
-	createColorResources();
-	createDepthResources();
-	createFramebuffers();
-}
-
-void ft::Application::cleanUpSwapChain() {
-
-	_ftColorImage.reset();
-
-	for (auto fb : _swapChainFramebuffers) {
-		vkDestroyFramebuffer(_ftDevice->getVKDevice(), fb, nullptr);
-	}
-	_ftSwapChain.reset();
+	_ftSwapChain->createFrameBuffers(_ftRenderPass);
 }
 
 // create descriptor set layout
@@ -760,23 +574,6 @@ void ft::Application::createUniformBuffers() {
 											.setMappedFlags(0)
 											.build(_ftDevice));
 	}
-}
-
-void ft::Application::updateUniformBuffer(uint32_t currentImage) {
-	static auto startTime = std::chrono::high_resolution_clock::now();
-
-	auto currentTime = std::chrono::high_resolution_clock::now();
-	float time = std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-	(void) time;
-	// calculate the data
-	UniformBufferObject ubo{};
-//	ubo.model = glm::rotate(glm::mat4(1.0f), time * glm::radians(10.0f), glm::linearRand(glm::vec3(0.0f), glm::vec3(1.0f)));
-	ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	ubo.proj = glm::perspective(glm::radians(45.0f), (float)_ftSwapChain->getVKSwapChainExtent().width / (float)_ftSwapChain->getVKSwapChainExtent().height, 1.0f, 10.0f);
-	ubo.proj[1][1] *= -1;
-
-	// copy the data to the buffer
-	_ftUniformBuffers[currentImage]->copyToMappedData(&ubo, sizeof(ubo));
 }
 
 // create descriptor pool
@@ -865,7 +662,7 @@ void ft::Application::createDescriptorSets() {
 		VkDescriptorImageInfo descriptorImageInfo{};
 		descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		descriptorImageInfo.imageView = _ftTextureImage->getVKImageView();
-		descriptorImageInfo.sampler = _textureSampler;
+		descriptorImageInfo.sampler = _ftSampler->getVKSampler();
 
 		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeDescriptorSets[1].dstSet = _descriptorSets[i];
@@ -919,7 +716,7 @@ void ft::Application::createTextureImage() {
 						  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, _mipLevels);
 
 	// copy the buffer to the image
-	stagingBuffer->copyToImage(_ftCommandPool, _ftTextureImage, texWidth, texHeight);
+	stagingBuffer->copyToImage(_ftTextureImage, texWidth, texHeight);
 
 	// generate mip maps
 	generateMipmaps(_ftTextureImage->getVKImage(), VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, _mipLevels);
@@ -931,7 +728,7 @@ void ft::Application::createTextureImage() {
 void ft::Application::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
 
 	// create a command buffer for transition
-	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice, _ftCommandPool);
+	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice);
 	commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 
@@ -987,103 +784,6 @@ void ft::Application::transitionImageLayout(VkImage image, VkFormat format, VkIm
 	commandBuffer->submit(_ftDevice->getVKGraphicsQueue());
 }
 
-// texture image sampler
-void ft::Application::createTextureSampler() {
-
-	VkPhysicalDeviceProperties properties = _ftDevice->getVKPhysicalDeviceProperties();
-
-	VkSamplerCreateInfo samplerCreateInfo{};
-	samplerCreateInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerCreateInfo.magFilter = VK_FILTER_LINEAR;
-	samplerCreateInfo.minFilter = VK_FILTER_LINEAR;
-	samplerCreateInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerCreateInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerCreateInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	samplerCreateInfo.anisotropyEnable = VK_TRUE;
-	samplerCreateInfo.maxAnisotropy = properties.limits.maxSamplerAnisotropy;
-	samplerCreateInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	samplerCreateInfo.unnormalizedCoordinates = VK_FALSE;
-	samplerCreateInfo.compareEnable = VK_FALSE;
-	samplerCreateInfo.compareOp = VK_COMPARE_OP_ALWAYS;
-	samplerCreateInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-	samplerCreateInfo.mipLodBias = 0.0f;
-	samplerCreateInfo.minLod = 0.0f;
-	samplerCreateInfo.maxLod = VK_LOD_CLAMP_NONE;
-
-	if (vkCreateSampler(_ftDevice->getVKDevice(), &samplerCreateInfo, nullptr, &_textureSampler) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create a texture sampler!");
-	}
-}
-
-// depth image and view
-void ft::Application::createDepthResources() {
-	// find optimal depth format supported by the device
-	VkFormat depthFormat = _ftDevice->findDepthFormat();
-	_ftDepthImage = _ftImageBuilder->setWidthHeight(_ftSwapChain->getWidth(), _ftSwapChain->getHeight())
-			.setMipLevel(1)
-			.setSampleCount(_ftDevice->getMSAASamples())
-			.setFormat(depthFormat)
-			.setTiling(VK_IMAGE_TILING_OPTIMAL)
-			.setUsageFlags(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-			.setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-			.setAspectFlags(VK_IMAGE_ASPECT_DEPTH_BIT)
-			.build(_ftDevice);
-
-	transitionImageLayout(_ftDepthImage->getVKImage(), depthFormat, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
-}
-
-// loading a model
-void ft::Application::loadModel() {
-	tinyobj::attrib_t	attrib;
-	std::vector<tinyobj::shape_t> shapes;
-	std::vector<tinyobj::material_t> materials;
-	std::string warn, err;
-
-	if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, MODEL_PATH.c_str())) {
-		throw std::runtime_error(warn + err);
-	}
-
-	std::unordered_map<Vertex, uint32_t> uniqueVertices{};
-
-	for (const auto& shape: shapes) {
-		for (const auto& index: shape.mesh.indices) {
-			Vertex vertex{};
-
-			vertex.pos = {
-					attrib.vertices[3 * index.vertex_index + 0],
-					attrib.vertices[3 * index.vertex_index + 1],
-					attrib.vertices[3 * index.vertex_index + 2],
-			};
-
-			if (index.normal_index >= 0)
-				vertex.normal = {
-						attrib.normals[3 * index.normal_index + 0],
-						attrib.normals[3 * index.normal_index + 1],
-						attrib.normals[3 * index.normal_index + 2],
-				};
-
-			if (index.texcoord_index >= 0)
-				vertex.texCoord =  {
-						attrib.texcoords[2 * index.texcoord_index + 0],
-						1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
-				};
-
-			vertex.color = {1.0f, 1.0f, 1.0f};
-
-			if (uniqueVertices.count(vertex) == 0) {
-				uniqueVertices[vertex] = static_cast<uint32_t>(_vertices.size());
-				_vertices.push_back(vertex);
-			}
-
-			_indices.push_back(uniqueVertices[vertex]);
-		}
-	}
-
-	std::cout << "vertices: " << _vertices.size() << std::endl;
-	std::cout << "indices: " << _indices.size() << std::endl;
-
-}
-
 // generate mipmaps
 void ft::Application::generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels) {
 	// check if the image format supports linear blitting
@@ -1093,7 +793,7 @@ void ft::Application::generateMipmaps(VkImage image, VkFormat imageFormat, int32
 		throw std::runtime_error("texture image format does not support linear blitting!");
 	}
 
-	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice, _ftCommandPool);
+	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice);
 	commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 
@@ -1166,34 +866,7 @@ void ft::Application::generateMipmaps(VkImage image, VkFormat imageFormat, int32
 	commandBuffer->submit(_ftDevice->getVKGraphicsQueue());
 }
 
-// create multisampling image target
-void ft::Application::createColorResources() {
-	_ftColorImage = _ftImageBuilder->setWidthHeight(_ftSwapChain->getWidth(), _ftSwapChain->getHeight())
-			.setMipLevel(1)
-			.setSampleCount(_ftDevice->getMSAASamples())
-			.setFormat(_ftSwapChain->getVKSwapChainImageFormat())
-			.setTiling(VK_IMAGE_TILING_OPTIMAL)
-			.setUsageFlags(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-			.setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
-			.setAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT)
-			.build(_ftDevice);
-}
-
-std::vector<char> ft::Application::readFile(const std::string& filename) {
-	std::ifstream file(filename, std::ios::ate | std::ios::binary);
-	if (!file.is_open()) {
-		throw std::runtime_error("failed to open file " + filename);
-	}
-	std::streamsize fileSize = file.tellg();
-	std::vector<char> buffer(fileSize);
-	file.seekg(0);
-	file.read(buffer.data(), fileSize);
-	file.close();
-	return buffer;
-}
-
 void ft::Application::updateScene(int key) {
-	std::cout << "key: " << key << std::endl;
 	if (key == _ftWindow->KEY(KeyboardKeys::KEY_UP)) {
 		_ftScene->getCamera()->vRotate(-10.0f);
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_DOWN)) {

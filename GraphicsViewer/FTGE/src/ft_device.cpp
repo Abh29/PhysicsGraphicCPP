@@ -1,11 +1,13 @@
+#include <utility>
+
 #include "../include.h"
 #include "../includes/ft_device.h"
 
 
-ft::Device::Device(std::shared_ptr<PhysicalDevice>& physicalDevice,
+ft::Device::Device(std::shared_ptr<PhysicalDevice> physicalDevice,
 				   std::vector<const char *> &validationLayers,
 				   std::vector<const char *> &deviceExtensions):
-		_ftPhysicalDevice(physicalDevice)
+		_ftPhysicalDevice(std::move(physicalDevice))
 		{
 			ft::QueueFamilyIndices indices = _ftPhysicalDevice->getQueueFamilyIndices();
 			std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
@@ -49,11 +51,12 @@ ft::Device::Device(std::shared_ptr<PhysicalDevice>& physicalDevice,
 
 			vkGetDeviceQueue(_device, indices.graphicsFamily.value(), 0, &_graphicsQueue);
 			vkGetDeviceQueue(_device, indices.presentFamily.value(), 0, &_presentQueue);
-
+			createCommandPool();
 		}
 
 
 ft::Device::~Device() {
+	vkDestroyCommandPool(_device, _commandPool, nullptr);
 	vkDestroyDevice(_device, nullptr);
 }
 
@@ -111,6 +114,22 @@ VkFormat ft::Device::findDepthFormat() const {
 bool ft::Device::hasStencilComponent(VkFormat format) const {
 	return format == VK_FORMAT_D16_UNORM_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
+
+void ft::Device::createCommandPool() {
+	QueueFamilyIndices queueFamilyIndices = getQueueFamilyIndices();
+	VkCommandPoolCreateInfo poolCreateInfo{};
+	poolCreateInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+	poolCreateInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+	poolCreateInfo.queueFamilyIndex = queueFamilyIndices.graphicsFamily.value();
+
+	if (vkCreateCommandPool(_device, &poolCreateInfo, nullptr, &_commandPool) != VK_SUCCESS) {
+		throw std::runtime_error("failed to create a command pool!");
+	}
+}
+
+VkCommandPool ft::Device::getVKCommandPool() const {return _commandPool;}
+
+
 
 ft::QueueFamilyIndices ft::Device::getQueueFamilyIndices() const {
 	return _ftPhysicalDevice->getQueueFamilyIndices();

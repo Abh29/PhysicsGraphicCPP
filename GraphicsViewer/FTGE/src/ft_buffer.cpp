@@ -58,14 +58,14 @@ void ft::Buffer::copyToMappedData(void *src, uint32_t size, uint32_t offset) {
 	std::memcpy((u_char *)_mappedData + offset, src, size);
 }
 
-void ft::Buffer::copyToBuffer(ft::CommandPool::pointer &commandPool, ft::Buffer::pointer &dst,
+void ft::Buffer::copyToBuffer(ft::Buffer::pointer &dst,
 							  VkDeviceSize size, VkDeviceSize srcOffset, VkDeviceSize dstOffset) const {
 	VkBufferCopy	copyRegion{};
 	copyRegion.srcOffset = srcOffset;
 	copyRegion.dstOffset = dstOffset;
 	copyRegion.size = size;
 
-	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice, commandPool);
+	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice);
 	commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	vkCmdCopyBuffer(commandBuffer->getVKCommandBuffer(), _buffer, dst->_buffer, 1, &copyRegion);
 	commandBuffer->end();
@@ -76,10 +76,10 @@ bool ft::Buffer::isMapped() const {
 	return _isMapped;
 }
 
-void ft::Buffer::copyToImage(ft::CommandPool::pointer &commandPool, ft::Image::pointer &image, uint32_t width,
+void ft::Buffer::copyToImage(ft::Image::pointer &image, uint32_t width,
 							 uint32_t height) {
 
-	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice, commandPool);
+	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice);
 	commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 	VkBufferImageCopy region{};

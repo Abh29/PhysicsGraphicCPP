@@ -3,17 +3,17 @@
 ft::Shader::Shader(ft::Device::pointer &device, const std::string& shaderPath, ShaderType shaderType) :
 _shaderPath(shaderPath),
 _shaderType(shaderType),
-_device(device)
+_ftDevice(device)
 {
 	auto shaderCode = readFile(_shaderPath);
 	createShaderModule(shaderCode);
 }
 
 ft::Shader::~Shader() {
-	vkDestroyShaderModule(_device->getVKDevice(), _shaderModule, nullptr);
+	vkDestroyShaderModule(_ftDevice->getVKDevice(), _shaderModule, nullptr);
 }
 
-VkShaderModule ft::Shader::getShaderModule() const {return _shaderModule;}
+VkShaderModule ft::Shader::getVKShaderModule() const {return _shaderModule;}
 ft::Shader::ShaderType ft::Shader::getShaderType() const {return _shaderType;}
 
 std::vector<char> ft::Shader::readFile(const std::string &filename) {
@@ -35,7 +35,7 @@ void ft::Shader::createShaderModule(const std::vector<char> &code) {
 	createInfo.codeSize = code.size();
 	createInfo.pCode = reinterpret_cast<const uint32_t *>(code.data());
 	// the alignment requirements are satisfied by std::allocator in std::vector
-	if (vkCreateShaderModule(_device->getVKDevice(), &createInfo, nullptr, &_shaderModule) != VK_SUCCESS) {
+	if (vkCreateShaderModule(_ftDevice->getVKDevice(), &createInfo, nullptr, &_shaderModule) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create a shader module!");
 	}
 }

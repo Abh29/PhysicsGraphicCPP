@@ -17,6 +17,7 @@ namespace ft {
 			FT_COMPUTE_SHADER
 		};
 
+		using pointer = std::shared_ptr<Shader>;
 
 		Shader(Device::pointer &device, const std::string& shaderPath, ShaderType shaderType);
 		~Shader();
@@ -25,7 +26,7 @@ namespace ft {
 		Shader operator=(const Shader& other) = delete;
 
 
-		VkShaderModule getShaderModule() const;
+		VkShaderModule getVKShaderModule() const;
 		ShaderType getShaderType() const;
 
 	private:
@@ -37,7 +38,7 @@ namespace ft {
 		std::string					_shaderPath;
 		VkShaderModule 				_shaderModule;
 		const ShaderType 			_shaderType;
-		std::shared_ptr<Device>		_device;
+		Device::pointer 			_ftDevice;
 
 	};
 

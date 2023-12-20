@@ -4,13 +4,13 @@
 #include "ft_headers.h"
 #include "ft_defines.h"
 #include "ft_surface.h"
-#include "ft_physicalDevice.h"
-
+#include "ft_renderPass.h"
 
 namespace ft {
 
 	class PhysicalDevice;
 	class Device;
+	class Image;
 
 	class SwapChain {
 	public:
@@ -37,6 +37,8 @@ namespace ft {
 		float getAspect() const;
 		std::pair<VkResult, uint32_t> acquireNextImage(VkSemaphore semaphore = VK_NULL_HANDLE, VkFence fence = VK_NULL_HANDLE);
 		[[nodiscard]] VkPresentModeKHR getPreferredPresentMode() const;
+		void createFrameBuffers(RenderPass::pointer renderPass);
+		std::vector<VkFramebuffer> &getFrameBuffers();
 
 	private:
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -44,6 +46,8 @@ namespace ft {
 		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
 		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilitiesKhr);
 		void createImageViews();
+		void createColorResources();
+		void createDepthResources();
 
 		std::shared_ptr<PhysicalDevice>		_ftPhysicalDevice;
 		std::shared_ptr<Device>				_ftDevice;
@@ -53,6 +57,9 @@ namespace ft {
 		VkExtent2D 							_swapChainExtent;
 		std::vector<VkImage>				_swapChainImages;
 		std::vector<VkImageView>			_swapChainImageViews;
+		std::vector<VkFramebuffer>			_frameBuffers;
+		std::shared_ptr<Image>				_ftDepthImage;
+		std::shared_ptr<Image>				_ftColorImage;
 		VkPresentModeKHR 					_preferredMode;
 		uint32_t 							_width;
 		uint32_t 							_height;

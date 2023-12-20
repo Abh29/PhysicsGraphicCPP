@@ -2,8 +2,8 @@
 #include "../includes/ft_scene.h"
 
 
-ft::Scene::Scene(ft::Device::pointer device, ft::CommandPool::pointer pool, std::vector<ft::Buffer::pointer> ubos):
-_ftDevice(device), _ftCommandPool(pool), _ftUniformBuffers(ubos) {
+ft::Scene::Scene(ft::Device::pointer device, std::vector<ft::Buffer::pointer> ubos):
+_ftDevice(device), _ftUniformBuffers(ubos) {
 
 	// point lights
 	_ubo.pLCount = 0;
@@ -14,10 +14,10 @@ _ftDevice(device), _ftCommandPool(pool), _ftUniformBuffers(ubos) {
 	_generalLighting.ambient = 0.2f;
 }
 
-void ft::Scene::drawScene(ft::CommandBuffer::pointer commandBuffer, VkPipelineLayout layout, uint32_t index) {
+void ft::Scene::drawScene(ft::CommandBuffer::pointer commandBuffer, ft::GraphicsPipeline::pointer pipeline, uint32_t index) {
 
 	// push constant
-	vkCmdPushConstants(commandBuffer->getVKCommandBuffer(), layout, VK_SHADER_STAGE_VERTEX_BIT,
+	vkCmdPushConstants(commandBuffer->getVKCommandBuffer(), pipeline->getVKPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT,
 					   0, static_cast<uint32_t>(sizeof(_generalLighting)), &_generalLighting);
 
 	_ftUniformBuffers[index]->copyToMappedData(&_ubo, sizeof(_ubo));
@@ -29,8 +29,9 @@ void ft::Scene::drawScene(ft::CommandBuffer::pointer commandBuffer, VkPipelineLa
 }
 
 uint32_t ft::Scene::addObjectToTheScene(std::string objectPath, ft::InstanceData data) {
-	Model::pointer model = std::make_shared<Model>(_ftDevice, _ftCommandPool, objectPath, _ftUniformBuffers.size());
+	Model::pointer model = std::make_shared<Model>(_ftDevice, objectPath, _ftUniformBuffers.size());
 	data.normalMatrix = glm::inverseTranspose(data.model * _ubo.view);
+	data.id = Model::uint32ToVec3(model->getFirstId());
 	model->getCopies()[0] = data;
 	_models.push_back(model);
 	return model->getFirstId();
