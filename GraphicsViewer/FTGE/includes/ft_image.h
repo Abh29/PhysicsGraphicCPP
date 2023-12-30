@@ -24,6 +24,7 @@ namespace ft {
 		static void transitionImageLayout(Device::pointer device, VkImage image, VkFormat format,
 										  VkImageLayout oldLayout, VkImageLayout newLayout,
 										  uint32_t mipLevels);
+		void generateMipmaps(VkFormat imageFormat);
 
 	private:
 

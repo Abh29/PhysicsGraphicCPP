@@ -65,6 +65,8 @@ namespace ft {
 								   VkImageLayout layout, const Image::pointer& image,
 								   const Sampler::pointer& sampler);
 		[[nodiscard]] VkDescriptorSet getVKDescriptorSet() const;
+		[[nodiscard]] VkDescriptorSet& getVKDescriptorSet();
+		[[nodiscard]] DescriptorSetLayout::pointer getDescriptorSetLayout() const;
 
 	private:
 		Device::pointer 					_ftDevice;

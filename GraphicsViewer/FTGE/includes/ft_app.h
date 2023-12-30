@@ -19,6 +19,8 @@
 #include "ft_pipeline.h"
 #include "ft_sampler.h"
 #include "ft_renderer.h"
+#include "ft_descriptor.h"
+#include "ft_rendering_systems.h"
 
 namespace ft {
 
@@ -26,8 +28,6 @@ namespace ft {
 	public:
 		static constexpr uint32_t W_WIDTH = 800;
 		static constexpr uint32_t W_HEIGHT = 600;
-		const std::string MODEL_PATH = "models/viking_room.obj";
-//		const std::string MODEL_PATH = "models/Sphere.obj";
 		const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 		Application();
@@ -51,7 +51,7 @@ namespace ft {
 		Gui::pointer 						_ftGui;
 		Scene::pointer 						_ftScene;
 		Renderer::pointer					_ftRenderer;
-
+		SimpleRdrSys::pointer 				_ftSimpleRdrSys;
 
 		std::shared_ptr<ImageBuilder>		_ftImageBuilder;
 		std::shared_ptr<BufferBuilder>		_ftBufferBuilder;
@@ -59,7 +59,10 @@ namespace ft {
 		Image::pointer						_ftTextureImage;
 		Image::pointer						_ftDepthImage;
 		Image::pointer						_ftColorImage;
+		DescriptorPool::pointer 			_ftDescriptorPool;
+		std::vector<DescriptorSet::pointer>	_ftDescriptorSets;
 		int									_topology = 0;
+
 
 
 		/****************************triangle app ************************/
@@ -68,17 +71,11 @@ namespace ft {
 		void cleanup();
 		void createGraphicsPipeline();
 		void drawFrame();
-		void createDescriptorSetLayout();
-		void createDescriptorPool();
 		void createDescriptorSets();
 		void createTextureImage();
 		void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
 		uint32_t 								_currentFrame = 0;
-		VkDescriptorSetLayout 					_descriptorSetLayout;
-		VkDescriptorPool 						_descriptorPool;
-		std::vector<VkDescriptorSet>			_descriptorSets;
-		uint32_t 								_mipLevels;
 	};
 
 

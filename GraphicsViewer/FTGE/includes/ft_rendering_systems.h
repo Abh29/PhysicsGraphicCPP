@@ -5,6 +5,9 @@
 #include "ft_defines.h"
 #include "ft_device.h"
 #include "ft_pipeline.h"
+#include "ft_descriptor.h"
+#include "ft_renderer.h"
+#include "ft_vertex.h"
 
 
 namespace ft {
@@ -14,46 +17,46 @@ namespace ft {
 	public:
 		using pointer = std::shared_ptr<RenderingSystem>;
 
-		explicit RenderingSystem(Device::pointer);
+		RenderingSystem(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
 		virtual ~RenderingSystem() = default;
 
-		void createDescriptorPool();
 
 		[[nodiscard]] GraphicsPipeline::pointer getGraphicsPipeline() const;
-		[[nodiscard]] VkDescriptorSetLayout getVKDescriptorSetLayout() const;
-		[[nodiscard]] std::vector<VkDescriptorSet> getVKDescriptorSets() const;
-		[[nodiscard]] VkDescriptorPool getVKDescriptorPool() const;
+		[[nodiscard]] DescriptorSetLayout::pointer getDescriptorSetLayout() const;
+		[[nodiscard]] std::vector<DescriptorSet::pointer> getDescriptorSets() const;
+		[[nodiscard]] DescriptorPool::pointer getDescriptorPool() const;
 
 	protected:
 
 		Device::pointer 							_ftDevice;
+		Renderer::pointer							_ftRenderer;
+		DescriptorPool::pointer						_ftDescriptorPool;
+		DescriptorSetLayout::pointer 				_ftDescriptorSetLayout;
+		std::vector<DescriptorSet::pointer>			_ftDescriptorSets;
 		GraphicsPipeline::pointer					_ftPipeline;
-		VkDescriptorSetLayout 						_descriptorSetLayout;
-		VkDescriptorPool 							_descriptorPool;
-		std::vector<VkDescriptorSet>				_descriptorSets;
 
 	};
 
 
-	class SimpleRdrSys : public RenderingSystem {
+	class SimpleRdrSys final : public RenderingSystem {
 		
 	public:
 		using pointer = std::shared_ptr<SimpleRdrSys>;
 
-		explicit SimpleRdrSys(Device::pointer);
-		~SimpleRdrSys() override;
+		explicit SimpleRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+		~SimpleRdrSys() override = default;
 
-		void createDescriptorSetLayout();
-		void createDescriptorSets();
-		void createGraphicsPipeline();
+		void populateUBODescriptors(std::vector<Buffer::pointer> ubos);
 
 	private:
-		Image::pointer							_ftDepthImage;
-		Image::pointer							_ftColorImage;
+		void createDescriptors();
+		void createGraphicsPipeline();
 
 	};
 
+	class TexturedRdrSys final : public RenderingSystem {
 
+	};
 
 
 }

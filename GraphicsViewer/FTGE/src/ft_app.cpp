@@ -91,12 +91,14 @@ void ft::Application::initApplication() {
 	_ftGui = std::make_shared<Gui>(_ftInstance, _ftPhysicalDevice, _ftDevice,
 								   _ftWindow, _ftRenderer->getRenderPass(), MAX_FRAMES_IN_FLIGHT);
 
+	_ftDescriptorPool = std::make_shared<ft::DescriptorPool>(_ftDevice);
+
+	_ftSimpleRdrSys = std::make_shared<ft::SimpleRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
+	_ftSimpleRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
 
 	createTextureImage();
-	createDescriptorSetLayout();
-	createGraphicsPipeline();
-	createDescriptorPool();
-	createDescriptorSets();
+//	createDescriptorSets();
+//	createGraphicsPipeline();
 }
 
 void ft::Application::createScene() {
@@ -110,18 +112,8 @@ void ft::Application::createScene() {
 				.setAspect(_ftRenderer->getSwapChain()->getAspect())
 				.build());
 	_ftScene->setGeneralLight({1.0f,1.0f,1.0f}, {10.0, -50.0, 10.0}, 0.2f);
-	ft::InstanceData data;
+	ft::InstanceData data{};
 	uint32_t  id;	(void) id;
-
-//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	data.model = glm::translate(data.model, glm::vec3{1.0f, 0.0f, 1.0f});
-//	data.color = {0.0f, 2.0f, 0.9f};
-//	auto id = _ftScene->addObjectToTheScene("models/viking_room.obj", data);
-//
-//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(-90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-//	data.model = glm::translate(data.model, glm::vec3{0.0f, 0.0f, 3.0f});
-//	data.color = {0.9f, 2.0f, 0.9f};
-//	id = _ftScene->addObjectCopyToTheScene(id, data);
 
 	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	data.model = glm::scale(data.model, {10.0f, 0.1f, 0.1f});
@@ -151,16 +143,16 @@ void ft::Application::createScene() {
 
 
 	data.model = glm::mat4(1.0f);
-	data.color = {0.95f, 0.2f, 0.0f};
+	data.color = {0.9f, 0.9f, 0.9f};
 	data.normalMatrix = glm::mat4(1.0f);
 //	data.model = glm::scale(data.model, {10, 10, 10});
 	data.model = glm::rotate(data.model, glm::radians(90.0f), {1,0,0});
-	id = _ftScene->addObjectToTheScene("models/sphere.mtl.obj", data);
+	id = _ftScene->addObjectToTheScene("models/viking_room.obj", data);
 
-	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	data.model = glm::translate(data.model, glm::vec3{1.0f, -2.0f, 0.0f});
-	data.color = {0.5f, 0.95f, 0.2f};
-	id = _ftScene->addObjectCopyToTheScene(id, data);
+//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	data.model = glm::translate(data.model, glm::vec3{1.0f, -2.0f, 0.0f});
+//	data.color = {0.5f, 0.95f, 0.2f};
+//	id = _ftScene->addObjectCopyToTheScene(id, data);
 
 //
 //	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
@@ -200,8 +192,6 @@ void ft::Application::printFPS() {
 
 void ft::Application::cleanup() {
 	_ftRenderer->getSwapChain().reset();
-	vkDestroyDescriptorPool(_ftDevice->getVKDevice(), _descriptorPool, nullptr);
-	vkDestroyDescriptorSetLayout(_ftDevice->getVKDevice(), _descriptorSetLayout, nullptr);
 }
 
 // graphics pipeline
@@ -314,7 +304,9 @@ void ft::Application::createGraphicsPipeline() {
 
 	pipelineConfig.pushConstantRanges.push_back(pushConstantRange);
 
-	_ftGraphicsPipeline = std::make_shared<ft::GraphicsPipeline>(_ftDevice, _ftRenderer->getRenderPass(), _descriptorSetLayout, pipelineConfig);
+	_ftGraphicsPipeline = std::make_shared<ft::GraphicsPipeline>(_ftDevice, _ftRenderer->getRenderPass(),
+																 _ftDescriptorSets[0]->getDescriptorSetLayout()->getVKLayout(),
+																 pipelineConfig);
 }
 
 // draw a frame
@@ -331,13 +323,21 @@ void ft::Application::drawFrame() {
 	// for each pipeline
 
 	// bind the graphics pipeline
-	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftGraphicsPipeline->getVKPipeline());
+//	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftGraphicsPipeline->getVKPipeline());
+	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftSimpleRdrSys->getGraphicsPipeline()->getVKPipeline());
 	// bind the descriptor sets
+//	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+//							_ftGraphicsPipeline->getVKPipelineLayout(), 0, 1, &(_ftDescriptorSets[_currentFrame]->getVKDescriptorSet()),
+//							0, nullptr);
+
 	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-							_ftGraphicsPipeline->getVKPipelineLayout(), 0, 1, &_descriptorSets[_currentFrame],
+							_ftSimpleRdrSys->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+							&(_ftSimpleRdrSys->getDescriptorSets()[_currentFrame]->getVKDescriptorSet()),
 							0, nullptr);
+
 	// scene
-	_ftScene->drawScene(commandBuffer, _ftGraphicsPipeline, _currentFrame);
+//	_ftScene->drawScene(commandBuffer, _ftGraphicsPipeline, _currentFrame);
+	_ftScene->drawScene(commandBuffer, _ftSimpleRdrSys->getGraphicsPipeline(), _currentFrame);
 
 	// gui
 	_ftGui->render(commandBuffer);
@@ -348,138 +348,30 @@ void ft::Application::drawFrame() {
 	_ftRenderer->endFrame(commandBuffer, index);
 }
 
-// create descriptor set layout
-void ft::Application::createDescriptorSetLayout() {
-	// create a descriptor binding for the uniform buffer object layout
-	VkDescriptorSetLayoutBinding	uboLayoutBinding{};
-	uboLayoutBinding.binding = 0;
-	uboLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	uboLayoutBinding.descriptorCount = 1;
-	uboLayoutBinding.stageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
-	uboLayoutBinding.pImmutableSamplers = nullptr;
-
-	// create a descriptor binding for the sampler layout
-	VkDescriptorSetLayoutBinding	samplerLayoutBinding{};
-	samplerLayoutBinding.binding = 1;
-	samplerLayoutBinding.descriptorCount = 1;
-	samplerLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	samplerLayoutBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	std::vector<VkDescriptorSetLayoutBinding> bindings = {
-			uboLayoutBinding,
-			samplerLayoutBinding
-	};
-
-
-	VkDescriptorSetLayoutCreateInfo layoutCreateInfo{};
-	layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	layoutCreateInfo.bindingCount = (uint32_t) bindings.size();
-	layoutCreateInfo.pBindings = bindings.data();
-
-	if (vkCreateDescriptorSetLayout(_ftDevice->getVKDevice(), &layoutCreateInfo, nullptr, &_descriptorSetLayout) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create a descriptor set layout!");
-	}
-}
-
-// create descriptor pool
-void ft::Application::createDescriptorPool() {
-
-	VkDescriptorPoolSize pool_sizes[] =
-	{
-			{ VK_DESCRIPTOR_TYPE_SAMPLER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1000 },
-			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC, 1000 },
-			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1000 },
-			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, 1000 }
-	};
-
-	VkDescriptorPoolCreateInfo pool_info = {};
-	pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-	pool_info.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-	pool_info.maxSets = 1000;
-	pool_info.poolSizeCount = std::size(pool_sizes);
-	pool_info.pPoolSizes = pool_sizes;
-
-//	std::array<VkDescriptorPoolSize, 2> poolSizes{};
-//
-//	// size of the ubo descriptor
-//	poolSizes[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-//	poolSizes[0].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-//
-//	// size of the sampler descriptor
-//	poolSizes[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-//	poolSizes[1].descriptorCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 2;
-//
-//	VkDescriptorPoolCreateInfo descriptorPoolCreateInfo{};
-//	descriptorPoolCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-//	descriptorPoolCreateInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-//	descriptorPoolCreateInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-//	descriptorPoolCreateInfo.pPoolSizes = poolSizes.data();
-//	descriptorPoolCreateInfo.maxSets = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT) * 2;
-
-	if (vkCreateDescriptorPool(_ftDevice->getVKDevice(), &pool_info, nullptr, &_descriptorPool) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create a descriptor pool!");
-	}
-}
-
 // create Descriptor sets
 void ft::Application::createDescriptorSets() {
-	_descriptorSets.resize(MAX_FRAMES_IN_FLIGHT);
+	_ftDescriptorSets.resize(ft::MAX_FRAMES_IN_FLIGHT);
 
-	// allocate the descriptor sets
-	std::vector<VkDescriptorSetLayout> layouts(MAX_FRAMES_IN_FLIGHT, _descriptorSetLayout);
-	VkDescriptorSetAllocateInfo descriptorSetAllocateInfo{};
-	descriptorSetAllocateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-	descriptorSetAllocateInfo.descriptorPool = _descriptorPool;
-	descriptorSetAllocateInfo.descriptorSetCount = static_cast<uint32_t>(MAX_FRAMES_IN_FLIGHT);
-	descriptorSetAllocateInfo.pSetLayouts = layouts.data();
+	// create the descriptor set layout
+	DescriptorSetLayoutBuilder dslBuilder;
+	auto layout = dslBuilder.addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
+				.addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
+				.build(_ftDevice);
 
-	if (vkAllocateDescriptorSets(_ftDevice->getVKDevice(), &descriptorSetAllocateInfo, _descriptorSets.data()) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create the descriptor sets!");
-	}
+	for(auto& set : _ftDescriptorSets)
+		set = _ftDescriptorPool->allocateSet(layout);
 
 	// populate every descriptor
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		// this is for ubo descriptor
-		VkDescriptorBufferInfo descriptorBufferInfo{};
-		descriptorBufferInfo.buffer = _ftRenderer->getUniformBuffers()[i]->getVKBuffer();
-		descriptorBufferInfo.offset = 0;
-		descriptorBufferInfo.range = sizeof(UniformBufferObject);
+	for (uint32_t i = 0; i < ft::MAX_FRAMES_IN_FLIGHT; ++i) {
 
-		std::array<VkWriteDescriptorSet, 2> writeDescriptorSets{};
-		writeDescriptorSets[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[0].dstSet = _descriptorSets[i];
-		writeDescriptorSets[0].dstBinding = 0;
-		writeDescriptorSets[0].dstArrayElement = 0;
-		writeDescriptorSets[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-		writeDescriptorSets[0].descriptorCount = 1;
-		writeDescriptorSets[0].pBufferInfo = &descriptorBufferInfo;
-		writeDescriptorSets[0].pImageInfo = nullptr;
-		writeDescriptorSets[0].pTexelBufferView = nullptr;
+		// this is for ubo descriptor
+		_ftDescriptorSets[i]->updateDescriptorBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+													 _ftRenderer->getUniformBuffers()[i], 0);
 
 		// this is for sampler descriptor
-		VkDescriptorImageInfo descriptorImageInfo{};
-		descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		descriptorImageInfo.imageView = _ftTextureImage->getVKImageView();
-		descriptorImageInfo.sampler = _ftRenderer->getSampler()->getVKSampler();
-
-		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		writeDescriptorSets[1].dstSet = _descriptorSets[i];
-		writeDescriptorSets[1].dstBinding = 1;
-		writeDescriptorSets[1].dstArrayElement = 0;
-		writeDescriptorSets[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-		writeDescriptorSets[1].descriptorCount = 1;
-		writeDescriptorSets[1].pBufferInfo = nullptr;
-		writeDescriptorSets[1].pImageInfo = &descriptorImageInfo;
-		writeDescriptorSets[1].pTexelBufferView = nullptr;
-
-		vkUpdateDescriptorSets(_ftDevice->getVKDevice(), (uint32_t) writeDescriptorSets.size(), writeDescriptorSets.data(), 0, nullptr);
+		_ftDescriptorSets[i]->updateDescriptorImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+													VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+													_ftTextureImage, _ftRenderer->getSampler());
 	}
 }
 
@@ -490,7 +382,7 @@ void ft::Application::createTextureImage() {
 	stbi_uc *pixels = stbi_load(TEXTURE_PATH.c_str(), &texWidth, &texHeight, &texChannels, STBI_rgb_alpha);
 	VkDeviceSize imageSize = texWidth * texHeight * 4;
 
-	_mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
+	uint32_t mipLevels = static_cast<uint32_t>(std::floor(std::log2(std::max(texWidth, texHeight)))) + 1;
 
 	if (!pixels) {
 		throw std::runtime_error("failed to load texture image!");
@@ -507,7 +399,7 @@ void ft::Application::createTextureImage() {
 
 	// create texture image on device with memory
 	_ftTextureImage = _ftImageBuilder->setWidthHeight(texWidth, texHeight)
-			.setMipLevel(_mipLevels)
+			.setMipLevel(mipLevels)
 			.setSampleCount(VK_SAMPLE_COUNT_1_BIT)
 			.setFormat(VK_FORMAT_R8G8B8A8_SRGB)
 			.setTiling(VK_IMAGE_TILING_OPTIMAL)
@@ -518,14 +410,14 @@ void ft::Application::createTextureImage() {
 
 	// transition the image layout for dst copy
 	Image::transitionImageLayout(_ftDevice, _ftTextureImage->getVKImage(), VK_FORMAT_R8G8B8A8_SRGB,
-						  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, _mipLevels);
+						  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
 
 	// copy the buffer to the image
 	stagingBuffer->copyToImage(_ftTextureImage, texWidth, texHeight);
 
 	// generate mip maps
-	generateMipmaps(_ftTextureImage->getVKImage(), VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, _mipLevels);
-
+//	generateMipmaps(_ftTextureImage->getVKImage(), VK_FORMAT_R8G8B8A8_SRGB, texWidth, texHeight, mipLevels);
+	_ftTextureImage->generateMipmaps(VK_FORMAT_R8G8B8A8_SRGB);
 	// clean up
 	stbi_image_free(pixels);
 }

@@ -78,6 +78,7 @@ ft::DescriptorSet::DescriptorSet(Device::pointer device, DescriptorSetLayout::po
 }
 
 VkDescriptorSet ft::DescriptorSet::getVKDescriptorSet() const {return _descriptorSet;}
+VkDescriptorSet& ft::DescriptorSet::getVKDescriptorSet() {return _descriptorSet;}
 
 bool ft::DescriptorSet::updateDescriptorBuffer(uint32_t binding, VkDescriptorType type, const Buffer::pointer& buffer,
 											   size_t offset) {
@@ -125,7 +126,7 @@ bool ft::DescriptorSet::updateDescriptorImage(uint32_t binding, VkDescriptorType
 	return true;
 }
 
-
+ft::DescriptorSetLayout::pointer ft::DescriptorSet::getDescriptorSetLayout() const {return _ftDSLayout;}
 /***********************************DescriptorPool****************************************/
 
 ft::DescriptorPool::DescriptorPool(Device::pointer device) : _ftDevice(std::move(device)), _currentPool(0) {
@@ -155,6 +156,7 @@ ft::DescriptorPool::DescriptorPool(Device::pointer device) : _ftDevice(std::move
 	if (vkCreateDescriptorPool(_ftDevice->getVKDevice(), &pool_info, nullptr, &pool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create a descriptor pool!");
 	}
+	_descriptorsPools.push_back(pool);
 }
 
 ft::DescriptorPool::~DescriptorPool() {
@@ -199,6 +201,7 @@ void ft::DescriptorPool::createNewPool() {
 	if (vkCreateDescriptorPool(_ftDevice->getVKDevice(), &pool_info, nullptr, &pool) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create a descriptor pool!");
 	}
+	_descriptorsPools.push_back(pool);
 	++_currentPool;
 }
 

@@ -20,6 +20,8 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES
 #    add the shader files here
         shaders/shader.vert
         shaders/shader.frag
+        shaders/SimpleRdrSys.vert
+        shaders/SimpleRdrSys.frag
         )
 
 foreach(GLSL_F ${GLSL_SOURCE_FILES})
