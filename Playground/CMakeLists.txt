@@ -16,6 +16,8 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES
         shaders/vertexShader.vert
         shaders/fragmentShader.frag
         shaders/computeShader.comp
+        shaders/18.frag
+        shaders/18.vert
     )
 
 foreach(GLSL_F ${GLSL_SOURCE_FILES})
@@ -59,8 +61,10 @@ add_executable(prog12 hello_rotating_square.cpp)
 add_executable(prog2 hello_triangle.cpp src/ObjectGen.cpp includes/ObjectGen.h includes/Object3d.h src/Object3d.cpp includes/Shapes3d.h includes/Vertex.h src/Vertex.cpp src/Shapes3d.cpp includes/Material.h)
 add_executable(prog3 load_model.cpp)
 add_executable(prog4 compute_shaders.cpp src/ObjectGen.cpp includes/ObjectGen.h includes/Object3d.h src/Object3d.cpp includes/Shapes3d.h includes/Vertex.h src/Vertex.cpp src/Shapes3d.cpp includes/Material.h)
+add_executable(tuto18 18_vertex_input.cpp)
 
 add_dependencies(prog2 Shaders Texture)
 add_dependencies(prog3 Shaders Texture Models)
 add_dependencies(prog4 Shaders Texture Models)
 add_dependencies(prog12 Shaders Texture Models)
+add_dependencies(tuto18 Shaders)

@@ -1,4 +1,4 @@
-#include "../include.h"
+#include "../includes/ft_pipeline.h"
 
 ft::GraphicsPipeline::GraphicsPipeline(Device::pointer device, RenderPass::pointer renderPass, VkDescriptorSetLayout descriptorSetLayout, PipelineConfig &config)
 : _ftDevice(device), _ftRenderPass(renderPass), _descriptorSetLayout(descriptorSetLayout) {

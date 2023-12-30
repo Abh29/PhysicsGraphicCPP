@@ -3,6 +3,16 @@
 
 #include "ft_headers.h"
 #include "ft_defines.h"
+#include "ft_window.h"
+#include "ft_surface.h"
+#include "ft_physicalDevice.h"
+#include "ft_device.h"
+#include "ft_image.h"
+#include "ft_buffer.h"
+#include "ft_command.h"
+#include "ft_renderPass.h"
+#include "ft_pipeline.h"
+#include "ft_sampler.h"
 
 namespace ft {
 
@@ -11,50 +21,43 @@ namespace ft {
 	public:
 		using pointer = std::shared_ptr<Renderer>;
 
-		Renderer(Device::pointer device);
+		Renderer(Window::pointer window, Surface::pointer surface,
+				 PhysicalDevice::pointer physicalDevice, Device::pointer device);
+
 		~Renderer();
 
-		CommandBuffer::pointer beginFrame();
-		void endFrame();
-		void beginRenderPass(CommandBuffer::pointer commandBuffer);
-		void endRenderPass(CommandBuffer::pointer commandBuffer);
-
+		std::pair<uint32_t, CommandBuffer::pointer> beginFrame();
+		void endFrame(CommandBuffer::pointer commandBuffer, uint32_t imageIndex);
+		void beginRenderPass(CommandBuffer::pointer commandBuffer, uint32_t imageIndex);
+		void endRenderPass(CommandBuffer::pointer commandBuffer, uint32_t imageIndex);
+		CommandBuffer::pointer getCurrentCommandBuffer();
+		[[nodiscard]] SwapChain::pointer getSwapChain() const;
+		[[nodiscard]] RenderPass::pointer getRenderPass() const;
+		[[nodiscard]] Sampler::pointer getSampler() const;
+		[[nodiscard]] std::vector<Buffer::pointer> getUniformBuffers() const;
 
 	private:
-
-		void createGraphicsPipeline();
-		void createFrameBuffers();
-		void recordCommandBuffer(const std::shared_ptr<CommandBuffer> &commandBuffer, uint32_t imageIndex);
-		void createSyncObjects();
+		void initRenderer();
+		void initRenderPasses();
 		void recreateSwapChain();
-		void cleanUpSwapChain();
-		void createDescriptorSetLayout();
 		void createUniformBuffers();
-		void createDescriptorPool();
-		void createDescriptorSets();
-		void createTextureImage();
-		void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
-		void createTextureSampler();
-		void createDepthResources();
-		void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
-		void createColorResources();
+		void createRenderResources();
 
-
+		Window::pointer							_ftWindow;
+		Surface::pointer						_ftSurface;
+		PhysicalDevice::pointer					_ftPhysicalDevice;
 		Device::pointer 						_ftDevice;
 		SwapChain::pointer 						_ftSwapChain;
 		std::shared_ptr<ImageBuilder>			_ftImageBuilder;
 		std::shared_ptr<BufferBuilder>			_ftBufferBuilder;
 		std::vector<CommandBuffer::pointer>		_ftCommandBuffers;
-		std::vector<VkFramebuffer>				_swapChainFramebuffers;
-		std::vector<VkSemaphore>				_imageAvailableSemaphores;
-		std::vector<VkSemaphore>				_renderFinishedSemaphores;
-		std::vector<VkFence>					_inFlightFences;
+		RenderPass::pointer						_ftRenderPass;
+		VkFramebuffer 							_pickingFrameBuffer;
+		RenderPass::pointer 					_ftPickingRenderPass;
 		uint32_t 								_currentFrame = 0;
-		VkDescriptorSetLayout 					_descriptorSetLayout;
-		VkDescriptorPool 						_descriptorPool;
-		std::vector<VkDescriptorSet>			_descriptorSets;
-		uint32_t 								_mipLevels;
-		VkSampler 								_textureSampler;
+		Image::pointer 							_ftPickingImage;
+		Sampler::pointer						_ftSampler;
+		std::vector<Buffer::pointer>			_ftUniformBuffers;
 	};
 
 }

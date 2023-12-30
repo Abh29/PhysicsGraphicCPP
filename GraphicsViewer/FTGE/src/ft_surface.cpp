@@ -1,4 +1,4 @@
-#include "../include.h"
+#include "../includes/ft_surface.h"
 
 ft::Surface::Surface(std::shared_ptr<Instance> instance,
 					 std::shared_ptr<Window> window) :

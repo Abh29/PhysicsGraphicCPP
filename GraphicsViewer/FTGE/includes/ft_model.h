@@ -36,6 +36,9 @@ namespace ft {
 		bool unselect(uint32_t id);
 		void selectAll();
 		void unselectAll();
+		void overrideFlags(uint32_t id, uint32_t flags);
+		void setFlags(uint32_t id, uint32_t flags);
+		void unsetFlags(uint32_t id, uint32_t flags);
 
 	private:
 		void loadModel();
@@ -46,6 +49,7 @@ namespace ft {
 		Device::pointer								_ftDevice;
 		std::array<uint32_t, MAX_COPY_COUNT>		_ids;
 		std::array<InstanceData, MAX_COPY_COUNT>	_copies;
+		std::array<uint32_t, MAX_COPY_COUNT>		_flags;
 		uint32_t 									_copiesCount;
 		Buffer::pointer 							_ftVertexBuffer;
 		Buffer::pointer 							_ftIndexBuffer;
@@ -54,7 +58,7 @@ namespace ft {
 		std::vector<uint32_t>						_indices;
 		std::string 								_modelPath;
 		bool 										_hasIndices;
-		std::array<bool, MAX_COPY_COUNT>			_selected;
+
 	};
 
 }

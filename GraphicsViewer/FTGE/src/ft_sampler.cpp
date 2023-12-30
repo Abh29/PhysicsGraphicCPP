@@ -1,4 +1,4 @@
-#include "../include.h"
+#include "../includes/ft_sampler.h"
 
 ft::Sampler::Sampler(Device::pointer device) : _ftDevice(std::move(device)) {
 	VkPhysicalDeviceProperties properties = _ftDevice->getVKPhysicalDeviceProperties();

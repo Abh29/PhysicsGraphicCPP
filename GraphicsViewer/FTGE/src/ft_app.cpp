@@ -15,7 +15,6 @@ _ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow", nullp
 
 	initEventListener();
 	initApplication();
-	initPushConstants();
 	createScene();
 }
 
@@ -82,43 +81,33 @@ void ft::Application::initApplication() {
 	_ftSurface = std::make_shared<Surface>(_ftInstance, _ftWindow);
 	_ftPhysicalDevice = std::make_shared<PhysicalDevice>(_ftInstance, _ftSurface, _deviceExtensions);
 	_ftDevice = std::make_shared<Device>(_ftPhysicalDevice, _validationLayers, _deviceExtensions);
-	_ftSwapChain = std::make_shared<SwapChain>(_ftPhysicalDevice, _ftDevice, _ftSurface,
-											   _ftWindow->queryCurrentWidthHeight().first,
-											   _ftWindow->queryCurrentWidthHeight().second,
-											   VK_PRESENT_MODE_FIFO_KHR);
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		_ftCommandBuffers.push_back(std::make_shared<CommandBuffer>(_ftDevice));
-	}
+	_ftRenderer = std::make_shared<ft::Renderer>(_ftWindow, _ftSurface, _ftPhysicalDevice, _ftDevice);
+
 
 	_ftImageBuilder = std::make_shared<ImageBuilder>();
 	_ftBufferBuilder = std::make_shared<BufferBuilder>();
 
-	initRenderPass();
-	_ftSwapChain->createFrameBuffers(_ftRenderPass);
 
 	_ftGui = std::make_shared<Gui>(_ftInstance, _ftPhysicalDevice, _ftDevice,
-								   _ftWindow, _ftRenderPass, MAX_FRAMES_IN_FLIGHT);
-	_ftSampler = std::make_shared<ft::Sampler>(_ftDevice);
+								   _ftWindow, _ftRenderer->getRenderPass(), MAX_FRAMES_IN_FLIGHT);
+
 
 	createTextureImage();
 	createDescriptorSetLayout();
 	createGraphicsPipeline();
-	createUniformBuffers();
 	createDescriptorPool();
 	createDescriptorSets();
-	createSyncObjects();
-
 }
 
 void ft::Application::createScene() {
 	CameraBuilder cameraBuilder;
-	_ftScene = std::make_shared<Scene>(_ftDevice, _ftUniformBuffers);
+	_ftScene = std::make_shared<Scene>(_ftDevice, _ftRenderer->getUniformBuffers());
 	_ftScene->setCamera(cameraBuilder.setEyePosition({5,-1,0})
 				.setTarget({1,-1,0})
 				.setUpDirection({0,1,0})
 				.setFOV(90)
 				.setZNearFar(0.5f, 30.0f)
-				.setAspect(_ftSwapChain->getAspect())
+				.setAspect(_ftRenderer->getSwapChain()->getAspect())
 				.build());
 	_ftScene->setGeneralLight({1.0f,1.0f,1.0f}, {10.0, -50.0, 10.0}, 0.2f);
 	ft::InstanceData data;
@@ -166,7 +155,7 @@ void ft::Application::createScene() {
 	data.normalMatrix = glm::mat4(1.0f);
 //	data.model = glm::scale(data.model, {10, 10, 10});
 	data.model = glm::rotate(data.model, glm::radians(90.0f), {1,0,0});
-	id = _ftScene->addObjectToTheScene("models/cube.mtl.obj", data);
+	id = _ftScene->addObjectToTheScene("models/sphere.mtl.obj", data);
 
 	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 	data.model = glm::translate(data.model, glm::vec3{1.0f, -2.0f, 0.0f});
@@ -185,51 +174,15 @@ void ft::Application::createScene() {
 //			{0.95f, 0.2f, 0.0f}
 //	});
 
-}
-
-void ft::Application::initRenderPass() {
-	ft::AttachmentBuilder attachmentBuilder;
-
-	ft::Attachment::pointer colorAttachment = attachmentBuilder
-			.setDescriptionFormat(_ftSwapChain->getVKSwapChainImageFormat())
-			.setDescriptionSamples(_ftDevice->getMSAASamples())
-			.setDescriptionLoadOp(VK_ATTACHMENT_LOAD_OP_CLEAR)
-			.setDescriptionStoreOp(VK_ATTACHMENT_STORE_OP_STORE)
-			.setDescriptionFinalLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-			.setReferenceImageLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-			.build(_ftColorImage);
-
-	ft::Attachment::pointer depthAttachment = attachmentBuilder
-			.setDescriptionFormat(_ftDevice->findDepthFormat())
-			.setDescriptionStoreOp(VK_ATTACHMENT_STORE_OP_DONT_CARE)
-			.setDescriptionFinalLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-			.setReferenceImageLayout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
-			.build(_ftDepthImage);
-
-	ft::Attachment::pointer colorResolver = attachmentBuilder
-			.setDescriptionFormat(_ftSwapChain->getVKSwapChainImageFormat())
-			.setDescriptionSamples(VK_SAMPLE_COUNT_1_BIT)
-			.setDescriptionLoadOp(VK_ATTACHMENT_LOAD_OP_DONT_CARE)
-			.setDescriptionStoreOp(VK_ATTACHMENT_STORE_OP_STORE)
-			.setDescriptionFinalLayout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR)
-			.setReferenceImageLayout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-			.build();
-
-	ft::SubPass::pointer subPass = std::make_shared<ft::SubPass>(VK_PIPELINE_BIND_POINT_GRAPHICS);
-	ft::SubpassDependency::pointer subpassDependency = std::make_shared<ft::SubpassDependency>(VK_SUBPASS_EXTERNAL, 0);
-
-	subpassDependency->setSrcStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT)
-	.setSrcAccessMask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT)
-	.setDstStageMask(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
-	.setDstAccessMask(VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
-
-	_ftRenderPass = std::make_shared<RenderPass>(_ftDevice);
-	_ftRenderPass->addSubpass(subPass);
-	_ftRenderPass->addSubpassDependency(subpassDependency);
-	_ftRenderPass->addColorAttachmentToSubpass(colorAttachment);
-	_ftRenderPass->setDepthStencilAttachmentToSubpass(depthAttachment);
-	_ftRenderPass->addResolveAttachmentToSubpass(colorResolver);
-	_ftRenderPass->create();
+//	data.model = glm::mat4(1.0f);
+//	data.color = {0.95f, 0.2f, 0.0f};
+//	data.normalMatrix = glm::mat4(1.0f);
+//	id = _ftScene->addObjectToTheScene("models/sphere.mtl.obj", data);
+//
+//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//	data.model = glm::translate(data.model, glm::vec3{1.0f, -2.0f, 0.0f});
+//	data.color = {0.5f, 0.95f, 0.2f};
+//	id = _ftScene->addObjectCopyToTheScene(id, data);
 
 }
 
@@ -246,16 +199,9 @@ void ft::Application::printFPS() {
 }
 
 void ft::Application::cleanup() {
-	_ftSwapChain.reset();
+	_ftRenderer->getSwapChain().reset();
 	vkDestroyDescriptorPool(_ftDevice->getVKDevice(), _descriptorPool, nullptr);
 	vkDestroyDescriptorSetLayout(_ftDevice->getVKDevice(), _descriptorSetLayout, nullptr);
-
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		vkDestroySemaphore(_ftDevice->getVKDevice(), _renderFinishedSemaphores[i], nullptr);
-		vkDestroySemaphore(_ftDevice->getVKDevice(), _imageAvailableSemaphores[i], nullptr);
-		vkDestroyFence(_ftDevice->getVKDevice(), _inFlightFences[i], nullptr);
-	}
-
 }
 
 // graphics pipeline
@@ -309,11 +255,11 @@ void ft::Application::createGraphicsPipeline() {
 	// view port and scissors
 	pipelineConfig.viewport.x = 0.0f;
 	pipelineConfig.viewport.y = 0.0f;
-	pipelineConfig.viewport.width = (float) _ftSwapChain->getVKSwapChainExtent().width;
-	pipelineConfig.viewport.height = (float) _ftSwapChain->getVKSwapChainExtent().height;
+	pipelineConfig.viewport.width = (float) _ftRenderer->getSwapChain()->getVKSwapChainExtent().width;
+	pipelineConfig.viewport.height = (float) _ftRenderer->getSwapChain()->getVKSwapChainExtent().height;
 
 	pipelineConfig.scissor.offset = {0, 0};
-	pipelineConfig.scissor.extent = _ftSwapChain->getVKSwapChainExtent();
+	pipelineConfig.scissor.extent = _ftRenderer->getSwapChain()->getVKSwapChainExtent();
 
 	// rasterizer
 	pipelineConfig.rasterizerState.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -368,164 +314,38 @@ void ft::Application::createGraphicsPipeline() {
 
 	pipelineConfig.pushConstantRanges.push_back(pushConstantRange);
 
-	_ftGraphicsPipeline = std::make_shared<ft::GraphicsPipeline>(_ftDevice, _ftRenderPass, _descriptorSetLayout, pipelineConfig);
-}
-
-
-// command buffer recording
-void ft::Application::recordCommandBuffer(const std::shared_ptr<CommandBuffer> &commandBuffer, uint32_t imageIndex) {
-
-	// begin command buffer
-	commandBuffer->beginRecording(0);
-
-	// starting render pass
-	std::array<VkClearValue, 2> clearValues = {};
-	clearValues[0].color =	{{0.0f, 0.0f, 0.0f, 1.0f}};
-	clearValues[1].depthStencil = {1.0f, 0};
-
-
-	VkRenderPassBeginInfo renderPassBeginInfo{};
-	renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-	renderPassBeginInfo.renderPass = _ftRenderPass->getVKRenderPass();
-	renderPassBeginInfo.framebuffer = _ftSwapChain->getFrameBuffers()[imageIndex];
-	renderPassBeginInfo.renderArea.offset = {0, 0};
-	renderPassBeginInfo.renderArea.extent = _ftSwapChain->getVKSwapChainExtent();
-	renderPassBeginInfo.clearValueCount = (uint32_t) clearValues.size();
-	renderPassBeginInfo.pClearValues = clearValues.data();
-
-	vkCmdBeginRenderPass(commandBuffer->getVKCommandBuffer(), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
-	// bind the graphics pipeline
-	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftGraphicsPipeline->getVKPipeline());
-
-	// set viewport and scissor
-	VkViewport viewport{};
-	viewport.x = 0.0f;
-	viewport.y = 0.0f;
-	viewport.width = static_cast<float>(_ftSwapChain->getVKSwapChainExtent().width);
-	viewport.height = static_cast<float>(_ftSwapChain->getVKSwapChainExtent().height);
-	viewport.minDepth = 0.0f;
-	viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(commandBuffer->getVKCommandBuffer(), 0, 1, &viewport);
-
-	VkRect2D scissor{};
-	scissor.offset = {0, 0};
-	scissor.extent = _ftSwapChain->getVKSwapChainExtent();
-	vkCmdSetScissor(commandBuffer->getVKCommandBuffer(), 0, 1, &scissor);
-
-	// bind the descriptor sets
-	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-							_ftGraphicsPipeline->getVKPipelineLayout(), 0, 1, &_descriptorSets[_currentFrame],
-							0, nullptr);
-
-	// scene
-	_ftScene->drawScene(commandBuffer, _ftGraphicsPipeline, _currentFrame);
-	// gui
-	_ftGui->render(commandBuffer);
-
-	// render pass end
-	vkCmdEndRenderPass(commandBuffer->getVKCommandBuffer());
-
-	// end command buffer
-	commandBuffer->end();
+	_ftGraphicsPipeline = std::make_shared<ft::GraphicsPipeline>(_ftDevice, _ftRenderer->getRenderPass(), _descriptorSetLayout, pipelineConfig);
 }
 
 // draw a frame
 void ft::Application::drawFrame() {
-	// wait for previous frame
-	vkWaitForFences(_ftDevice->getVKDevice(), 1, &_inFlightFences[_currentFrame], VK_TRUE, UINT64_MAX);
-	vkResetFences(_ftDevice->getVKDevice(), 1, &_inFlightFences[_currentFrame]);
+	CommandBuffer::pointer commandBuffer;
+	uint32_t index;
+	std::tie(index, commandBuffer) = _ftRenderer->beginFrame();
+	if (!commandBuffer) return;
 
-	// acquire and image from the swap chain
-	auto result = _ftSwapChain->acquireNextImage(_imageAvailableSemaphores[_currentFrame]);
-
-	if (result.first == VK_ERROR_OUT_OF_DATE_KHR) {
-		recreateSwapChain();
-		return;
-	}
+	// begin the render pass
+	_ftRenderer->beginRenderPass(commandBuffer, index);
 
 	// recording the command buffer
-	recordCommandBuffer(_ftCommandBuffers[_currentFrame], result.second);
+	// for each pipeline
 
-	// submitting the command buffer
-	VkSemaphore waitSemaphores[] = {_imageAvailableSemaphores[_currentFrame]};
-	VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
-	VkSemaphore signalSemaphores[] = {_renderFinishedSemaphores[_currentFrame]};
+	// bind the graphics pipeline
+	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftGraphicsPipeline->getVKPipeline());
+	// bind the descriptor sets
+	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+							_ftGraphicsPipeline->getVKPipelineLayout(), 0, 1, &_descriptorSets[_currentFrame],
+							0, nullptr);
+	// scene
+	_ftScene->drawScene(commandBuffer, _ftGraphicsPipeline, _currentFrame);
 
-	VkSubmitInfo submitInfo{};
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
+	// gui
+	_ftGui->render(commandBuffer);
 
-	_ftCommandBuffers[_currentFrame]->submit(_ftDevice->getVKGraphicsQueue(), submitInfo, _inFlightFences[_currentFrame]);
-
-	// presentation
-	VkSwapchainKHR	swapChains[] = {_ftSwapChain->getVKSwapChain()};
-
-	VkPresentInfoKHR presentInfoKhr{};
-	presentInfoKhr.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-	presentInfoKhr.waitSemaphoreCount = 1;
-	presentInfoKhr.pWaitSemaphores = signalSemaphores;
-	presentInfoKhr.swapchainCount = 1;
-	presentInfoKhr.pSwapchains = swapChains;
-	presentInfoKhr.pImageIndices = &result.second;
-	presentInfoKhr.pResults = nullptr;
-
-	VkResult result2 = vkQueuePresentKHR(_ftDevice->getVKPresentQueue(), &presentInfoKhr);
-
-	if (result2 == VK_ERROR_OUT_OF_DATE_KHR || result2 == VK_SUBOPTIMAL_KHR ) {
-		recreateSwapChain();
-	} else if (result2 != VK_SUCCESS) {
-		throw std::runtime_error("failed to acquire the swap chain image!");
-	}
-
-	_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
-}
-
-// semaphores and fences
-void ft::Application::createSyncObjects() {
-	_imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	_renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	_inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
-
-	VkSemaphoreCreateInfo semaphoreCreateInfo{};
-	semaphoreCreateInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-	VkFenceCreateInfo fenceCreateInfo{};
-	fenceCreateInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT; // this is for the first call
-
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		if (vkCreateSemaphore(_ftDevice->getVKDevice(), &semaphoreCreateInfo, nullptr, &_imageAvailableSemaphores[i]) != VK_SUCCESS ||
-			vkCreateSemaphore(_ftDevice->getVKDevice(), &semaphoreCreateInfo, nullptr, &_renderFinishedSemaphores[i]) != VK_SUCCESS ||
-			vkCreateFence(_ftDevice->getVKDevice(), &fenceCreateInfo, nullptr, &_inFlightFences[i]) != VK_SUCCESS) {
-			throw std::runtime_error("failed to create sync objects!");
-		}
-	}
-
-}
-
-// recreate swap chain (resize window event)
-void ft::Application::recreateSwapChain() {
-	// handle minimization
-	int width = 0, height = 0;
-	std::tie(width, height) = _ftWindow->queryCurrentWidthHeight();
-	while (width == 0 || height == 0) {
-		std::tie(width, height) = _ftWindow->queryCurrentWidthHeight();
-		_ftWindow->waitEvents();
-	}
-
-	// handle resize
-	vkDeviceWaitIdle(_ftDevice->getVKDevice());
-	auto preferredMode = _ftSwapChain->getPreferredPresentMode();
-
-	_ftSwapChain.reset();
-	_ftSwapChain = std::make_shared<SwapChain>(_ftPhysicalDevice, _ftDevice, _ftSurface,
-											   _ftWindow->queryCurrentWidthHeight().first,
-											   _ftWindow->queryCurrentWidthHeight().second,
-											   preferredMode);
-	_ftSwapChain->createFrameBuffers(_ftRenderPass);
+	// end the render pass
+	_ftRenderer->endRenderPass(commandBuffer, index);
+	// end the frame
+	_ftRenderer->endFrame(commandBuffer, index);
 }
 
 // create descriptor set layout
@@ -558,21 +378,6 @@ void ft::Application::createDescriptorSetLayout() {
 
 	if (vkCreateDescriptorSetLayout(_ftDevice->getVKDevice(), &layoutCreateInfo, nullptr, &_descriptorSetLayout) != VK_SUCCESS) {
 		throw std::runtime_error("failed to create a descriptor set layout!");
-	}
-}
-
-// create uniform buffers
-void ft::Application::createUniformBuffers() {
-	VkDeviceSize bufferSize = sizeof(UniformBufferObject);
-
-	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
-		_ftUniformBuffers.push_back(_ftBufferBuilder->setSize(bufferSize)
-											.setUsageFlags(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT)
-											.setMemoryProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
-											.setIsMapped(true)
-											.setMappedOffset(0)
-											.setMappedFlags(0)
-											.build(_ftDevice));
 	}
 }
 
@@ -643,7 +448,7 @@ void ft::Application::createDescriptorSets() {
 	for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; ++i) {
 		// this is for ubo descriptor
 		VkDescriptorBufferInfo descriptorBufferInfo{};
-		descriptorBufferInfo.buffer = _ftUniformBuffers[i]->getVKBuffer();
+		descriptorBufferInfo.buffer = _ftRenderer->getUniformBuffers()[i]->getVKBuffer();
 		descriptorBufferInfo.offset = 0;
 		descriptorBufferInfo.range = sizeof(UniformBufferObject);
 
@@ -662,7 +467,7 @@ void ft::Application::createDescriptorSets() {
 		VkDescriptorImageInfo descriptorImageInfo{};
 		descriptorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		descriptorImageInfo.imageView = _ftTextureImage->getVKImageView();
-		descriptorImageInfo.sampler = _ftSampler->getVKSampler();
+		descriptorImageInfo.sampler = _ftRenderer->getSampler()->getVKSampler();
 
 		writeDescriptorSets[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		writeDescriptorSets[1].dstSet = _descriptorSets[i];
@@ -712,7 +517,7 @@ void ft::Application::createTextureImage() {
 			.build(_ftDevice);
 
 	// transition the image layout for dst copy
-	transitionImageLayout(_ftTextureImage->getVKImage(), VK_FORMAT_R8G8B8A8_SRGB,
+	Image::transitionImageLayout(_ftDevice, _ftTextureImage->getVKImage(), VK_FORMAT_R8G8B8A8_SRGB,
 						  VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, _mipLevels);
 
 	// copy the buffer to the image
@@ -723,65 +528,6 @@ void ft::Application::createTextureImage() {
 
 	// clean up
 	stbi_image_free(pixels);
-}
-
-void ft::Application::transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels) {
-
-	// create a command buffer for transition
-	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice);
-	commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-
-
-	// create a barrier for sync
-	VkImageMemoryBarrier barrier{};
-	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-	barrier.oldLayout = oldLayout;
-	barrier.newLayout = newLayout;
-	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
-	barrier.image = image;
-	barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = mipLevels;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
-
-	// transition barrier masks
-	VkPipelineStageFlags sourceStage;
-	VkPipelineStageFlags destinationStage;
-
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-	} else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	} else if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-		// set the right aspectMask
-		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-		barrier.subresourceRange.aspectMask |= _ftDevice->hasStencilComponent(format) ? VK_IMAGE_ASPECT_STENCIL_BIT : VK_IMAGE_ASPECT_NONE;
-		barrier.srcAccessMask = VK_ACCESS_NONE;
-		barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
-								VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-	}else {
-		throw std::invalid_argument("unsopported layout transition!");
-	}
-
-	// submit the barrier
-	vkCmdPipelineBarrier(commandBuffer->getVKCommandBuffer(),
-						 sourceStage, destinationStage,
-						 0, 0, nullptr, 0, nullptr,
-						 1,&barrier);
-
-	// execution and clean up
-	commandBuffer->end();
-	commandBuffer->submit(_ftDevice->getVKGraphicsQueue());
 }
 
 // generate mipmaps
@@ -907,8 +653,3 @@ void ft::Application::updateScene(int key) {
 	_ftScene->updateCameraUBO();
 }
 
-void ft::Application::initPushConstants() {
-	_push.lightColor = {1.0f, 1.0f, 1.0f};
-	_push.lightDirection = {10.0f, -5.0f, 1.0f};
-	_push.ambient = 0.2f;
-}

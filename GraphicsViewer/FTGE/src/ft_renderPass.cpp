@@ -1,4 +1,3 @@
-#include "../include.h"
 #include "../includes/ft_renderPass.h"
 
 
@@ -152,7 +151,6 @@ std::vector<VkImageView> ft::RenderPass::getAttachmentImageViews() const {
 				   [](const Attachment::pointer &p) {return p->getVKImageView();});
 	return out;
 }
-
 
 void ft::RenderPass::addColorAttachmentToSubpass(ft::Attachment::pointer &attachment, uint32_t subpassIndex) {
 	attachment->setAttachmentIndex(_ftAttachments.size());

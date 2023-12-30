@@ -3,6 +3,7 @@
 
 #include "ft_headers.h"
 #include "ft_device.h"
+#include "ft_command.h"
 
 namespace ft {
 

@@ -4,6 +4,7 @@
 #include "ft_headers.h"
 #include "ft_device.h"
 #include "ft_command.h"
+#include "ft_image.h"
 
 namespace ft {
 
@@ -23,6 +24,7 @@ namespace ft {
 
 		[[nodiscard]] VkBuffer getVKBuffer() const;
 		[[nodiscard]] void* getMappedData() const;
+		[[nodiscard]] VkDeviceSize getSize() const;
 		void copyToMappedData(void *src, uint32_t size, uint32_t offset = 0);
 		void copyToBuffer(Buffer::pointer &other, VkDeviceSize size,
 						  VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0) const;

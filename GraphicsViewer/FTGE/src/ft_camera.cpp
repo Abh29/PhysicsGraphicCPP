@@ -1,4 +1,3 @@
-#include "../include.h"
 #include "../includes/ft_camera.h"
 
 

@@ -18,6 +18,7 @@
 #include "ft_scene.h"
 #include "ft_pipeline.h"
 #include "ft_sampler.h"
+#include "ft_renderer.h"
 
 namespace ft {
 
@@ -25,11 +26,9 @@ namespace ft {
 	public:
 		static constexpr uint32_t W_WIDTH = 800;
 		static constexpr uint32_t W_HEIGHT = 600;
-		static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 		const std::string MODEL_PATH = "models/viking_room.obj";
 //		const std::string MODEL_PATH = "models/Sphere.obj";
 		const std::string TEXTURE_PATH = "textures/viking_room.png";
-		const uint32_t MAX_INSTANCE_COUNT = 100;
 
 		Application();
 		~Application();
@@ -39,8 +38,6 @@ namespace ft {
 	private:
 		void initEventListener();
 		void initApplication();
-		void initRenderPass();
-		void initPushConstants();
 		void createScene();
 
 		EventListener::pointer				_ftEventListener;
@@ -49,52 +46,39 @@ namespace ft {
 		Surface::pointer					_ftSurface;
 		PhysicalDevice::pointer				_ftPhysicalDevice;
 		Device::pointer						_ftDevice;
-		SwapChain::pointer					_ftSwapChain;
 		std::vector<const char*> 			_validationLayers;
 		std::vector<const char*> 			_deviceExtensions;
-		std::shared_ptr<ImageBuilder>		_ftImageBuilder;
-		std::shared_ptr<BufferBuilder>		_ftBufferBuilder;
-		std::vector<CommandBuffer::pointer>	_ftCommandBuffers;
 		Gui::pointer 						_ftGui;
 		Scene::pointer 						_ftScene;
-		GraphicsPipeline::pointer 			_ftGraphicsPipeline;
+		Renderer::pointer					_ftRenderer;
 
+
+		std::shared_ptr<ImageBuilder>		_ftImageBuilder;
+		std::shared_ptr<BufferBuilder>		_ftBufferBuilder;
+		GraphicsPipeline::pointer 			_ftGraphicsPipeline;
 		Image::pointer						_ftTextureImage;
 		Image::pointer						_ftDepthImage;
 		Image::pointer						_ftColorImage;
-		Sampler::pointer					_ftSampler;
-		std::vector<Buffer::pointer>		_ftUniformBuffers;
-		RenderPass::pointer					_ftRenderPass;
-		PushConstantObject					_push{};
 		int									_topology = 0;
 
 
 		/****************************triangle app ************************/
-		void printFPS();
+		static void printFPS();
 		void updateScene(int key);
 		void cleanup();
 		void createGraphicsPipeline();
-		void recordCommandBuffer(const std::shared_ptr<CommandBuffer> &commandBuffer, uint32_t imageIndex);
 		void drawFrame();
-		void createSyncObjects();
-		void recreateSwapChain();
 		void createDescriptorSetLayout();
-		void createUniformBuffers();
 		void createDescriptorPool();
 		void createDescriptorSets();
 		void createTextureImage();
-		void transitionImageLayout(VkImage image, VkFormat format, VkImageLayout oldLayout, VkImageLayout newLayout, uint32_t mipLevels);
 		void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
-		std::vector<VkSemaphore>				_imageAvailableSemaphores;
-		std::vector<VkSemaphore>				_renderFinishedSemaphores;
-		std::vector<VkFence>					_inFlightFences;
 		uint32_t 								_currentFrame = 0;
 		VkDescriptorSetLayout 					_descriptorSetLayout;
 		VkDescriptorPool 						_descriptorPool;
 		std::vector<VkDescriptorSet>			_descriptorSets;
 		uint32_t 								_mipLevels;
-
 	};
 
 

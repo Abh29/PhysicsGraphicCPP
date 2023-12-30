@@ -1,4 +1,3 @@
-#include "../include.h"
 #include "../includes/ft_buffer.h"
 
 
@@ -52,6 +51,8 @@ VkBuffer ft::Buffer::getVKBuffer() const { return _buffer;}
 void* ft::Buffer::getMappedData() const {
 	return _mappedData;
 }
+
+VkDeviceSize ft::Buffer::getSize() const {return _size;}
 
 void ft::Buffer::copyToMappedData(void *src, uint32_t size, uint32_t offset) {
 	assert(_isMapped);

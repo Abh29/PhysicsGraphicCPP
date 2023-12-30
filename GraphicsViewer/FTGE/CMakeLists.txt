@@ -55,7 +55,7 @@ add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp
         src/ft_frameBuffer.cpp src/ft_vertex.cpp src/ft_command.cpp
         src/ft_attachment.cpp src/ft_renderPass.cpp src/ft_event.cpp
         src/ft_gui.cpp src/ft_model.cpp src/ft_scene.cpp src/ft_renderer.cpp
-        src/ft_pipeline.cpp src/ft_scene_rendering_system.cpp src/ft_renderpass.cpp
+        src/ft_pipeline.cpp src/ft_rendering_systems.cpp
         src/ft_descriptor.cpp src/ft_camera.cpp src/ft_sampler.cpp)
 
 target_link_libraries(ftGraphics imgui)

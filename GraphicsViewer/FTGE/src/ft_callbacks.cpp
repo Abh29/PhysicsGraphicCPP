@@ -1,5 +1,4 @@
 #include "../includes/ft_callbacks.h"
-#include "../includes/ft_window.h"
 
 void ft::Callback::keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods) {
 	if (action == GLFW_PRESS) {

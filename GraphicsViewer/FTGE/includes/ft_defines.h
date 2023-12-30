@@ -5,6 +5,7 @@
 
 namespace ft {
 
+	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 	constexpr int POINT_LIGHT_MAX_COUNT = 100;
 
 	struct QueueFamilyIndices {
@@ -186,6 +187,16 @@ namespace ft {
 		MOUSE_BUTTON_RIGHT,
 		MOUSE_BUTTON_MIDDLE,
 	};
+
+	constexpr uint32_t MODEL_HIDDEN_BIT = 1u;
+	constexpr uint32_t MODEL_SELECTABLE_BIT = 1u << 1;
+	constexpr uint32_t MODEL_SELECTED_BIT = 1u << 2;
+	constexpr uint32_t MODEL_TEXTURED_BIT = 1u << 10;
+	constexpr uint32_t MODEL_TRIANGLE_BIT = 1U << 11;
+	constexpr uint32_t MODEL_LINE_BIT = 1U << 12;
+	constexpr uint32_t MODEL_POINT_BIT = 1U << 13;
+
+
 }
 
 

@@ -1,4 +1,4 @@
-#include "../include.h"
+#include "../includes/ft_gui.h"
 
 ft::Gui::Gui(Instance::pointer instance, PhysicalDevice::pointer physicalDevice,
 			 Device::pointer device, Window::pointer window,

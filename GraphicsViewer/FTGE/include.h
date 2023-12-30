@@ -22,7 +22,7 @@
 #include "includes/ft_gui.h"
 #include "includes/ft_model.h"
 #include "includes/ft_scene.h"
-#include "includes/ft_scene_rendering_system.h"
+#include "includes/ft_rendering_systems.h"
 #include "includes/ft_pipeline.h"
 #include "includes/ft_renderer.h"
 #include "includes/ft_descriptor.h"

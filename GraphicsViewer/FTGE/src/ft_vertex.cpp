@@ -1,4 +1,4 @@
-#include "../include.h"
+#include "../includes/ft_vertex.h"
 
 ft::Vertex::Vertex(glm::vec3 p, glm::vec3 c, glm::vec3 n, glm::vec2 t) :
 pos{p}, color{c}, normal{n}, texCoord{t} {}

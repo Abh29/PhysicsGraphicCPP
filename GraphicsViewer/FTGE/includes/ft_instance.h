@@ -2,6 +2,7 @@
 #define FTGRAPHICS_FT_INSTANCE_H
 
 #include "ft_headers.h"
+#include "ft_callbacks.h"
 
 
 namespace ft {

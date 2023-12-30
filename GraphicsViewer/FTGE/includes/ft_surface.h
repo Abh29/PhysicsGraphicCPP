@@ -2,6 +2,7 @@
 #define FTGRAPHICS_FT_SURFACE_H
 
 #include "ft_headers.h"
+#include "ft_window.h"
 
 namespace ft {
 

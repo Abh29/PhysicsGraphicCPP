@@ -1,11 +1,11 @@
-#include "../include.h"
+#include "../includes/ft_model.h"
 
 ft::Model::Model(Device::pointer device,
 				 std::string filePath, uint32_t bufferCount) :
 		_ftDevice(device), _modelPath(filePath), _hasIndices(false) {
 	_ids[0] = ft::Model::ID();
 	_copiesCount = 1;
-	_selected.fill(false);
+	_flags.fill(0);
 	loadModel();
 	createVertexBuffer();
 	createIndexBuffer();
@@ -188,7 +188,7 @@ std::array<ft::InstanceData, 100>& ft::Model::getCopies() {return _copies;}
 bool ft::Model::select(uint32_t id) {
 	for (size_t i = 0; i < _copiesCount ; ++i) {
 		if (_ids[i] == id) {
-			_selected[i] = true;
+			_flags[i] |= ft::MODEL_SELECTED_BIT;
 			return true;
 		}
 	}
@@ -197,7 +197,7 @@ bool ft::Model::select(uint32_t id) {
 bool ft::Model::unselect(uint32_t id) {
 	for (size_t i = 0; i < _copiesCount ; ++i) {
 		if (_ids[i] == id) {
-			_selected[i] = false;
+			_flags[i] &= ~ft::MODEL_SELECTED_BIT;
 			return true;
 		}
 	}
@@ -206,13 +206,21 @@ bool ft::Model::unselect(uint32_t id) {
 bool ft::Model::isSelected(uint32_t id) const {
 	for (size_t i = 0; i < _copiesCount ; ++i) {
 		if (_ids[i] == id)
-			return _selected[i];
+			return _flags[i] & ft::MODEL_SELECTED_BIT;
 	}
 	return false;
 }
 
-void ft::Model::selectAll() {_selected.fill(true);}
-void ft::Model::unselectAll() {_selected.fill(false);}
+void ft::Model::selectAll() {
+	std::for_each(_flags.begin(), _flags.end(), [](uint32_t &flag) {
+		flag |= ft::MODEL_SELECTED_BIT;
+	});
+}
+void ft::Model::unselectAll() {
+	std::for_each(_flags.begin(), _flags.end(), [](uint32_t &flag) {
+		flag &= ~ft::MODEL_SELECTED_BIT;
+	});
+}
 
 glm::vec3 ft::Model::uint32ToVec3(uint32_t value)  {
 	// Extract R, G, B components from the uint32 value

@@ -50,7 +50,7 @@ public:
 	AttachmentBuilder& setDescriptionInitialLayout(VkImageLayout layout);
 	AttachmentBuilder& setDescriptionFinalLayout(VkImageLayout layout);
 	AttachmentBuilder& setReferenceImageLayout(VkImageLayout layout);
-	Attachment::pointer build(Image::pointer image = nullptr);
+	Attachment::pointer build();
 
 private:
 	VkAttachmentReference			_attachmentReference;

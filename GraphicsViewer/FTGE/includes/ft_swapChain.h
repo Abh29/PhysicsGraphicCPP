@@ -5,6 +5,7 @@
 #include "ft_defines.h"
 #include "ft_surface.h"
 #include "ft_renderPass.h"
+#include "ft_command.h"
 
 namespace ft {
 
@@ -35,10 +36,11 @@ namespace ft {
 		uint32_t getWidth() const;
 		uint32_t getHeight() const;
 		float getAspect() const;
-		std::pair<VkResult, uint32_t> acquireNextImage(VkSemaphore semaphore = VK_NULL_HANDLE, VkFence fence = VK_NULL_HANDLE);
+		std::pair<VkResult, uint32_t> acquireNextImage(VkFence fence = VK_NULL_HANDLE);
 		[[nodiscard]] VkPresentModeKHR getPreferredPresentMode() const;
 		void createFrameBuffers(RenderPass::pointer renderPass);
 		std::vector<VkFramebuffer> &getFrameBuffers();
+		VkResult submit(CommandBuffer::pointer commandBuffer, uint32_t imageIndex);
 
 	private:
 		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
@@ -48,6 +50,7 @@ namespace ft {
 		void createImageViews();
 		void createColorResources();
 		void createDepthResources();
+		void createSyncObjects();
 
 		std::shared_ptr<PhysicalDevice>		_ftPhysicalDevice;
 		std::shared_ptr<Device>				_ftDevice;
@@ -64,6 +67,10 @@ namespace ft {
 		uint32_t 							_width;
 		uint32_t 							_height;
 		uint32_t 							_imageNext = 0;
+		std::vector<VkSemaphore>			_imageAvailableSemaphores;
+		std::vector<VkSemaphore>			_renderFinishedSemaphores;
+		std::vector<VkFence>				_inFlightFences;
+		uint32_t 							_currentFrame = 0;
 
 	};
 

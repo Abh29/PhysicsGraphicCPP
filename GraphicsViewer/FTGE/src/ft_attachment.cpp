@@ -1,4 +1,3 @@
-#include "../include.h"
 #include "../includes/ft_attachment.h"
 
 
@@ -84,8 +83,6 @@ ft::AttachmentBuilder &ft::AttachmentBuilder::setReferenceImageLayout(VkImageLay
 	return *this;
 }
 
-ft::Attachment::pointer ft::AttachmentBuilder::build(ft::Image::pointer image) {
-	if (image)
-		return std::make_shared<Attachment>(_attachmentDescription, _attachmentReference, image->getVKImageView());
+ft::Attachment::pointer ft::AttachmentBuilder::build() {
 	return std::make_shared<Attachment>(_attachmentDescription, _attachmentReference);
 }

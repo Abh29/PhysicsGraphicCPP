@@ -1,4 +1,4 @@
-#include "../include.h"
+#include "../includes/ft_instance.h"
 
 ft::Instance::Instance(VkApplicationInfo &applicationInfo,
 					   const std::vector<const char *> &validationLayers,

@@ -1,4 +1,4 @@
-#include "../include.h"
+#include "../includes/ft_shader.h"
 
 ft::Shader::Shader(ft::Device::pointer &device, const std::string& shaderPath, ShaderType shaderType) :
 _shaderPath(shaderPath),

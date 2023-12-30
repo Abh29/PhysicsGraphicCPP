@@ -1,4 +1,4 @@
-#include "../include.h"
+#include "../includes/ft_image.h"
 
 ft::Image::Image(ft::Device::pointer device,
 uint32_t width, uint32_t height, uint32_t mipLevel,
