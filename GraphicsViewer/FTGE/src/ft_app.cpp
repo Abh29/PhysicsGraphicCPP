@@ -97,6 +97,10 @@ void ft::Application::initApplication() {
 	_ftSimpleRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
 
 	createTextureImage();
+	_ftTexturedRdrSys = std::make_shared<ft::TexturedRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
+	_ftTexturedRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
+	_ftTexturedRdrSys->populateTextureDescriptors(_ftTextureImage, _ftRenderer->getSampler());
+
 //	createDescriptorSets();
 //	createGraphicsPipeline();
 }
@@ -323,21 +327,15 @@ void ft::Application::drawFrame() {
 	// for each pipeline
 
 	// bind the graphics pipeline
-//	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftGraphicsPipeline->getVKPipeline());
-	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftSimpleRdrSys->getGraphicsPipeline()->getVKPipeline());
+	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftTexturedRdrSys->getGraphicsPipeline()->getVKPipeline());
 	// bind the descriptor sets
-//	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-//							_ftGraphicsPipeline->getVKPipelineLayout(), 0, 1, &(_ftDescriptorSets[_currentFrame]->getVKDescriptorSet()),
-//							0, nullptr);
-
 	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-							_ftSimpleRdrSys->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
-							&(_ftSimpleRdrSys->getDescriptorSets()[_currentFrame]->getVKDescriptorSet()),
+							_ftTexturedRdrSys->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+							&(_ftTexturedRdrSys->getDescriptorSets()[_currentFrame]->getVKDescriptorSet()),
 							0, nullptr);
 
 	// scene
-//	_ftScene->drawScene(commandBuffer, _ftGraphicsPipeline, _currentFrame);
-	_ftScene->drawScene(commandBuffer, _ftSimpleRdrSys->getGraphicsPipeline(), _currentFrame);
+	_ftScene->drawScene(commandBuffer, _ftTexturedRdrSys->getGraphicsPipeline(), _currentFrame);
 
 	// gui
 	_ftGui->render(commandBuffer);

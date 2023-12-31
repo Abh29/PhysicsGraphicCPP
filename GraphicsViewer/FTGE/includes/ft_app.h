@@ -39,6 +39,14 @@ namespace ft {
 		void initEventListener();
 		void initApplication();
 		void createScene();
+		static void printFPS();
+		void updateScene(int key);
+		void cleanup();
+		void createGraphicsPipeline();
+		void drawFrame();
+		void createDescriptorSets();
+		void createTextureImage();
+		void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
 		EventListener::pointer				_ftEventListener;
 		Window::pointer						_ftWindow;
@@ -52,6 +60,7 @@ namespace ft {
 		Scene::pointer 						_ftScene;
 		Renderer::pointer					_ftRenderer;
 		SimpleRdrSys::pointer 				_ftSimpleRdrSys;
+		TexturedRdrSys::pointer				_ftTexturedRdrSys;
 
 		std::shared_ptr<ImageBuilder>		_ftImageBuilder;
 		std::shared_ptr<BufferBuilder>		_ftBufferBuilder;
@@ -62,20 +71,7 @@ namespace ft {
 		DescriptorPool::pointer 			_ftDescriptorPool;
 		std::vector<DescriptorSet::pointer>	_ftDescriptorSets;
 		int									_topology = 0;
-
-
-
-		/****************************triangle app ************************/
-		static void printFPS();
-		void updateScene(int key);
-		void cleanup();
-		void createGraphicsPipeline();
-		void drawFrame();
-		void createDescriptorSets();
-		void createTextureImage();
-		void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
-
-		uint32_t 								_currentFrame = 0;
+		uint32_t 							_currentFrame = 0;
 	};
 
 

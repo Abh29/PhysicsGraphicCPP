@@ -55,7 +55,21 @@ namespace ft {
 	};
 
 	class TexturedRdrSys final : public RenderingSystem {
+	public:
+		using pointer = std::shared_ptr<TexturedRdrSys>;
 
+		TexturedRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+		~TexturedRdrSys() override = default;
+
+		void populateUBODescriptors(std::vector<Buffer::pointer> ubos);
+		void populateTextureDescriptors(Image::pointer image, Sampler::pointer sampler);
+
+	private:
+		void createDescriptors();
+		void createGraphicsPipeline();
+
+		Image::pointer 					_ftTextureImage;
+		Sampler::pointer				_ftSampler;
 	};
 
 

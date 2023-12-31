@@ -22,6 +22,8 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES
         shaders/shader.frag
         shaders/SimpleRdrSys.vert
         shaders/SimpleRdrSys.frag
+        shaders/TexturedRdrSys.vert
+        shaders/TexturedRdrSys.frag
         )
 
 foreach(GLSL_F ${GLSL_SOURCE_FILES})
