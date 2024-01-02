@@ -60,7 +60,8 @@ add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp
         src/ft_attachment.cpp src/ft_renderPass.cpp src/ft_event.cpp
         src/ft_gui.cpp src/ft_model.cpp src/ft_scene.cpp src/ft_renderer.cpp
         src/ft_pipeline.cpp src/ft_rendering_systems.cpp
-        src/ft_descriptor.cpp src/ft_camera.cpp src/ft_sampler.cpp)
+        src/ft_descriptor.cpp src/ft_camera.cpp src/ft_sampler.cpp
+        src/ft_material.cpp)
 
 target_link_libraries(ftGraphics imgui)
 add_dependencies(ftGraphics Shaders)

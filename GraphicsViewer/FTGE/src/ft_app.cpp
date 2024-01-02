@@ -6,7 +6,6 @@ _ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow", nullp
 {
 	_validationLayers = {
 			"VK_LAYER_KHRONOS_validation",
-			"VK_LAYER_LUNARG_monitor"
 	};
 
 	_deviceExtensions = {
@@ -38,7 +37,7 @@ void ft::Application::run() {
 
 void ft::Application::initEventListener() {
 	_ftEventListener->addCallbackForEventType(Event::EventType::KEYBOARD_EVENT, [&](ft::Event& ev) {
-		ft::KeyboardEvent& kev = dynamic_cast<KeyboardEvent&>(ev);
+		auto& kev = dynamic_cast<KeyboardEvent&>(ev);
 		auto data = kev.getData();
 		if (std::any_cast<int>(data[2]) == _ftWindow->ACTION(KeyActions::KEY_PRESS) ||
 			std::any_cast<int>(data[2]) == _ftWindow->ACTION(KeyActions::KEY_REPEAT))
@@ -46,21 +45,21 @@ void ft::Application::initEventListener() {
 	});
 
 	_ftEventListener->addCallbackForEventType(Event::EventType::MOUSE_BUTTON, [&](ft::Event& ev) {
-		ft::CursorEvent& cev = dynamic_cast<CursorEvent&>(ev);
+		auto& cev = dynamic_cast<CursorEvent&>(ev);
 		auto data = cev.getData();
 		if (std::any_cast<int>(data[1]) == _ftWindow->ACTION(KeyActions::KEY_PRESS)) {
-			double x = std::any_cast<double>(data[3]);
-			double y = std::any_cast<double>(data[4]);
+			auto x = std::any_cast<double>(data[3]);
+			auto y = std::any_cast<double>(data[4]);
 			std::cout << "mouse clicked: " << x << " , " << y << std::endl;
 		}
 	});
 
 	_ftEventListener->addCallbackForEventType(Event::EventType::MOUSE_SCROLL, [&](ft::Event& ev) {
-		ft::ScrollEvent& sev = dynamic_cast<ScrollEvent&>(ev);
+		auto& sev = dynamic_cast<ScrollEvent&>(ev);
 		auto data = sev.getData();
 		auto yOff = std::any_cast<double>(data[1]);
 
-		_ftScene->getCamera()->forward(yOff / 10);
+		_ftScene->getCamera()->forward((float)yOff / 10);
 		_ftScene->updateCameraUBO();
 
 	});

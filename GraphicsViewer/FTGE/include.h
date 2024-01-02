@@ -28,6 +28,6 @@
 #include "includes/ft_descriptor.h"
 #include "includes/ft_camera.h"
 #include "includes/ft_sampler.h"
-
+#include "includes/ft_material.h"
 
 #endif //FTGRAPHICS_INCLUDE_H
