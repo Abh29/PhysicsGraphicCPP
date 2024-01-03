@@ -10,6 +10,8 @@
 #include "ft_swapChain.h"
 #include "ft_camera.h"
 #include "ft_pipeline.h"
+#include "ft_material.h"
+#include "ft_rendering_systems.h"
 
 namespace ft {
 
@@ -22,9 +24,12 @@ namespace ft {
 		Scene(Device::pointer device, std::vector<Buffer::pointer> ubos);
 		~Scene() = default;
 
-		void drawScene(CommandBuffer::pointer commandBuffer, GraphicsPipeline::pointer pipeline, uint32_t index);
+
+		void drawSimpleObjs(CommandBuffer::pointer &commandBuffer, const GraphicsPipeline::pointer& pipeline, uint32_t index);
+        void drawTexturedObjs(CommandBuffer::pointer, GraphicsPipeline::pointer, TexturedRdrSys::pointer, uint32_t index);
 		uint32_t addObjectToTheScene(std::string objectPath, InstanceData data);
 		uint32_t addObjectCopyToTheScene(uint32_t id, InstanceData data);
+        void addMaterialToObject(uint32_t id, Material::pointer material);
 		void addPointLightToTheScene(PointLightObject& pl);
 		[[nodiscard]] Camera::pointer getCamera() const;
 		void setCamera(Camera::pointer camera);
@@ -33,6 +38,7 @@ namespace ft {
 		PointLightObject* getLights();
 		PushConstantObject& getGeneralLighting();
 		[[nodiscard]] std::vector<Model::pointer> getModels() const;
+        void setMaterialPool(MaterialPool::pointer pool);
 
 	private:
 
@@ -42,7 +48,8 @@ namespace ft {
 		PushConstantObject											_generalLighting;
 		Camera::pointer												_camera;
 		UniformBufferObject											_ubo;
-
+        MaterialPool::pointer                                       _ftMaterialPool;
+        std::map<uint32_t, std::vector<Model::pointer>>             _materialToModel;
 	};
 
 }

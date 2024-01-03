@@ -248,3 +248,51 @@ uint32_t ft::Model::vec3ToUint32(glm::vec3 &v) {
 	uint32_t packedColor = (r << 16) | (g << 8) | b;
 	return packedColor;
 }
+
+void ft::Model::overrideFlags(uint32_t id, uint32_t flags) {
+    for (size_t i = 0; i < _copiesCount ; ++i) {
+        if (_ids[i] == id) {
+            _flags[i] = flags;
+            break;
+        }
+    }
+}
+
+void ft::Model::setFlags(uint32_t id, uint32_t flags) {
+    for (size_t i = 0; i < _copiesCount ; ++i) {
+        if (_ids[i] == id) {
+            _flags[i] |= flags;
+            break;
+        }
+    }
+}
+
+void ft::Model::unsetFlags(uint32_t id, uint32_t flags) {
+    for (size_t i = 0; i < _copiesCount ; ++i) {
+        if (_ids[i] == id) {
+            _flags[i] &= ~flags;
+            break;
+        }
+    }
+}
+
+void ft::Model::setMaterial(ft::Material::pointer material) {
+    _ftMaterial = material;
+    std::for_each(_flags.begin(), _flags.end(), [](uint32_t& flag) {
+        flag |= ft::MODEL_TEXTURED_BIT;
+    });
+}
+
+void ft::Model::unsetMaterial() {
+    _ftMaterial = nullptr;
+    std::for_each(_flags.begin(), _flags.end(), [](uint32_t& flag) {
+        flag &= ~ft::MODEL_TEXTURED_BIT;
+    });
+}
+
+bool ft::Model::hasMaterial() {
+    return _ftMaterial != nullptr;
+}
+
+
+

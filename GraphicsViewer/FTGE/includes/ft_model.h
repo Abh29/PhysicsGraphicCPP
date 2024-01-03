@@ -6,6 +6,7 @@
 #include "ft_buffer.h"
 #include "ft_command.h"
 #include "ft_vertex.h"
+#include "ft_material.h"
 
 #define MAX_COPY_COUNT 100
 
@@ -30,7 +31,7 @@ namespace ft {
 		[[nodiscard]] bool findID(uint32_t id) const;
 		[[nodiscard]] std::array<InstanceData, MAX_COPY_COUNT>& getCopies();
 		[[nodiscard]] bool isSelected(uint32_t id) const;
-		uint32_t getFirstId() const;
+		[[nodiscard]] uint32_t getFirstId() const;
 		std::array<uint32_t, MAX_COPY_COUNT>& getIds();
 		bool select(uint32_t id);
 		bool unselect(uint32_t id);
@@ -39,6 +40,9 @@ namespace ft {
 		void overrideFlags(uint32_t id, uint32_t flags);
 		void setFlags(uint32_t id, uint32_t flags);
 		void unsetFlags(uint32_t id, uint32_t flags);
+        void setMaterial(Material::pointer material);
+        void unsetMaterial();
+        bool hasMaterial();
 
 	private:
 		void loadModel();
@@ -58,6 +62,7 @@ namespace ft {
 		std::vector<uint32_t>						_indices;
 		std::string 								_modelPath;
 		bool 										_hasIndices;
+        Material::pointer                           _ftMaterial = nullptr;
 
 	};
 

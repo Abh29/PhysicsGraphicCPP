@@ -13,7 +13,7 @@ _ftDevice(device), _ftUniformBuffers(ubos) {
 	_generalLighting.ambient = 0.2f;
 }
 
-void ft::Scene::drawScene(ft::CommandBuffer::pointer commandBuffer, ft::GraphicsPipeline::pointer pipeline, uint32_t index) {
+void ft::Scene::drawSimpleObjs(CommandBuffer::pointer &commandBuffer, const GraphicsPipeline::pointer& pipeline, uint32_t index) {
 
 	// push constant
 	vkCmdPushConstants(commandBuffer->getVKCommandBuffer(), pipeline->getVKPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT,
@@ -22,9 +22,29 @@ void ft::Scene::drawScene(ft::CommandBuffer::pointer commandBuffer, ft::Graphics
 	_ftUniformBuffers[index]->copyToMappedData(&_ubo, sizeof(_ubo));
 	// vertex and index buffers
 	for (auto& model : _models) {
+        if (model->hasMaterial()) continue;
 		model->bind(commandBuffer, index);
 		model->draw(commandBuffer);
 	}
+}
+
+void ft::Scene::drawTexturedObjs(ft::CommandBuffer::pointer commandBuffer, ft::GraphicsPipeline::pointer pipeline, ft::TexturedRdrSys::pointer system,
+                                 uint32_t index) {
+    // push constant
+    vkCmdPushConstants(commandBuffer->getVKCommandBuffer(), pipeline->getVKPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT,
+                       0, static_cast<uint32_t>(sizeof(_generalLighting)), &_generalLighting);
+
+    _ftUniformBuffers[index]->copyToMappedData(&_ubo, sizeof(_ubo));
+
+    // vertex and index buffers
+    for (auto & i : _materialToModel) {
+        auto mat = _ftMaterialPool->getMaterialByID(i.first);
+        system->populateTextureDescriptors(mat->getTextureImage(), mat->getSampler());
+        for (auto& model : i.second) {
+            model->bind(commandBuffer, index);
+            model->draw(commandBuffer);
+        }
+    }
 }
 
 uint32_t ft::Scene::addObjectToTheScene(std::string objectPath, ft::InstanceData data) {
@@ -75,3 +95,20 @@ ft::PushConstantObject &ft::Scene::getGeneralLighting() {return _generalLighting
 ft::PointLightObject* ft::Scene::getLights() {return _ubo.lights;}
 
 std::vector<ft::Model::pointer> ft::Scene::getModels() const {return _models;}
+
+void ft::Scene::addMaterialToObject(uint32_t id, Material::pointer material) {
+    for (auto& m : _models) {
+        if (m->findID(id)) {
+            m->setMaterial(material);
+            if (_materialToModel.find(material->getID()) == _materialToModel.end()) {
+                _materialToModel[material->getID()] = {m};
+            } else {
+                _materialToModel[material->getID()].push_back(m);
+            }
+            break;
+        }
+    }
+}
+
+void ft::Scene::setMaterialPool(MaterialPool::pointer pool) {_ftMaterialPool = std::move(pool);}
+

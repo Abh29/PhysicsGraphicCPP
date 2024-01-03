@@ -68,6 +68,8 @@ std::string ft::Material::getTexturePath() const {return _path;}
 
 bool ft::Material::operator==(const ft::Material &m) const {return _path == m._path;}
 
+ft::Sampler::pointer ft::Material::getSampler() const { return _ftSampler;}
+
 /***************************************MaterialPool*************************************************/
 
 ft::MaterialPool::MaterialPool(Device::pointer device): _ftDevice(std::move(device)) {}
@@ -83,6 +85,8 @@ ft::Material::pointer ft::MaterialPool::createMaterial(std::string path, Sampler
         return nullptr;
     }
     _textures.insert(std::make_pair(path, m));
+    _ids.insert(std::make_pair(m->getID(), m));
     return m;
 }
 
+ft::Material::pointer ft::MaterialPool::getMaterialByID(uint32_t id) {return _ids[id];}

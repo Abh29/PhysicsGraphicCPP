@@ -20,6 +20,7 @@ namespace ft {
     [[nodiscard]] Image::pointer getTextureImage();
     [[nodiscard]] uint32_t getID() const;
     [[nodiscard]] std::string getTexturePath() const;
+    [[nodiscard]] Sampler::pointer getSampler() const;
 
     bool operator==(const Material& m) const;
 
@@ -39,14 +40,17 @@ namespace ft {
 
  public:
      using pointer = std::shared_ptr<MaterialPool>;
-     MaterialPool(Device::pointer device);
+     explicit MaterialPool(Device::pointer device);
      ~MaterialPool() = default;
 
      Material::pointer createMaterial(std::string path, Sampler::pointer sampler);
+     Material::pointer getMaterialByID(uint32_t id);
+
 
  private:
      Device::pointer                                    _ftDevice;
      std::map<std::string, Material::pointer>           _textures;
+     std::map<uint32_t , Material::pointer>             _ids;
 
  };
 

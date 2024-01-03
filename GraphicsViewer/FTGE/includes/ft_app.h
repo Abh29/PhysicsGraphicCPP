@@ -21,6 +21,7 @@
 #include "ft_renderer.h"
 #include "ft_descriptor.h"
 #include "ft_rendering_systems.h"
+#include "ft_material.h"
 
 namespace ft {
 
@@ -42,11 +43,7 @@ namespace ft {
 		static void printFPS();
 		void updateScene(int key);
 		void cleanup();
-		void createGraphicsPipeline();
 		void drawFrame();
-		void createDescriptorSets();
-		void createTextureImage();
-		void generateMipmaps(VkImage image, VkFormat imageFormat, int32_t texWidth, int32_t texHeight, uint32_t mipLevels);
 
 		EventListener::pointer				_ftEventListener;
 		Window::pointer						_ftWindow;
@@ -62,14 +59,9 @@ namespace ft {
 		SimpleRdrSys::pointer 				_ftSimpleRdrSys;
 		TexturedRdrSys::pointer				_ftTexturedRdrSys;
 
-		std::shared_ptr<ImageBuilder>		_ftImageBuilder;
-		std::shared_ptr<BufferBuilder>		_ftBufferBuilder;
-		GraphicsPipeline::pointer 			_ftGraphicsPipeline;
-		Image::pointer						_ftTextureImage;
-		Image::pointer						_ftDepthImage;
-		Image::pointer						_ftColorImage;
 		DescriptorPool::pointer 			_ftDescriptorPool;
 		std::vector<DescriptorSet::pointer>	_ftDescriptorSets;
+        MaterialPool::pointer               _ftMaterialPool;
 		int									_topology = 0;
 		uint32_t 							_currentFrame = 0;
 	};
