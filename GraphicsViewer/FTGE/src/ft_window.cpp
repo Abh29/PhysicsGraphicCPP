@@ -25,6 +25,7 @@ void ft::Window::initWindow() {
 	glfwSetKeyCallback(_window, keyCallback);
 	glfwSetMouseButtonCallback(_window, cursorClickCallback);
 	glfwSetScrollCallback(_window, scrollCallback);
+    glfwSetWindowSizeCallback(_window, resizeCallback);
 }
 
 bool ft::Window::shouldClose() {
@@ -86,6 +87,12 @@ void ft::Window::scrollCallback(GLFWwindow *window, double xoffset, double yoffs
 	glfwGetCursorPos(window, &x, &y);
 	ft::ScrollEvent sev(xoffset, yoffset, x, y);
 	ftw->getEventListener()->fireEvent(sev);
+}
+
+void ft::Window::resizeCallback(GLFWwindow *window, int width, int height) {
+    auto *ftw = reinterpret_cast<ft::Window*>(glfwGetWindowUserPointer(window));
+    ft::ScreenResizeEvent srev(width, height);
+    ftw->getEventListener()->fireEvent(srev);
 }
 
 ft::EventListener::pointer &ft::Window::getEventListener() {

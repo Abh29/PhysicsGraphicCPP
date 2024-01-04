@@ -63,6 +63,15 @@ void ft::Application::initEventListener() {
 		_ftScene->updateCameraUBO();
 
 	});
+
+    _ftEventListener->addCallbackForEventType(Event::EventType::SCREEN_RESIZE_EVENT, [&](ft::Event& ev) {
+        auto& srev = dynamic_cast<ScreenResizeEvent&>(ev);
+        auto data = srev.getData();
+        auto width = std::any_cast<int>(data[0]);
+        auto height = std::any_cast<int>(data[1]);
+        _ftScene->getCamera()->updateAspect((float)width / (float)height);
+        _ftScene->updateCameraUBO();
+    });
 }
 
 void ft::Application::initApplication() {
@@ -104,8 +113,8 @@ void ft::Application::createScene() {
 	_ftScene->setCamera(cameraBuilder.setEyePosition({5,-1,0})
 				.setTarget({1,-1,0})
 				.setUpDirection({0,1,0})
-				.setFOV(90)
-				.setZNearFar(0.5f, 30.0f)
+				.setFOV(120)
+				.setZNearFar(0.5f, 300.0f)
 				.setAspect(_ftRenderer->getSwapChain()->getAspect())
 				.build());
 	_ftScene->setGeneralLight({1.0f,1.0f,1.0f}, {10.0, -50.0, 10.0}, 0.2f);
@@ -148,6 +157,19 @@ void ft::Application::createScene() {
 
     auto m = _ftMaterialPool->createMaterial("textures/viking_room.png", _ftRenderer->getSampler());
     _ftScene->addMaterialToObject(id, m);
+
+
+//	data.model = glm::mat4(1.0f);
+//	data.color = {0.9f, 0.9f, 0.9f};
+//	data.normalMatrix = glm::mat4(1.0f);
+////	data.model = glm::scale(data.model, {0.1, 0.1, 0.1});
+//	data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
+//	id = _ftScene->addObjectToTheScene("models/mountain.obj", data);
+//
+//    m = _ftMaterialPool->createMaterial("textures/mountain.jpg", _ftRenderer->getSampler());
+//    _ftScene->addMaterialToObject(id, m);
+
+
 
 //	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 //	data.model = glm::translate(data.model, glm::vec3{1.0f, -2.0f, 0.0f});

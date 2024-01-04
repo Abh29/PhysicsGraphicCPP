@@ -12,6 +12,7 @@ namespace ft {
 			MOUSE_BUTTON,
 			KEYBOARD_EVENT,
 			MOUSE_SCROLL,
+            SCREEN_RESIZE_EVENT,
 		};
 		virtual ~Event() = default;
 		virtual std::vector<std::any> getData() const;
@@ -39,6 +40,14 @@ namespace ft {
 	public:
 		ScrollEvent(double xOffset, double yOffset, double x, double y);
 		~ScrollEvent() override = default;
+
+		[[nodiscard]] EventType getType() const override;
+	};
+
+    class ScreenResizeEvent: public Event {
+	public:
+        ScreenResizeEvent(int width, int height);
+		~ScreenResizeEvent() override = default;
 
 		[[nodiscard]] EventType getType() const override;
 	};

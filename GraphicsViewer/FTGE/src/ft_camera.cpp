@@ -85,6 +85,11 @@ void ft::Camera::rotateWorldZ(float deg) {
 	_viewMatrix = glm::rotate(_viewMatrix, glm::radians(deg), {0,0,1});
 }
 
+void ft::Camera::updateAspect(float aspect) {
+    _aspect = aspect;
+    _projMatrix = glm::perspective(_fov, _aspect, _nearZ, _farZ);
+}
+
 /**********************************CameraBuilder*******************************/
 
 ft::CameraBuilder &ft::CameraBuilder::setFOV(float fov) {

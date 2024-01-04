@@ -38,6 +38,7 @@ namespace ft {
 		static void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods);
 		static void cursorClickCallback(GLFWwindow* window, int button, int action, int mods);
 		static void scrollCallback(GLFWwindow* window, double xoffset, double yoffset);
+        static void resizeCallback(GLFWwindow* window, int width, int height);
 
 		void initKeys();
 

@@ -45,3 +45,12 @@ ft::ScrollEvent::ScrollEvent(double xOffset, double yOffset, double x, double y)
 }
 
 ft::Event::EventType ft::ScrollEvent::getType() const {return EventType::MOUSE_SCROLL;}
+
+/***********************************ScreenResize*********************************/
+ft::ScreenResizeEvent::ScreenResizeEvent(int width, int height) {
+    _data.push_back(width);
+    _data.push_back(height);
+}
+
+ft::Event::EventType ft::ScreenResizeEvent::getType() const {return EventType ::SCREEN_RESIZE_EVENT;}
+

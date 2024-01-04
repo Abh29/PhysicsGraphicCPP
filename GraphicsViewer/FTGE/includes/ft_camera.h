@@ -21,6 +21,7 @@ namespace ft {
 		[[nodiscard]] const glm::mat4& 	getProjMatrix() const;
 		glm::mat4& 			getProjMatrix();
 		void hardSet(glm::vec3 eye, glm::vec3 target, glm::vec3 up);
+        void updateAspect(float aspect);
 
 		void hRotate(float deg);
 		void vRotate(float deg);
