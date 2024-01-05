@@ -70,17 +70,31 @@ bool ft::Material::operator==(const ft::Material &m) const {return _path == m._p
 
 ft::Sampler::pointer ft::Material::getSampler() const { return _ftSampler;}
 
+ft::DescriptorSet::pointer ft::Material::getDescriptorSet(uint32_t index) const {
+    if (_ftDescriptorSets.empty()) return nullptr;
+    return _ftDescriptorSets[index];
+}
+
+std::vector<ft::DescriptorSet::pointer> &ft::Material::getDescriptorSets() {return _ftDescriptorSets;}
+
+void ft::Material::setDescriptorSets(std::vector<DescriptorSet::pointer> descriptorSets) {_ftDescriptorSets = std::move(descriptorSets);}
+
 /***************************************MaterialPool*************************************************/
 
 ft::MaterialPool::MaterialPool(Device::pointer device): _ftDevice(std::move(device)) {}
 
-ft::Material::pointer ft::MaterialPool::createMaterial(std::string path, Sampler::pointer sampler) {
+ft::Material::pointer ft::MaterialPool::createMaterial(std::string path, Sampler::pointer sampler, const DescriptorPool::pointer& pool, const DescriptorSetLayout::pointer& layout) {
     if (_textures.find(path) != _textures.end()) return _textures[path];
 
     Material::pointer m;
 
     try {
         m = std::make_shared<ft::Material>(_ftDevice, sampler, path);
+        std::vector<DescriptorSet::pointer> descriptorSets(ft::MAX_FRAMES_IN_FLIGHT);
+        for (auto& ds : descriptorSets) {
+            ds = pool->allocateSet(layout);
+        }
+        m->setDescriptorSets(descriptorSets);
     } catch (std::exception& e) {
         return nullptr;
     }

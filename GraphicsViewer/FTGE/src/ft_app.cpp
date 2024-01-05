@@ -17,10 +17,6 @@ _ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow", nullp
 	createScene();
 }
 
-ft::Application::~Application() {
-	cleanup();
-}
-
 void ft::Application::run() {
 
 	while(!_ftWindow->shouldClose()) {
@@ -59,7 +55,7 @@ void ft::Application::initEventListener() {
 		auto data = sev.getData();
 		auto yOff = std::any_cast<double>(data[1]);
 
-		_ftScene->getCamera()->forward((float)yOff / 10);
+		_ftScene->getCamera()->forward((float)yOff);
 		_ftScene->updateCameraUBO();
 
 	});
@@ -102,10 +98,10 @@ void ft::Application::initApplication() {
 	_ftSimpleRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
 
 	_ftTexturedRdrSys = std::make_shared<ft::TexturedRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
-	_ftTexturedRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
 
 }
 
+//TODO: replace this with a scene manager, read scene from disk
 void ft::Application::createScene() {
 	CameraBuilder cameraBuilder;
 	_ftScene = std::make_shared<Scene>(_ftDevice, _ftRenderer->getUniformBuffers());
@@ -114,49 +110,73 @@ void ft::Application::createScene() {
 				.setTarget({1,-1,0})
 				.setUpDirection({0,1,0})
 				.setFOV(120)
-				.setZNearFar(0.5f, 300.0f)
+				.setZNearFar(0.5f, 1000.0f)
 				.setAspect(_ftRenderer->getSwapChain()->getAspect())
 				.build());
 	_ftScene->setGeneralLight({1.0f,1.0f,1.0f}, {10.0, -50.0, 10.0}, 0.2f);
 	ft::InstanceData data{};
 	uint32_t  id;	(void) id;
 
-	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	data.model = glm::scale(data.model, {10.0f, 0.1f, 0.1f});
+    // Z
+    data.model = glm::mat4(1.0f);
+	data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+	data.color = {0.f, 0.0f, 0.9f};
+	data.normalMatrix = glm::mat4(1.0f);
+	id = _ftScene->addObjectToTheScene("models/axis.obj", data);
+
+    // Y
+    data.model = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+    data.color = {0.0f, 0.9f, 0.0f};
+	data.normalMatrix = glm::mat4(1.0f);
+	id = _ftScene->addObjectCopyToTheScene(id, data);
+
+    // X
+	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
 	data.color = {0.9f, 0.0f, 0.0f};
 	data.normalMatrix = glm::mat4(1.0f);
-	id = _ftScene->addObjectToTheScene("models/arrow.obj", data);
-
-	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	data.model = glm::scale(data.model, {10.0f, 0.1f, 0.1f});
-	data.color = {0.0f, 0.0f, 0.9f};
-	data.normalMatrix = glm::mat4(1.0f);
-	id = _ftScene->addObjectCopyToTheScene(id, data);
-
-	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	data.model = glm::scale(data.model, {10.0f, 0.1f, 0.1f});
-	data.color = {0.0f, 0.9f, 0.0f};
-	data.normalMatrix = glm::mat4(1.0f);
-	id = _ftScene->addObjectCopyToTheScene(id, data);
+	_ftScene->addObjectCopyToTheScene(id, data);
 
 	// plane
 	data.model = glm::mat4(1.0f);
 	data.color = {0.95f, .95f, .95f};
 	data.normalMatrix = glm::mat4(1.0f);
 	data.model = glm::scale(data.model, {100, 100, 100});
-	id = _ftScene->addObjectToTheScene("models/plane.mtl.obj", data);
+	_ftScene->addObjectToTheScene("models/plane.mtl.obj", data);
 
 
 
 	data.model = glm::mat4(1.0f);
 	data.color = {0.9f, 0.9f, 0.9f};
 	data.normalMatrix = glm::mat4(1.0f);
-//	data.model = glm::scale(data.model, {10, 10, 10});
 	data.model = glm::rotate(data.model, glm::radians(90.0f), {1,0,0});
 	id = _ftScene->addObjectToTheScene("models/viking_room.obj", data);
 
-    auto m = _ftMaterialPool->createMaterial("textures/viking_room.png", _ftRenderer->getSampler());
+    auto m = _ftMaterialPool->createMaterial("textures/viking_room.png", _ftRenderer->getSampler(), _ftTexturedRdrSys->getDescriptorPool(), _ftTexturedRdrSys->getDescriptorSetLayout());
     _ftScene->addMaterialToObject(id, m);
+
+    data.model = glm::mat4(1.0f);
+	data.color = {0.9f, 0.9f, 0.9f};
+	data.normalMatrix = glm::mat4(1.0f);
+    data.model = glm::translate(data.model, {0, 0, 3});
+    data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
+    data.model = glm::scale(data.model, {0.005,0.005,0.005});
+	id = _ftScene->addObjectToTheScene("models/car.obj", data);
+
+    m = _ftMaterialPool->createMaterial("textures/car.png", _ftRenderer->getSampler(), _ftTexturedRdrSys->getDescriptorPool(), _ftTexturedRdrSys->getDescriptorSetLayout());
+    _ftScene->addMaterialToObject(id, m);
+
+
+//    data.model = glm::mat4(1.0f);
+//	data.color = {0.9f, 0.9f, 0.9f};
+//	data.normalMatrix = glm::mat4(1.0f);
+//	data.model = glm::scale(data.model, {2, 2, 2});
+//	data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
+//	id = _ftScene->addObjectToTheScene("models/big_terrain.obj", data);
+//
+//    auto m = _ftMaterialPool->createMaterial("textures/terrain.png", _ftRenderer->getSampler());
+//    _ftScene->addMaterialToObject(id, m);
 
 
 //	data.model = glm::mat4(1.0f);
@@ -166,7 +186,7 @@ void ft::Application::createScene() {
 //	data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
 //	id = _ftScene->addObjectToTheScene("models/mountain.obj", data);
 //
-//    m = _ftMaterialPool->createMaterial("textures/mountain.jpg", _ftRenderer->getSampler());
+//    m = _ftMaterialPool->createMaterial("textures/mountain.jpg", _ftRenderer->getSampler(), _ftTexturedRdrSys->getDescriptorPool(), _ftTexturedRdrSys->getDescriptorSetLayout());
 //    _ftScene->addMaterialToObject(id, m);
 
 
@@ -212,10 +232,6 @@ void ft::Application::printFPS() {
 	}
 }
 
-void ft::Application::cleanup() {
-	_ftRenderer->getSwapChain().reset();
-}
-
 // draw a frame
 void ft::Application::drawFrame() {
 	CommandBuffer::pointer commandBuffer;
@@ -237,13 +253,13 @@ void ft::Application::drawFrame() {
     _ftScene->drawSimpleObjs(commandBuffer, _ftSimpleRdrSys->getGraphicsPipeline(), _currentFrame);
 
 
-	// bind the graphics pipeline
-	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftTexturedRdrSys->getGraphicsPipeline()->getVKPipeline());
-	// bind the descriptor sets
-	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-							_ftTexturedRdrSys->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
-							&(_ftTexturedRdrSys->getDescriptorSets()[_currentFrame]->getVKDescriptorSet()),
-							0, nullptr);
+//	// bind the graphics pipeline
+//	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftTexturedRdrSys->getGraphicsPipeline()->getVKPipeline());
+//	// bind the descriptor sets
+//	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+//							_ftTexturedRdrSys->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+//							&(_ftTexturedRdrSys->getDescriptorSets()[_currentFrame]->getVKDescriptorSet()),
+//							0, nullptr);
 
     _ftScene->drawTexturedObjs(commandBuffer, _ftTexturedRdrSys->getGraphicsPipeline(), _ftTexturedRdrSys, _currentFrame);
 
@@ -270,9 +286,9 @@ void ft::Application::updateScene(int key) {
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_W)) {
 		_ftScene->getCamera()->forward(0.5f);
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Q)){
-		_ftScene->getCamera()->translateUp(0.5f);
-	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_E)) {
 		_ftScene->getCamera()->translateUp(-0.5f);
+	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_E)) {
+		_ftScene->getCamera()->translateUp(0.5f);
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_A)) {
 		_ftScene->getCamera()->translateSide(-0.5f);
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_S)) {

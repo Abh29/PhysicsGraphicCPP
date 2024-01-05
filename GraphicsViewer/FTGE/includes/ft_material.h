@@ -7,6 +7,7 @@
 #include "ft_sampler.h"
 #include "ft_image.h"
 #include "ft_buffer.h"
+#include "ft_descriptor.h"
 
 namespace ft {
 
@@ -22,17 +23,23 @@ namespace ft {
     [[nodiscard]] std::string getTexturePath() const;
     [[nodiscard]] Sampler::pointer getSampler() const;
 
+    [[nodiscard]] DescriptorSet::pointer getDescriptorSet(uint32_t index) const;
+    void setDescriptorSets(std::vector<DescriptorSet::pointer> descriptorSets);
+    std::vector<DescriptorSet::pointer>& getDescriptorSets();
+
     bool operator==(const Material& m) const;
 
  private:
      void createTextureResource();
      static uint32_t ID();
 
-     uint32_t                           _id;
-     Device::pointer                    _ftDevice;
-     Sampler::pointer                   _ftSampler;
-     std::string                        _path;
-     Image::pointer                     _ftTextureImage;
+     uint32_t                                       _id;
+     Device::pointer                                _ftDevice;
+     Sampler::pointer                               _ftSampler;
+     std::string                                    _path;
+     Image::pointer                                 _ftTextureImage;
+     std::vector<DescriptorSet::pointer>            _ftDescriptorSets;
+
 
  };
 
@@ -43,7 +50,7 @@ namespace ft {
      explicit MaterialPool(Device::pointer device);
      ~MaterialPool() = default;
 
-     Material::pointer createMaterial(std::string path, Sampler::pointer sampler);
+     Material::pointer createMaterial(std::string path, Sampler::pointer sampler, const DescriptorPool::pointer& pool, const DescriptorSetLayout::pointer& layout);
      Material::pointer getMaterialByID(uint32_t id);
 
 

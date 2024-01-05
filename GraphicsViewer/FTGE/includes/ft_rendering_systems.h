@@ -8,6 +8,7 @@
 #include "ft_descriptor.h"
 #include "ft_renderer.h"
 #include "ft_vertex.h"
+#include "ft_material.h"
 
 
 namespace ft {
@@ -23,7 +24,6 @@ namespace ft {
 
 		[[nodiscard]] GraphicsPipeline::pointer getGraphicsPipeline() const;
 		[[nodiscard]] DescriptorSetLayout::pointer getDescriptorSetLayout() const;
-		[[nodiscard]] std::vector<DescriptorSet::pointer> getDescriptorSets() const;
 		[[nodiscard]] DescriptorPool::pointer getDescriptorPool() const;
 
 	protected:
@@ -32,7 +32,6 @@ namespace ft {
 		Renderer::pointer							_ftRenderer;
 		DescriptorPool::pointer						_ftDescriptorPool;
 		DescriptorSetLayout::pointer 				_ftDescriptorSetLayout;
-		std::vector<DescriptorSet::pointer>			_ftDescriptorSets;
 		GraphicsPipeline::pointer					_ftPipeline;
 
 	};
@@ -47,10 +46,13 @@ namespace ft {
 		~SimpleRdrSys() override = default;
 
 		void populateUBODescriptors(std::vector<Buffer::pointer> ubos);
+        [[nodiscard]] std::vector<DescriptorSet::pointer> getDescriptorSets() const;
 
 	private:
 		void createDescriptors();
 		void createGraphicsPipeline();
+
+        std::vector<DescriptorSet::pointer>			_ftDescriptorSets;
 
 	};
 
@@ -61,15 +63,17 @@ namespace ft {
 		TexturedRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
 		~TexturedRdrSys() override = default;
 
-		void populateUBODescriptors(std::vector<Buffer::pointer> ubos);
-		void populateTextureDescriptors(Image::pointer image, Sampler::pointer sampler);
+		void populateUBODescriptors(std::vector<Buffer::pointer> ubos, const Material::pointer& material);
+		void populateTextureDescriptors(const Material::pointer& material);
+        [[nodiscard]] uint32_t getTextureImageBinding() const;
+        [[nodiscard]] uint32_t getSamplerBinding() const;
 
 	private:
-		void createDescriptors();
+		void createDescriptorSetLayout();
 		void createGraphicsPipeline();
 
-		Image::pointer 					_ftTextureImage;
-		Sampler::pointer				_ftSampler;
+        uint32_t                        _samplerBinding;
+        uint32_t                        _textureImageBinding;
 	};
 
 

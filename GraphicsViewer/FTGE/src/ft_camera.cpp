@@ -70,6 +70,9 @@ void ft::Camera::hardSet(glm::vec3 eye, glm::vec3 target, glm::vec3 up) {
 	_eyePosition = eye;
 	_targetPosition = target;
 	_upDirection = up;
+    _frontVec = glm::normalize(_targetPosition - _eyePosition);
+    _rightVec = glm::normalize(glm::cross(_frontVec, _upDirection));
+    _cameraUp = glm::normalize(glm::cross(_frontVec, _rightVec));
 	_viewMatrix = glm::lookAt(_eyePosition, _targetPosition, _upDirection);
 }
 

@@ -30,6 +30,10 @@ void ft::Scene::drawSimpleObjs(CommandBuffer::pointer &commandBuffer, const Grap
 
 void ft::Scene::drawTexturedObjs(ft::CommandBuffer::pointer commandBuffer, ft::GraphicsPipeline::pointer pipeline, ft::TexturedRdrSys::pointer system,
                                  uint32_t index) {
+
+    // bind the graphics pipeline
+    vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, system->getGraphicsPipeline()->getVKPipeline());
+
     // push constant
     vkCmdPushConstants(commandBuffer->getVKCommandBuffer(), pipeline->getVKPipelineLayout(), VK_SHADER_STAGE_VERTEX_BIT,
                        0, static_cast<uint32_t>(sizeof(_generalLighting)), &_generalLighting);
@@ -39,7 +43,14 @@ void ft::Scene::drawTexturedObjs(ft::CommandBuffer::pointer commandBuffer, ft::G
     // vertex and index buffers
     for (auto & i : _materialToModel) {
         auto mat = _ftMaterialPool->getMaterialByID(i.first);
-        system->populateTextureDescriptors(mat->getTextureImage(), mat->getSampler());
+        system->populateUBODescriptors(_ftUniformBuffers, mat);
+        system->populateTextureDescriptors(mat);
+//        mat->getDescriptorSet(index)->updateDescriptorBuffer()
+        // bind the descriptor sets
+        vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                system->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+                                &(mat->getDescriptorSet(index)->getVKDescriptorSet()),
+                                0, nullptr);
         for (auto& model : i.second) {
             model->bind(commandBuffer, index);
             model->draw(commandBuffer);

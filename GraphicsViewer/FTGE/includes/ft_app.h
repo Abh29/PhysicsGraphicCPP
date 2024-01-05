@@ -2,6 +2,7 @@
 #define FTGRAPHICS_FT_APP_H
 
 #include "ft_headers.h"
+#include "ft_defines.h"
 #include "ft_window.h"
 #include "ft_instance.h"
 #include "ft_surface.h"
@@ -32,7 +33,7 @@ namespace ft {
 		const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 		Application();
-		~Application();
+		~Application() = default;
 
 		void run();
 
@@ -42,7 +43,6 @@ namespace ft {
 		void createScene();
 		static void printFPS();
 		void updateScene(int key);
-		void cleanup();
 		void drawFrame();
 
 		EventListener::pointer				_ftEventListener;

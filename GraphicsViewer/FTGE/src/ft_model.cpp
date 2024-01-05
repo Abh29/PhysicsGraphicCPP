@@ -70,11 +70,12 @@ void ft::Model::loadModel() {
 					attrib.vertices[3 * index.vertex_index + 2],
 			};
 
-			vertex.normal = {
-					attrib.normals[3 * index.normal_index + 0],
-					attrib.normals[3 * index.normal_index + 1],
-					attrib.normals[3 * index.normal_index + 2],
-			};
+            if (index.normal_index >= 0)
+                vertex.normal = {
+                        attrib.normals[3 * index.normal_index + 0],
+                        attrib.normals[3 * index.normal_index + 1],
+                        attrib.normals[3 * index.normal_index + 2],
+                };
 
 			if (index.texcoord_index >= 0)
 				vertex.texCoord =  {
@@ -93,6 +94,7 @@ void ft::Model::loadModel() {
 		}
 	}
 	_hasIndices = true;
+    std::cout << "model: " <<  _modelPath << " has: " << _indices.size() << " vertices." << std::endl;
 }
 
 void ft::Model::writePerInstanceData(uint32_t index) {

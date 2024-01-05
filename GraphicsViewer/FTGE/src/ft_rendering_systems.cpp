@@ -9,8 +9,6 @@ ft::DescriptorPool::pointer ft::RenderingSystem::getDescriptorPool() const {retu
 
 ft::DescriptorSetLayout::pointer ft::RenderingSystem::getDescriptorSetLayout() const {return _ftDescriptorSetLayout;}
 
-std::vector<ft::DescriptorSet::pointer> ft::RenderingSystem::getDescriptorSets() const {return _ftDescriptorSets;}
-
 /*********************************SimpleRdrSys****************************************/
 
 ft::SimpleRdrSys::SimpleRdrSys(Device::pointer device, Renderer::pointer renderer, ft::DescriptorPool::pointer pool) :
@@ -152,6 +150,8 @@ void ft::SimpleRdrSys::createGraphicsPipeline() {
 														 pipelineConfig);
 }
 
+std::vector<ft::DescriptorSet::pointer> ft::SimpleRdrSys::getDescriptorSets() const {return _ftDescriptorSets;}
+
 /**********************************TexturedRdrSys***************************************/
 
 
@@ -159,41 +159,39 @@ void ft::SimpleRdrSys::createGraphicsPipeline() {
 ft::TexturedRdrSys::TexturedRdrSys(Device::pointer device, Renderer::pointer renderer, ft::DescriptorPool::pointer pool) :
 		RenderingSystem(std::move(device), std::move(renderer), std::move(pool))
 {
-	createDescriptors();
+	createDescriptorSetLayout();
 	createGraphicsPipeline();
 }
 
-void ft::TexturedRdrSys::createDescriptors() {
-	_ftDescriptorSets.resize(ft::MAX_FRAMES_IN_FLIGHT);
-
+void ft::TexturedRdrSys::createDescriptorSetLayout() {
 	// create the descriptor set layout
 	DescriptorSetLayoutBuilder dslBuilder;
 	_ftDescriptorSetLayout = dslBuilder.addDescriptorBinding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_SHADER_STAGE_ALL_GRAPHICS)
 			.addDescriptorBinding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT)
 			.build(_ftDevice);
 
-	for(auto& set : _ftDescriptorSets)
-		set = _ftDescriptorPool->allocateSet(_ftDescriptorSetLayout);
+    _samplerBinding = 0u;
+    _textureImageBinding = 1u;
 }
 
-void ft::TexturedRdrSys::populateUBODescriptors(std::vector<ft::Buffer::pointer> ubos) {
-	assert(ubos.size() >= _ftDescriptorSets.size());
+void ft::TexturedRdrSys::populateUBODescriptors(std::vector<ft::Buffer::pointer> ubos, const ft::Material::pointer& material) {
+	assert(ubos.size() >= material->getDescriptorSets().size());
 
-	for (uint32_t i = 0; i < _ftDescriptorSets.size(); ++i)
-		_ftDescriptorSets[i]->updateDescriptorBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, ubos[i], 0);
+	for (uint32_t i = 0; i < material->getDescriptorSets().size(); ++i)
+		material->getDescriptorSets()[i]->updateDescriptorBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, ubos[i], 0);
 }
 
-void ft::TexturedRdrSys::populateTextureDescriptors(Image::pointer image, Sampler::pointer sampler) {
+void ft::TexturedRdrSys::populateTextureDescriptors(const Material::pointer& material) {
 
-	_ftSampler = std::move(sampler);
-	_ftTextureImage = std::move(image);
-
-	for (auto & _ftDescriptorSet : _ftDescriptorSets)
+	for (auto & _ftDescriptorSet : material->getDescriptorSets())
 	_ftDescriptorSet->updateDescriptorImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
 												VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-												_ftTextureImage, _ftSampler);
+												material->getTextureImage(), material->getSampler());
 
 }
+
+uint32_t ft::TexturedRdrSys::getTextureImageBinding() const {return _textureImageBinding;}
+uint32_t ft::TexturedRdrSys::getSamplerBinding() const {return _samplerBinding;}
 
 void ft::TexturedRdrSys::createGraphicsPipeline() {
 	ft::PipelineConfig pipelineConfig{};
