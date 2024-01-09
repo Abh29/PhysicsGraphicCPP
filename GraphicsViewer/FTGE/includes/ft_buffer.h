@@ -29,6 +29,7 @@ namespace ft {
 		void copyToBuffer(Buffer::pointer &other, VkDeviceSize size,
 						  VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0) const;
 		void copyToImage(Image::pointer &image, uint32_t width, uint32_t height);
+        void copyFromImage(const Image::pointer &image, VkImageLayout layout);
 		bool isMapped() const;
 
 

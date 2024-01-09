@@ -43,7 +43,8 @@ uint32_t ft::Model::addCopy(const ft::InstanceData &copyData) {
 	uint32_t id = ID();
 	_ids[_copiesCount] = id;
 	_copies[_copiesCount] = copyData;
-	_copies[_copiesCount].id = Model::uint32ToVec3(id);
+//	_copies[_copiesCount].id = Model::uint32ToVec3(id);
+	_copies[_copiesCount].id = id;
 	++_copiesCount;
 	return id;
 }

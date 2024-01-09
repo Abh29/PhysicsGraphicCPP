@@ -47,6 +47,9 @@ void ft::Application::initEventListener() {
 			auto x = std::any_cast<double>(data[3]);
 			auto y = std::any_cast<double>(data[4]);
 			std::cout << "mouse clicked: " << x << " , " << y << std::endl;
+            std::cout << "width: " << _ftRenderer->getSwapChain()->getWidth() << std::endl;
+            auto pixels = reinterpret_cast<uint32_t*>(_ftRenderer->getPickingBuffer()->getMappedData());
+            std::cout << "pixel is: " << pixels[(int)y * _ftRenderer->getSwapChain()->getWidth() + (int)x] << std::endl;
 		}
 	});
 
@@ -99,6 +102,8 @@ void ft::Application::initApplication() {
 
 	_ftTexturedRdrSys = std::make_shared<ft::TexturedRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
 
+    _ftPickingRdrSys = std::make_shared<ft::PickingRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
+    _ftPickingRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
 }
 
 //TODO: replace this with a scene manager, read scene from disk
@@ -272,6 +277,104 @@ void ft::Application::drawFrame() {
 	_ftRenderer->endFrame(commandBuffer, index);
 }
 
+void ft::Application::pick() {
+
+    // recording the command buffer
+    vkResetCommandBuffer(_ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer(), 0);
+
+    // begin command buffer
+    VkCommandBufferBeginInfo commandBufferBeginInfo{};
+    commandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    commandBufferBeginInfo.flags = 0;
+    commandBufferBeginInfo.pInheritanceInfo = nullptr;
+
+    if (vkBeginCommandBuffer(_ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer(), &commandBufferBeginInfo) != VK_SUCCESS) {
+        throw std::runtime_error("failed to begin recording command buffer!");
+    }
+
+    // starting render pass
+    std::array<VkClearValue, 2> clearValues = {};
+    clearValues[0].color =	{{0.0f, 0.0f, 0.0f, 0.0f}};
+    clearValues[1].depthStencil = {1.0f, 0};
+
+
+    VkRenderPassBeginInfo renderPassBeginInfo{};
+    renderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+    renderPassBeginInfo.renderPass = _ftRenderer->getPickingRenderPass()->getVKRenderPass();
+    renderPassBeginInfo.framebuffer = _ftRenderer->getVKPickingFrameBuffer();
+    renderPassBeginInfo.renderArea.offset = {0, 0};
+    renderPassBeginInfo.renderArea.extent = _ftRenderer->getSwapChain()->getVKSwapChainExtent();
+    renderPassBeginInfo.clearValueCount = (uint32_t) clearValues.size();
+    renderPassBeginInfo.pClearValues = clearValues.data();
+
+    vkCmdBeginRenderPass(_ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer(), &renderPassBeginInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+    // bind the graphics pipeline
+    vkCmdBindPipeline(_ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftPickingRdrSys->getGraphicsPipeline()->getVKPipeline());
+
+
+    // bind the descriptor sets
+    vkCmdBindDescriptorSets(_ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+                            _ftPickingRdrSys->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+                            &(_ftPickingRdrSys->getDescriptorSets()[0]->getVKDescriptorSet()),
+                            0, nullptr);
+
+
+
+    // set viewport and scissor
+    VkViewport viewport{};
+    viewport.x = 0.0f;
+    viewport.y = 0.0f;
+    viewport.width = static_cast<float>(_ftRenderer->getSwapChain()->getVKSwapChainExtent().width);
+    viewport.height = static_cast<float>(_ftRenderer->getSwapChain()->getVKSwapChainExtent().height);
+    viewport.minDepth = 0.0f;
+    viewport.maxDepth = 1.0f;
+    vkCmdSetViewport(_ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer(), 0, 1, &viewport);
+
+    VkRect2D scissor{};
+    scissor.offset = {0, 0};
+    scissor.extent = _ftRenderer->getSwapChain()->getVKSwapChainExtent();
+    vkCmdSetScissor(_ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer(), 0, 1, &scissor);
+
+
+    _ftScene->drawPickableObjs(_ftRenderer->getPickingCommandBuffer(), _ftPickingRdrSys->getGraphicsPipeline(), 0);
+
+
+    // render pass end
+    vkCmdEndRenderPass(_ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer());
+
+    // end command buffer
+    if (vkEndCommandBuffer(_ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer()) != VK_SUCCESS) {
+        throw std::runtime_error("failed to record the picking command buffer!");
+    }
+
+    // submitting the command buffer
+    auto cb = _ftRenderer->getPickingCommandBuffer()->getVKCommandBuffer();
+
+    VkSubmitInfo submitInfo{};
+    submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.waitSemaphoreCount = 0;
+    submitInfo.pWaitSemaphores = nullptr;
+    submitInfo.pWaitDstStageMask = nullptr;
+    submitInfo.commandBufferCount = 1;
+    submitInfo.pCommandBuffers = &cb;
+    submitInfo.signalSemaphoreCount = 0;
+    submitInfo.pSignalSemaphores = nullptr;
+
+    if (vkQueueSubmit(_ftDevice->getVKGraphicsQueue(), 1, &submitInfo, nullptr) != VK_SUCCESS) {
+        throw std::runtime_error("failed to submit a draw command buffer!");
+    }
+
+    auto image = _ftRenderer->getPickingColorImage();
+    Image::transitionImageLayout(_ftDevice, image->getVKImage(), VK_FORMAT_R32_UINT,
+                                 VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, 1);
+    _ftRenderer->getPickingBuffer()->copyFromImage(image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+    Image::transitionImageLayout(_ftDevice, image->getVKImage(), VK_FORMAT_R32_UINT,
+                                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, 1);
+
+}
+
 void ft::Application::updateScene(int key) {
 	if (key == _ftWindow->KEY(KeyboardKeys::KEY_UP)) {
 		_ftScene->getCamera()->vRotate(-10.0f);
@@ -308,8 +411,8 @@ void ft::Application::updateScene(int key) {
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_KP_3)) {
 		_ftScene->getCamera()->rotateWorldZ(-10.0f);
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Z)) {
-
+        std::cout << "picking an object " << std::endl;
+        pick();
 	}
 	_ftScene->updateCameraUBO();
 }
-

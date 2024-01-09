@@ -44,6 +44,7 @@ namespace ft {
 		static void printFPS();
 		void updateScene(int key);
 		void drawFrame();
+        void pick();
 
 		EventListener::pointer				_ftEventListener;
 		Window::pointer						_ftWindow;
@@ -58,6 +59,7 @@ namespace ft {
 		Renderer::pointer					_ftRenderer;
 		SimpleRdrSys::pointer 				_ftSimpleRdrSys;
 		TexturedRdrSys::pointer				_ftTexturedRdrSys;
+        PickingRdrSys::pointer              _ftPickingRdrSys;
 
 		DescriptorPool::pointer 			_ftDescriptorPool;
 		std::vector<DescriptorSet::pointer>	_ftDescriptorSets;
@@ -65,7 +67,6 @@ namespace ft {
 		int									_topology = 0;
 		uint32_t 							_currentFrame = 0;
 	};
-
 
 }
 

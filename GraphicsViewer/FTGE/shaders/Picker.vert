@@ -35,28 +35,17 @@ layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) in mat4 modelMatrix;
 layout(location = 8) in mat4 normalMatrix;
 layout(location = 12) in vec3 inColor2;
+//layout(location = 13) in vec3 modelID;
 layout(location = 13) in uint modelID;
 
 // output
-layout(location = 0) out vec3 fragColor;
-layout(location = 1) out vec2 fragTexCoord;
+layout(location = 0) out uint fragColor;
 
 void main() {
-    fragTexCoord = inTexCoord;
+//    fragColor = modelID;
+    fragColor = modelID;
     gl_PointSize = 2;
-    vec4 worldPos = modelMatrix * vec4(inPosition, 1.0);
-    vec3 worldNormal = mat3(transpose(inverse(modelMatrix))) * normal;
-    vec3 viewDir = normalize(-vec3(ubo.view * worldPos));
-
-    // Calculate diffuse reflection
-    float diffuseStrength = max(dot(worldNormal, -push.lightDirection), 0.0);
-    vec3 diffuse = diffuseStrength * push.lightColor * inColor2;
-
-    // Calculate ambient reflection
-    vec3 ambient = push.ambient * inColor2;
-
-    // Calculate final color by combining ambient and diffuse components
-    fragColor = ambient + diffuse;
-
-    gl_Position = ubo.proj * ubo.view * worldPos;
+    gl_Position = ubo.proj * ubo.view * modelMatrix * vec4(inPosition, 1.0);
 }
+
+

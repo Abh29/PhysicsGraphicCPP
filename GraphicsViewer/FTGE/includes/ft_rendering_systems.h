@@ -76,6 +76,23 @@ namespace ft {
         uint32_t                        _textureImageBinding;
 	};
 
+    class PickingRdrSys final : public RenderingSystem {
+    public:
+        using pointer = std::shared_ptr<PickingRdrSys>;
+
+        PickingRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+        ~PickingRdrSys() override = default;
+
+        void populateUBODescriptors(std::vector<Buffer::pointer> ubos);
+        [[nodiscard]] std::vector<DescriptorSet::pointer> getDescriptorSets() const;
+
+    private:
+        void createDescriptorSetLayout();
+        void createGraphicsPipeline();
+
+        std::vector<DescriptorSet::pointer>                    _ftDescriptorSets;
+
+    };
 
 }
 

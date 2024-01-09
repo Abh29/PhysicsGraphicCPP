@@ -27,6 +27,7 @@ namespace ft {
 
 		void drawSimpleObjs(CommandBuffer::pointer &commandBuffer, const GraphicsPipeline::pointer& pipeline, uint32_t index);
         void drawTexturedObjs(CommandBuffer::pointer, GraphicsPipeline::pointer, TexturedRdrSys::pointer, uint32_t index);
+        void drawPickableObjs(const CommandBuffer::pointer &commandBuffer, const GraphicsPipeline::pointer& pipeline, uint32_t index);
 		uint32_t addObjectToTheScene(std::string objectPath, InstanceData data);
 		uint32_t addObjectCopyToTheScene(uint32_t id, InstanceData data);
         void addMaterialToObject(uint32_t id, Material::pointer material);

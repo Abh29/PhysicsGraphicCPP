@@ -61,7 +61,8 @@ void ft::Scene::drawTexturedObjs(ft::CommandBuffer::pointer commandBuffer, ft::G
 uint32_t ft::Scene::addObjectToTheScene(std::string objectPath, ft::InstanceData data) {
 	Model::pointer model = std::make_shared<Model>(_ftDevice, objectPath, _ftUniformBuffers.size());
 	data.normalMatrix = glm::inverseTranspose(data.model * _ubo.view);
-	data.id = Model::uint32ToVec3(model->getFirstId());
+//	data.id = Model::uint32ToVec3(model->getFirstId());
+	data.id = model->getFirstId();
 	model->getCopies()[0] = data;
 	_models.push_back(model);
 	return model->getFirstId();
@@ -122,4 +123,15 @@ void ft::Scene::addMaterialToObject(uint32_t id, Material::pointer material) {
 }
 
 void ft::Scene::setMaterialPool(MaterialPool::pointer pool) {_ftMaterialPool = std::move(pool);}
+
+void
+ft::Scene::drawPickableObjs(const ft::CommandBuffer::pointer &commandBuffer, const ft::GraphicsPipeline::pointer &pipeline,
+                            uint32_t index) {
+    (void) pipeline;
+    // vertex and index buffers
+    for (auto& model : _models) {
+        model->bind(commandBuffer, index);
+        model->draw(commandBuffer);
+    }
+}
 

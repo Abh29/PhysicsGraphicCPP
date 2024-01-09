@@ -23,7 +23,8 @@ namespace ft {
 		alignas(16) glm::mat4 model;
 		alignas(16) glm::mat4 normalMatrix;
 		alignas(16) glm::vec3 color;
-		alignas(16) glm::vec3 id;
+//		alignas(16) glm::vec3 id;
+        alignas(4) uint32_t id;
 
 		static VkVertexInputBindingDescription getBindingDescription();
 		static std::array<VkVertexInputAttributeDescription, 10> getAttributeDescription();

@@ -25,6 +25,8 @@ namespace ft {
 										  VkImageLayout oldLayout, VkImageLayout newLayout,
 										  uint32_t mipLevels);
 		void generateMipmaps(VkFormat imageFormat);
+        [[nodiscard]] uint32_t getHeight() const;
+        [[nodiscard]] uint32_t getWidth() const;
 
 	private:
 

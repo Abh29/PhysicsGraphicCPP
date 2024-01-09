@@ -36,6 +36,12 @@ namespace ft {
 		[[nodiscard]] Sampler::pointer getSampler() const;
 		[[nodiscard]] std::vector<Buffer::pointer> getUniformBuffers() const;
 
+        RenderPass::pointer getPickingRenderPass();
+        Image::pointer getPickingColorImage();
+        CommandBuffer::pointer getPickingCommandBuffer();
+        VkFramebuffer getVKPickingFrameBuffer() const;
+        Buffer::pointer getPickingBuffer() const;
+
 	private:
 		void initRenderer();
 		void initRenderPasses();
@@ -54,8 +60,11 @@ namespace ft {
 		RenderPass::pointer						_ftRenderPass;
 		VkFramebuffer 							_pickingFrameBuffer;
 		RenderPass::pointer 					_ftPickingRenderPass;
+        CommandBuffer::pointer                  _ftPickingCommandBuffer;
 		uint32_t 								_currentFrame = 0;
-		Image::pointer 							_ftPickingImage;
+		Image::pointer 							_ftPickingColorImage;
+		Image::pointer 							_ftPickingDepthImage;
+        Buffer::pointer                         _ftPickColorBuffer;
 		Sampler::pointer						_ftSampler;
 		std::vector<Buffer::pointer>			_ftUniformBuffers;
 	};

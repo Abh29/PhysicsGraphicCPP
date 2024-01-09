@@ -105,7 +105,8 @@ std::array<VkVertexInputAttributeDescription, 10> ft::InstanceData::getAttribute
 
 	attributeDescriptions[9].binding = 1;
 	attributeDescriptions[9].location = 13;
-	attributeDescriptions[9].format = VK_FORMAT_R32G32B32_SFLOAT;
+//	attributeDescriptions[9].format = VK_FORMAT_R32G32B32_SFLOAT;
+	attributeDescriptions[9].format = VK_FORMAT_R32_UINT;
 	attributeDescriptions[9].offset = offsetof(ft::InstanceData, id);
 
 	return attributeDescriptions;

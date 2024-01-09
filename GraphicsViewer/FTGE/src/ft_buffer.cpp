@@ -100,6 +100,29 @@ void ft::Buffer::copyToImage(ft::Image::pointer &image, uint32_t width,
 	commandBuffer->submit(_ftDevice->getVKGraphicsQueue());
 }
 
+void ft::Buffer::copyFromImage(const Image::pointer &image, VkImageLayout layout) {
+
+    std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice);
+    commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+    VkBufferImageCopy region{};
+    region.bufferOffset = 0;
+    region.bufferRowLength = 0;
+    region.bufferImageHeight = 0;
+    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    region.imageSubresource.mipLevel = 0;
+    region.imageSubresource.baseArrayLayer = 0;
+    region.imageSubresource.layerCount = 1;
+    region.imageOffset = {0, 0, 0};
+    region.imageExtent = {image->getWidth(), image->getHeight(), 1};
+
+    vkCmdCopyImageToBuffer(commandBuffer->getVKCommandBuffer(), image->getVKImage(), layout, _buffer, 1, &region);
+
+    commandBuffer->end();
+    commandBuffer->submit(_ftDevice->getVKGraphicsQueue());
+}
+
+
 /*******************************BufferBuilder****************************************/
 
 ft::BufferBuilder& ft::BufferBuilder::setSize(VkDeviceSize size) {
