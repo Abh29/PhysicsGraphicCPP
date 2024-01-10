@@ -85,12 +85,13 @@ namespace ft {
 
         void populateUBODescriptors(std::vector<Buffer::pointer> ubos);
         [[nodiscard]] std::vector<DescriptorSet::pointer> getDescriptorSets() const;
+        void createGraphicsPipeline(const RenderPass::pointer& renderPass);
 
     private:
         void createDescriptorSetLayout();
-        void createGraphicsPipeline();
 
-        std::vector<DescriptorSet::pointer>                    _ftDescriptorSets;
+        std::vector<DescriptorSet::pointer>                     _ftDescriptorSets;
+        bool                                                    _isCreatedPipeline = false;
 
     };
 

@@ -306,12 +306,10 @@ void ft::TexturedRdrSys::createGraphicsPipeline() {
 
 /***********************************PickingRenderingSystem********************************/
 
-
 ft::PickingRdrSys::PickingRdrSys(Device::pointer device, Renderer::pointer renderer, ft::DescriptorPool::pointer pool) :
         RenderingSystem(std::move(device), std::move(renderer), std::move(pool))
 {
     createDescriptorSetLayout();
-    createGraphicsPipeline();
 }
 
 void ft::PickingRdrSys::createDescriptorSetLayout() {
@@ -336,7 +334,7 @@ void ft::PickingRdrSys::populateUBODescriptors(std::vector<ft::Buffer::pointer> 
 
 std::vector<ft::DescriptorSet::pointer> ft::PickingRdrSys::getDescriptorSets() const {return _ftDescriptorSets;}
 
-void ft::PickingRdrSys::createGraphicsPipeline() {
+void ft::PickingRdrSys::createGraphicsPipeline(const ft::RenderPass::pointer& renderPass) {
     ft::PipelineConfig pipelineConfig{};
 
     // shader modules
@@ -442,8 +440,9 @@ void ft::PickingRdrSys::createGraphicsPipeline() {
 
     pipelineConfig.pushConstantRanges.push_back(pushConstantRange);
 
-    _ftPipeline = std::make_shared<ft::GraphicsPipeline>(_ftDevice, _ftRenderer->getPickingRenderPass(),
+    _ftPipeline = std::make_shared<ft::GraphicsPipeline>(_ftDevice, renderPass,
                                                          _ftDescriptorSetLayout->getVKLayout(),
                                                          pipelineConfig);
+    _isCreatedPipeline = true;
 }
 

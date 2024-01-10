@@ -23,6 +23,7 @@
 #include "ft_descriptor.h"
 #include "ft_rendering_systems.h"
 #include "ft_material.h"
+#include "ft_picker.h"
 
 namespace ft {
 
@@ -30,10 +31,9 @@ namespace ft {
 	public:
 		static constexpr uint32_t W_WIDTH = 800;
 		static constexpr uint32_t W_HEIGHT = 600;
-		const std::string TEXTURE_PATH = "textures/viking_room.png";
 
 		Application();
-		~Application() = default;
+		~Application();
 
 		void run();
 
@@ -44,7 +44,6 @@ namespace ft {
 		static void printFPS();
 		void updateScene(int key);
 		void drawFrame();
-        void pick();
 
 		EventListener::pointer				_ftEventListener;
 		Window::pointer						_ftWindow;
@@ -60,6 +59,7 @@ namespace ft {
 		SimpleRdrSys::pointer 				_ftSimpleRdrSys;
 		TexturedRdrSys::pointer				_ftTexturedRdrSys;
         PickingRdrSys::pointer              _ftPickingRdrSys;
+        MousePicker::pointer                _ftMousePicker;
 
 		DescriptorPool::pointer 			_ftDescriptorPool;
 		std::vector<DescriptorSet::pointer>	_ftDescriptorSets;
