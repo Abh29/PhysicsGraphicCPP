@@ -32,6 +32,10 @@ bool ft::Window::shouldClose() {
 	return glfwWindowShouldClose(_window);
 }
 
+void ft::Window::close() {
+    glfwSetWindowShouldClose(_window, true);
+}
+
 void ft::Window::pollEvents() {
 	glfwPollEvents();
 }

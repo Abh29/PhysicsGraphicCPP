@@ -23,6 +23,7 @@
 #include "glm/gtc/matrix_inverse.hpp"
 #include "glm/gtc/matrix_access.hpp"
 #include "glm/gtx/string_cast.hpp"
+#include "glm/gtc/type_ptr.hpp"
 #include <glm/gtx/hash.hpp>
 #include "array"
 #include "unordered_map"
@@ -30,10 +31,11 @@
 #include "glm/gtc/random.hpp"
 #include "memory"
 #include "functional"
-#include "stb/stb_image.h"
-#include "tiny_obj_loader.h"
 #include "thread"
 #include "any"
-
-
+//#include "stb/stb_image.h"
+#include "tinygltf/tiny_gltf.h"
+#include "tiny_obj_loader.h"
+#include "ktx.h"
+#include "ktxvulkan.h"
 

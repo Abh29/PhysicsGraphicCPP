@@ -51,9 +51,19 @@ add_custom_target(Texture)
 file(COPY models DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 add_custom_target(Models)
 
+#include_directories(external/ktx/other_include)
+#set(KTX_DIR ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx)
+#set(KTX_SOURCES
+#        ${KTX_DIR}/lib/texture.c
+#        ${KTX_DIR}/lib/hashlist.c
+#        ${KTX_DIR}/lib/checkheader.c
+#        ${KTX_DIR}/lib/swap.c
+#        ${KTX_DIR}/lib/memstream.c
+#        ${KTX_DIR}/lib/filestream.c)
+#
+##add_library(ktx STATIC ${KTX_SOURCE})
 
-
-add_link_options( -lglfw -lGL -lGLEW -lvulkan -ldl -lpthread )
+add_link_options( -lglfw -lGL -lGLEW -lvulkan -ldl -lpthread -lktx)
 add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp
         src/ft_callbacks.cpp src/ft_shader.cpp src/ft_instance.cpp
         src/ft_physicalDevice.cpp src/ft_device.cpp src/ft_surface.cpp
@@ -63,9 +73,11 @@ add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp
         src/ft_gui.cpp src/ft_model.cpp src/ft_scene.cpp src/ft_renderer.cpp
         src/ft_pipeline.cpp src/ft_rendering_systems.cpp
         src/ft_descriptor.cpp src/ft_camera.cpp src/ft_sampler.cpp
-        src/ft_material.cpp
+        src/ft_texture.cpp
         includes/ft_picker.h
-        src/ft_picker.cpp)
+        src/ft_picker.cpp
+        includes/ft_tools.h
+)
 
 target_link_libraries(ftGraphics imgui)
 add_dependencies(ftGraphics Shaders)

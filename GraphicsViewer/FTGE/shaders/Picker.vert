@@ -30,13 +30,13 @@ layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
 layout(location = 2) in vec3 normal;
 layout(location = 3) in vec2 inTexCoord;
+layout(location = 4) in vec4 tangent;
 
 // per instance data
-layout(location = 4) in mat4 modelMatrix;
-layout(location = 8) in mat4 normalMatrix;
-layout(location = 12) in vec3 inColor2;
-//layout(location = 13) in vec3 modelID;
-layout(location = 13) in uint modelID;
+layout(location = 5) in mat4 modelMatrix;
+layout(location = 9) in mat4 normalMatrix;
+layout(location = 13) in vec3 inColor2;
+layout(location = 14) in uint modelID;
 
 // output
 layout(location = 0) out uint fragColor;

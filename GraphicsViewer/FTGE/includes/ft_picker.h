@@ -17,12 +17,12 @@ namespace ft {
  public:
      using pointer = std::shared_ptr<MousePicker>;
 
-     MousePicker(Device::pointer device, SwapChain::pointer swapChain, PickingRdrSys::pointer rdrSys);
+     MousePicker(Device::pointer device, uint32_t width, uint32_t height, PickingRdrSys::pointer rdrSys);
      ~MousePicker();
 
      [[nodiscard]] uint32_t pick(Scene::pointer &scene, uint32_t x, uint32_t y);
      void notifyUpdatedView();
-     void updateResources();
+     void updateResources(uint32_t width, uint32_t height);
      [[nodiscard]] VkFence getVkFence() const;
 
  private:
@@ -33,7 +33,8 @@ namespace ft {
 
 
      Device::pointer                    _ftDevice;
-     SwapChain::pointer                 _ftSwapChain;
+     uint32_t                           _width;
+     uint32_t                           _height;
      bool                               _viewUpdated = true;
      VkFramebuffer 						_pickingFrameBuffer = VK_NULL_HANDLE;
      RenderPass::pointer 				_ftRenderPass;

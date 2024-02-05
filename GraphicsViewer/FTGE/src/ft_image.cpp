@@ -4,9 +4,10 @@ ft::Image::Image(ft::Device::pointer device,
 uint32_t width, uint32_t height, uint32_t mipLevel,
 VkSampleCountFlagBits sampleCount, VkFormat format,
 VkImageTiling tiling, VkImageUsageFlags usage,
-VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags) :
+VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags,
+VkImageLayout layout) :
 _ftDevice(std::move(device)), _width(width), _height(height),
-_mipLevel(mipLevel), _sampleCount(sampleCount){
+_mipLevel(mipLevel), _sampleCount(sampleCount), _imageLayout(layout){
 
 	// create an image on the device
 	VkImageCreateInfo imageCreateInfo{};
@@ -149,6 +150,76 @@ void ft::Image::transitionImageLayout(ft::Device::pointer device, VkImage image,
 	commandBuffer->submit(device->getVKGraphicsQueue());
 }
 
+void ft::Image::transitionLayout(VkFormat format, VkImageLayout layout) {
+    // create a command buffer for transition
+    std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice);
+    commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+
+    // create a barrier for sync
+    VkImageMemoryBarrier barrier{};
+    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+    barrier.oldLayout = _imageLayout;
+    barrier.newLayout = layout;
+    barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+    barrier.image = _image;
+    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    barrier.subresourceRange.baseMipLevel = 0;
+    barrier.subresourceRange.levelCount = _mipLevel;
+    barrier.subresourceRange.baseArrayLayer = 0;
+    barrier.subresourceRange.layerCount = 1;
+
+    // transition barrier masks
+    VkPipelineStageFlags sourceStage;
+    VkPipelineStageFlags destinationStage;
+
+    if (_imageLayout == VK_IMAGE_LAYOUT_UNDEFINED && layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (_imageLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+        sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+        destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    } else if (_imageLayout == VK_IMAGE_LAYOUT_UNDEFINED && layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
+        // set the right aspectMask
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+        barrier.subresourceRange.aspectMask |= _ftDevice->hasStencilComponent(format) ? VK_IMAGE_ASPECT_STENCIL_BIT
+                                                                                   : VK_IMAGE_ASPECT_NONE;
+        barrier.srcAccessMask = VK_ACCESS_NONE;
+        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT |
+                                VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+    } else if (_imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL && layout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+    } else if (_imageLayout == VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL && layout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL) {
+        barrier.srcAccessMask = 0;
+        barrier.dstAccessMask = 0;
+        sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+        destinationStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    } else {
+        throw std::invalid_argument("unsupported layout transition!");
+    }
+
+    // submit the barrier
+    vkCmdPipelineBarrier(commandBuffer->getVKCommandBuffer(),
+                         sourceStage, destinationStage,
+                         0, 0, nullptr, 0, nullptr,
+                         1,&barrier);
+
+    // execution and clean up
+    commandBuffer->end();
+    commandBuffer->submit(_ftDevice->getVKGraphicsQueue());
+    _imageLayout = layout;
+}
+
 void ft::Image::generateMipmaps(VkFormat imageFormat) {
 	// check if the image format supports linear blitting
 	VkFormatProperties formatProperties = _ftDevice->getVKFormatProperties(imageFormat);
@@ -242,7 +313,7 @@ ft::ImageBuilder::ImageBuilder() {
 ft::Image::pointer ft::ImageBuilder::build(std::shared_ptr<Device> &device) {
 	_ftImage = std::make_unique<ft::Image>(device,
 			_width, _height, _mipLevel, _sampleCount, _format,
-			_tiling, _usageFlags, _memoryProperties, _aspectFlags);
+			_tiling, _usageFlags, _memoryProperties, _aspectFlags, _layout);
 
 	return std::move(_ftImage);
 }
@@ -286,5 +357,10 @@ ft::ImageBuilder& ft::ImageBuilder::setMemoryProperties(VkMemoryPropertyFlags me
 
 ft::ImageBuilder& ft::ImageBuilder::setAspectFlags(VkImageAspectFlags aspectFlags) {
 	_aspectFlags = aspectFlags;
+	return *this;
+}
+
+ft::ImageBuilder& ft::ImageBuilder::setLayout(VkImageLayout imageLayout) {
+	_layout = imageLayout;
 	return *this;
 }

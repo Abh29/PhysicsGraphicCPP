@@ -33,7 +33,6 @@ namespace ft {
 		CommandBuffer::pointer getCurrentCommandBuffer();
 		[[nodiscard]] SwapChain::pointer getSwapChain() const;
 		[[nodiscard]] RenderPass::pointer getRenderPass() const;
-		[[nodiscard]] Sampler::pointer getSampler() const;
 		[[nodiscard]] std::vector<Buffer::pointer> getUniformBuffers() const;
 
 
@@ -53,7 +52,6 @@ namespace ft {
 		std::vector<CommandBuffer::pointer>		_ftCommandBuffers;
 		RenderPass::pointer						_ftRenderPass;
 		uint32_t 								_currentFrame = 0;
-		Sampler::pointer						_ftSampler;
 		std::vector<Buffer::pointer>			_ftUniformBuffers;
 	};
 

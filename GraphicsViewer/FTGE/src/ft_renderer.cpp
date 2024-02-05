@@ -26,7 +26,6 @@ void ft::Renderer::initRenderer() {
 
 	_ftImageBuilder = std::make_shared<ImageBuilder>();
 	_ftBufferBuilder = std::make_shared<BufferBuilder>();
-	_ftSampler = std::make_shared<ft::Sampler>(_ftDevice);
 
 	initRenderPasses();
 	_ftSwapChain->createFrameBuffers(_ftRenderPass);
@@ -176,8 +175,6 @@ void ft::Renderer::initRenderPasses() {
 ft::SwapChain::pointer ft::Renderer::getSwapChain() const {return _ftSwapChain;}
 
 ft::RenderPass::pointer ft::Renderer::getRenderPass() const {return _ftRenderPass;}
-
-ft::Sampler::pointer ft::Renderer::getSampler() const {return _ftSampler;}
 
 void ft::Renderer::createUniformBuffers() {
 	VkDeviceSize bufferSize = sizeof(UniformBufferObject);

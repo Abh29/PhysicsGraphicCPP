@@ -44,6 +44,35 @@ namespace ft {
 		alignas(4)  float		ambient;
 	};
 
+    struct Material {
+        glm::vec4   colorFactor = glm::vec4(1.0f);
+        uint32_t    colorTextureIndex;
+        uint32_t    normalTextureIndex;
+        std::string alphaModel = "OPAQUE";
+        float alphaCutOff;
+        bool doubleSided = false;
+    };
+
+    struct Primitive {
+        uint32_t firstIndex;
+        uint32_t indexCount;
+        uint32_t materialIndex;
+    };
+
+    struct Node {
+        Node* parent;
+        uint32_t    id;
+        std::vector<Node*> children;
+        std::vector<Primitive> mesh;
+        glm::mat4 matrix;
+        std::string name;
+        bool visible = true;
+        ~Node() {
+            for (auto& child: children)
+                delete child;
+        }
+    };
+
 	enum class KeyActions {
 		KEY_PRESS,
 		KEY_RELEASE,
@@ -191,6 +220,8 @@ namespace ft {
 	constexpr uint32_t MODEL_HIDDEN_BIT = 1u;
 	constexpr uint32_t MODEL_SELECTABLE_BIT = 1u << 1;
 	constexpr uint32_t MODEL_SELECTED_BIT = 1u << 2;
+    constexpr uint32_t MODEL_HAS_COLOR_TEXTURE_BIT = 1u << 3;
+    constexpr uint32_t MODEL_HAS_NORMAL_TEXTURE_BIT = 1u << 4;
 	constexpr uint32_t MODEL_TEXTURED_BIT = 1u << 10;
 	constexpr uint32_t MODEL_TRIANGLE_BIT = 1U << 11;
 	constexpr uint32_t MODEL_LINE_BIT = 1U << 12;

@@ -11,7 +11,6 @@ ft::SwapChain::SwapChain(std::shared_ptr<PhysicalDevice> &physicalDevice,
 						 _ftSurface(surface),
 						 _preferredMode(preferredMode),
 						 _width(width), _height(height){
-
 	SwapChainSupportDetails details = querySwapChainSupport(physicalDevice->getVKPhysicalDevice());
 
 	VkSurfaceFormatKHR  surfaceFormatKhr = chooseSwapSurfaceFormat(details.formats);
@@ -53,7 +52,7 @@ ft::SwapChain::SwapChain(std::shared_ptr<PhysicalDevice> &physicalDevice,
 	swapchainCreateInfoKhr.oldSwapchain = VK_NULL_HANDLE;
 
 	if (vkCreateSwapchainKHR(_ftDevice->getVKDevice(), &swapchainCreateInfoKhr, nullptr, &_swapChain) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create a swapChain!");
+		throw std::runtime_error("failed to create the swapChain!");
 	}
 
 	uint32_t actualImageCount;
@@ -182,11 +181,11 @@ void ft::SwapChain::createImageViews() {
 }
 
 uint32_t ft::SwapChain::getWidth() const {
-	return _width;
+	return _swapChainExtent.width;
 }
 
 uint32_t ft::SwapChain::getHeight() const {
-	return _height;
+	return _swapChainExtent.height;
 }
 
 float ft::SwapChain::getAspect() const {

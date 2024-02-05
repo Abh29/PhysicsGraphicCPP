@@ -14,7 +14,7 @@
 
 namespace ft {
 
-class Gui {
+    class Gui {
 
 public:
 	using pointer = std::shared_ptr<Gui>;
@@ -26,16 +26,27 @@ public:
 
 	void newFrame();
 	void showDemo();
+    void showGUI(uint32_t flags = 0, bool *p_open = nullptr);
 	void render(CommandBuffer::pointer commandBuffer);
 
 
+
 private:
+    void showMetrics(bool *p_open);
+    void showMainMenue();
+    void showTitleBar();
+    void showExampleMenuFile();
+
 	Instance::pointer 						_ftInstance;
 	PhysicalDevice::pointer 				_ftPhysicalDevice;
 	Device::pointer 						_ftDevice;
 	Window::pointer							_ftWindow;
 	RenderPass::pointer						_ftRenderPass;
 	VkDescriptorPool						_descriptorPool;
+
+    // flags
+    bool show_app_metrics = false;
+    bool show_app_about = false;
 
 };
 

@@ -73,7 +73,7 @@ ft::DescriptorSet::DescriptorSet(Device::pointer device, DescriptorSetLayout::po
 	descriptorSetAllocateInfo.pSetLayouts = &_ftDSLayout->getVKLayout();
 
 	if (vkAllocateDescriptorSets(_ftDevice->getVKDevice(), &descriptorSetAllocateInfo, &_descriptorSet) != VK_SUCCESS) {
-		throw std::runtime_error("failed to create the descriptor sets!");
+		throw std::runtime_error("failed to create descriptor sets!");
 	}
 }
 

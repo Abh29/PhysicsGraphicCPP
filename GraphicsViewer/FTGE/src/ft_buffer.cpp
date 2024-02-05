@@ -77,24 +77,33 @@ bool ft::Buffer::isMapped() const {
 	return _isMapped;
 }
 
+//todo: copy multiple regions for each mipLevel
 void ft::Buffer::copyToImage(ft::Image::pointer &image, uint32_t width,
-							 uint32_t height) {
+							 uint32_t height, uint32_t mipLevels, size_t *offsets) {
 
 	std::unique_ptr<CommandBuffer>	commandBuffer = std::make_unique<CommandBuffer>(_ftDevice);
 	commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-	VkBufferImageCopy region{};
-	region.bufferOffset = 0;
-	region.bufferRowLength = 0;
-	region.bufferImageHeight = 0;
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-	region.imageSubresource.mipLevel = 0;
-	region.imageSubresource.baseArrayLayer = 0;
-	region.imageSubresource.layerCount = 1;
-	region.imageOffset = {0, 0, 0};
-	region.imageExtent = {width, height, 1};
+    std::vector<VkBufferImageCopy> copyRegions;
 
-	vkCmdCopyBufferToImage(commandBuffer->getVKCommandBuffer(), _buffer, image->getVKImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    for (uint32_t i = 0; i < mipLevels; ++i) {
+        VkBufferImageCopy region{};
+        region.bufferOffset = offsets ? offsets[i] : 0;
+        region.bufferRowLength = 0;
+        region.bufferImageHeight = 0;
+        region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        region.imageSubresource.mipLevel = i;
+        region.imageSubresource.baseArrayLayer = 0;
+        region.imageSubresource.layerCount = 1;
+        region.imageOffset = {0, 0, 0};
+        region.imageExtent.width = std::max(1u, width >> i );
+        region.imageExtent.height = std::max(1u, height >> i );
+        region.imageExtent.depth = 1;
+
+        copyRegions.push_back(region);
+    }
+
+	vkCmdCopyBufferToImage(commandBuffer->getVKCommandBuffer(), _buffer, image->getVKImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, copyRegions.data());
 
 	commandBuffer->end();
 	commandBuffer->submit(_ftDevice->getVKGraphicsQueue());

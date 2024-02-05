@@ -172,14 +172,14 @@ void ft::TexturedRdrSys::createDescriptorSetLayout() {
     _textureImageBinding = 1u;
 }
 
-void ft::TexturedRdrSys::populateUBODescriptors(std::vector<ft::Buffer::pointer> ubos, const ft::Material::pointer& material) {
+void ft::TexturedRdrSys::populateUBODescriptors(std::vector<ft::Buffer::pointer> ubos, const ft::Texture::pointer& material) {
 	assert(ubos.size() >= material->getDescriptorSets().size());
 
 	for (uint32_t i = 0; i < material->getDescriptorSets().size(); ++i)
 		material->getDescriptorSets()[i]->updateDescriptorBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, ubos[i], 0);
 }
 
-void ft::TexturedRdrSys::populateTextureDescriptors(const Material::pointer& material) {
+void ft::TexturedRdrSys::populateTextureDescriptors(const Texture::pointer& material) {
 
 	for (auto & _ftDescriptorSet : material->getDescriptorSets())
 	_ftDescriptorSet->updateDescriptorImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,

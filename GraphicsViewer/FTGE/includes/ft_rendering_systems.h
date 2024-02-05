@@ -8,7 +8,7 @@
 #include "ft_descriptor.h"
 #include "ft_renderer.h"
 #include "ft_vertex.h"
-#include "ft_material.h"
+#include "ft_texture.h"
 
 
 namespace ft {
@@ -63,8 +63,8 @@ namespace ft {
 		TexturedRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
 		~TexturedRdrSys() override = default;
 
-		void populateUBODescriptors(std::vector<Buffer::pointer> ubos, const Material::pointer& material);
-		void populateTextureDescriptors(const Material::pointer& material);
+		void populateUBODescriptors(std::vector<Buffer::pointer> ubos, const Texture::pointer& material);
+		void populateTextureDescriptors(const Texture::pointer& material);
         [[nodiscard]] uint32_t getTextureImageBinding() const;
         [[nodiscard]] uint32_t getSamplerBinding() const;
 

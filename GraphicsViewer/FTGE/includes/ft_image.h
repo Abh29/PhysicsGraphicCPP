@@ -15,7 +15,8 @@ namespace ft {
 			  uint32_t width, uint32_t height, uint32_t mipLevel,
 			  VkSampleCountFlagBits sampleCount, VkFormat format,
 			  VkImageTiling tiling, VkImageUsageFlags usage,
-			  VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags);
+			  VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags,
+              VkImageLayout layout);
 
 		~Image();
 
@@ -24,6 +25,7 @@ namespace ft {
 		static void transitionImageLayout(Device::pointer device, VkImage image, VkFormat format,
 										  VkImageLayout oldLayout, VkImageLayout newLayout,
 										  uint32_t mipLevels);
+        void transitionLayout(VkFormat format, VkImageLayout layout);
 		void generateMipmaps(VkFormat imageFormat);
         [[nodiscard]] uint32_t getHeight() const;
         [[nodiscard]] uint32_t getWidth() const;
@@ -38,6 +40,7 @@ namespace ft {
 		VkImage 						_image;
 		VkImageView 					_imageView;
 		VkDeviceMemory 					_imageMemory;
+        VkImageLayout                   _imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	};
 
 
@@ -56,6 +59,7 @@ namespace ft {
 		ImageBuilder& setUsageFlags(VkImageUsageFlags usageFlags);
 		ImageBuilder& setMemoryProperties(VkMemoryPropertyFlags memoryProperties);
 		ImageBuilder& setAspectFlags(VkImageAspectFlags aspectFlags);
+		ImageBuilder& setLayout(VkImageLayout imageLayout);
 
 		Image::pointer build(Device::pointer &device);
 
@@ -65,6 +69,7 @@ namespace ft {
 		uint32_t 						_mipLevel;
 		VkSampleCountFlagBits			_sampleCount;
 		VkFormat						_format;
+        VkImageLayout                   _layout = VK_IMAGE_LAYOUT_UNDEFINED;
 		VkImageTiling					_tiling;
 		VkImageUsageFlags 				_usageFlags;
 		VkMemoryPropertyFlags 			_memoryProperties;

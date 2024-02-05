@@ -17,15 +17,15 @@ _ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow", nullp
 	createScene();
 }
 
-ft::Application::~Application() {}
-
+ft::Application::~Application() = default;
 
 void ft::Application::run() {
 
 	while(!_ftWindow->shouldClose()) {
 		_ftWindow->pollEvents();
 		_ftGui->newFrame();
-		_ftGui->showDemo();
+		_ftGui->showGUI();
+//		_ftGui->showDemo();
 		drawFrame();
 		#ifdef SHOW_FRAME_RATE
 			printFPS();
@@ -51,6 +51,9 @@ void ft::Application::initEventListener() {
 			auto y = std::any_cast<double>(data[4]);
             uint32_t id  =  _ftMousePicker->pick(_ftScene, (uint32_t)x, (uint32_t)y);
             std::cout << "id is: " << id << std::endl;
+            if (id && _ftScene->select(id)) {
+                _ftMousePicker->notifyUpdatedView();
+            }
 		}
 	});
 
@@ -72,7 +75,7 @@ void ft::Application::initEventListener() {
         auto height = std::any_cast<int>(data[1]);
         _ftScene->getCamera()->updateAspect((float)width / (float)height);
         _ftScene->updateCameraUBO();
-        _ftMousePicker->notifyUpdatedView();
+        _ftMousePicker->updateResources(_ftRenderer->getSwapChain()->getWidth(), _ftRenderer->getSwapChain()->getHeight());
     });
 }
 
@@ -97,7 +100,7 @@ void ft::Application::initApplication() {
 	_ftGui = std::make_shared<Gui>(_ftInstance, _ftPhysicalDevice, _ftDevice,
 								   _ftWindow, _ftRenderer->getRenderPass(), MAX_FRAMES_IN_FLIGHT);
 
-    _ftMaterialPool = std::make_shared<ft::MaterialPool>(_ftDevice);
+    _ftMaterialPool = std::make_shared<ft::TexturePool>(_ftDevice);
 	_ftDescriptorPool = std::make_shared<ft::DescriptorPool>(_ftDevice);
 
 	_ftSimpleRdrSys = std::make_shared<ft::SimpleRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
@@ -108,12 +111,14 @@ void ft::Application::initApplication() {
     _ftPickingRdrSys = std::make_shared<ft::PickingRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
     _ftPickingRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
 
-    _ftMousePicker = std::make_shared<ft::MousePicker>(_ftDevice, _ftRenderer->getSwapChain(), _ftPickingRdrSys);
+    _ftMousePicker = std::make_shared<ft::MousePicker>(_ftDevice, _ftRenderer->getSwapChain()->getWidth(), _ftRenderer->getSwapChain()->getHeight(), _ftPickingRdrSys);
 }
 
 //TODO: replace this with a scene manager, read scene from disk
 void ft::Application::createScene() {
 	CameraBuilder cameraBuilder;
+    Texture::pointer m;
+
 	_ftScene = std::make_shared<Scene>(_ftDevice, _ftRenderer->getUniformBuffers());
     _ftScene->setMaterialPool(_ftMaterialPool);
 	_ftScene->setCamera(cameraBuilder.setEyePosition({5,-1,0})
@@ -132,7 +137,7 @@ void ft::Application::createScene() {
 	data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
 	data.color = {0.f, 0.0f, 0.9f};
 	data.normalMatrix = glm::mat4(1.0f);
-	id = _ftScene->addObjectToTheScene("models/axis.obj", data);
+	id = _ftScene->addModelFromObj("models/axis.obj", data);
 
     // Y
     data.model = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -153,29 +158,47 @@ void ft::Application::createScene() {
 	data.color = {0.95f, .95f, .95f};
 	data.normalMatrix = glm::mat4(1.0f);
 	data.model = glm::scale(data.model, {100, 100, 100});
-	_ftScene->addObjectToTheScene("models/plane.mtl.obj", data);
+	id = _ftScene->addModelFromObj("models/plane.mtl.obj", data);
+
+
+    id  = _ftScene->addModelsFromGltf("assets/models/sponza/sponza.gltf",
+                                      _ftTexturedRdrSys->getDescriptorPool(),
+                                      _ftTexturedRdrSys->getDescriptorSetLayout());
+
+
+//     m = _ftMaterialPool->createTexture("textures/cubemap_space.ktx", _ftRenderer->getSampler(),
+//                                       _ftTexturedRdrSys->getDescriptorPool(),
+//                                       _ftTexturedRdrSys->getDescriptorSetLayout(),
+//                                       Texture::FileType::FT_TEXTURE_KTX);
+//    _ftScene->addTextureToObject(id, m);
 
 
 
-	data.model = glm::mat4(1.0f);
-	data.color = {0.9f, 0.9f, 0.9f};
-	data.normalMatrix = glm::mat4(1.0f);
-	data.model = glm::rotate(data.model, glm::radians(90.0f), {1,0,0});
-	id = _ftScene->addObjectToTheScene("models/viking_room.obj", data);
+//	data.model = glm::mat4(1.0f);
+//	data.color = {0.0f, 0.9f, 0.2f};
+//	data.normalMatrix = glm::mat4(1.0f);
+//	data.model = glm::rotate(data.model, glm::radians(90.0f), {1,0,0});
+//	id = _ftScene->addModelFromObj("models/viking_room.obj", data);
 
-    auto m = _ftMaterialPool->createMaterial("textures/viking_room.png", _ftRenderer->getSampler(), _ftTexturedRdrSys->getDescriptorPool(), _ftTexturedRdrSys->getDescriptorSetLayout());
-    _ftScene->addMaterialToObject(id, m);
+//     m = _ftTexturePool->createTexture("textures/viking_room.png", _ftRenderer->getSampler(),
+//                                            _ftTexturedRdrSys->getDescriptorPool(),
+//                                            _ftTexturedRdrSys->getDescriptorSetLayout(),
+//                                            Texture::FileType::FT_TEXTURE_UNDEFINED);
+//    _ftScene->addTextureToObject(id, m);
 
-    data.model = glm::mat4(1.0f);
-	data.color = {0.9f, 0.9f, 0.9f};
-	data.normalMatrix = glm::mat4(1.0f);
-    data.model = glm::translate(data.model, {0, 0, 3});
-    data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
-    data.model = glm::scale(data.model, {0.005,0.005,0.005});
-	id = _ftScene->addObjectToTheScene("models/car.obj", data);
+//    data.model = glm::mat4(1.0f);
+//	data.color = {0.9f, 0.9f, 0.9f};
+//	data.normalMatrix = glm::mat4(1.0f);
+//    data.model = glm::translate(data.model, {0, 0, 3});
+//    data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
+//    data.model = glm::scale(data.model, {0.005,0.005,0.005});
+//	id = _ftScene->addModelFromObj("models/car.obj", data);
 
-    m = _ftMaterialPool->createMaterial("textures/car.png", _ftRenderer->getSampler(), _ftTexturedRdrSys->getDescriptorPool(), _ftTexturedRdrSys->getDescriptorSetLayout());
-    _ftScene->addMaterialToObject(id, m);
+//    m = _ftTexturePool->createTexture("textures/car.png", _ftRenderer->getSampler(),
+//                                       _ftTexturedRdrSys->getDescriptorPool(),
+//                                       _ftTexturedRdrSys->getDescriptorSetLayout(),
+//                                       Texture::FileType::FT_TEXTURE_UNDEFINED);
+//    _ftScene->addTextureToObject(id, m);
 
 
 //    data.model = glm::mat4(1.0f);
@@ -183,10 +206,10 @@ void ft::Application::createScene() {
 //	data.normalMatrix = glm::mat4(1.0f);
 //	data.model = glm::scale(data.model, {2, 2, 2});
 //	data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
-//	id = _ftScene->addObjectToTheScene("models/big_terrain.obj", data);
+//	id = _ftScene->addModelFromObj("models/big_terrain.obj", data);
 //
-//    auto m = _ftMaterialPool->createMaterial("textures/terrain.png", _ftRenderer->getSampler());
-//    _ftScene->addMaterialToObject(id, m);
+//    auto m = _ftTexturePool->createTexture("textures/terrain.png", _ftRenderer->getSampler());
+//    _ftScene->addTextureToObject(id, m);
 
 
 //	data.model = glm::mat4(1.0f);
@@ -194,10 +217,10 @@ void ft::Application::createScene() {
 //	data.normalMatrix = glm::mat4(1.0f);
 ////	data.model = glm::scale(data.model, {0.1, 0.1, 0.1});
 //	data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
-//	id = _ftScene->addObjectToTheScene("models/mountain.obj", data);
+//	id = _ftScene->addModelFromObj("models/mountain.obj", data);
 //
-//    m = _ftMaterialPool->createMaterial("textures/mountain.jpg", _ftRenderer->getSampler(), _ftTexturedRdrSys->getDescriptorPool(), _ftTexturedRdrSys->getDescriptorSetLayout());
-//    _ftScene->addMaterialToObject(id, m);
+//    m = _ftTexturePool->createTexture("textures/mountain.jpg", _ftRenderer->getSampler(), _ftTexturedRdrSys->getDescriptorPool(), _ftTexturedRdrSys->getDescriptorSetLayout());
+//    _ftScene->addTextureToObject(id, m);
 
 
 
@@ -212,7 +235,7 @@ void ft::Application::createScene() {
 //	data.color = {0.7f, 0.2f, 0.4f};
 //	id = _ftScene->addObjectCopyToTheScene(id, data);
 //
-//	id = _ftScene->addObjectToTheScene("models/smooth_vase.obj", {
+//	id = _ftScene->addModelFromObj("models/smooth_vase.obj", {
 //			glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f)),
 //			glm::mat4(1.0f),
 //			{0.95f, 0.2f, 0.0f}
@@ -221,7 +244,7 @@ void ft::Application::createScene() {
 //	data.model = glm::mat4(1.0f);
 //	data.color = {0.95f, 0.2f, 0.0f};
 //	data.normalMatrix = glm::mat4(1.0f);
-//	id = _ftScene->addObjectToTheScene("models/sphere.mtl.obj", data);
+//	id = _ftScene->addModelFromObj("models/sphere.mtl.obj", data);
 //
 //	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 //	data.model = glm::translate(data.model, glm::vec3{1.0f, -2.0f, 0.0f});
@@ -318,7 +341,8 @@ void ft::Application::updateScene(int key) {
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_KP_3)) {
 		_ftScene->getCamera()->rotateWorldZ(-10.0f);
 	} else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Z)) {
-        std::cout << "nothing ... " << std::endl;
+        std::cout << "unselect all ... " << std::endl;
+        _ftScene->unselectAll();
 	}
 	_ftScene->updateCameraUBO();
     _ftMousePicker->notifyUpdatedView();

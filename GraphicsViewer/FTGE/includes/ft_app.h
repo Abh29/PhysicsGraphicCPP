@@ -22,7 +22,7 @@
 #include "ft_renderer.h"
 #include "ft_descriptor.h"
 #include "ft_rendering_systems.h"
-#include "ft_material.h"
+#include "ft_texture.h"
 #include "ft_picker.h"
 
 namespace ft {
@@ -63,7 +63,7 @@ namespace ft {
 
 		DescriptorPool::pointer 			_ftDescriptorPool;
 		std::vector<DescriptorSet::pointer>	_ftDescriptorSets;
-        MaterialPool::pointer               _ftMaterialPool;
+        TexturePool::pointer               _ftMaterialPool;
 		int									_topology = 0;
 		uint32_t 							_currentFrame = 0;
 	};

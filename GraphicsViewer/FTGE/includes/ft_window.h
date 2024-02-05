@@ -31,6 +31,7 @@ namespace ft {
 		int KEY(KeyboardKeys key) const;
 		int MOUSE(MouseKeys key) const;
 		int ACTION(KeyActions action) const;
+        void close();
 
 	private:
 

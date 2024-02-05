@@ -1,9 +1,9 @@
 #include "../includes/ft_picker.h"
 
 
-ft::MousePicker::MousePicker(Device::pointer device, ft::SwapChain::pointer swapChain, ft::PickingRdrSys::pointer rdrSys):
+ft::MousePicker::MousePicker(Device::pointer device, uint32_t width, uint32_t height, ft::PickingRdrSys::pointer rdrSys):
 _ftDevice(std::move(device)),
-_ftSwapChain(std::move(swapChain)),
+_width(width), _height(height),
 _ftPickingRdrSys(std::move(rdrSys)){
     createPickingRenderPass();
     createPickingResources();
@@ -23,7 +23,7 @@ uint32_t ft::MousePicker::pick(ft::Scene::pointer &scene, uint32_t x, uint32_t y
         _viewUpdated = false;
     }
     auto pixels = reinterpret_cast<uint32_t*>(_ftColorBuffer->getMappedData());
-    return pixels[(int)y * _ftSwapChain->getWidth() + (int)x];
+    return pixels[(int)y * _width + (int)x];
 }
 
 void ft::MousePicker::notifyUpdatedView() {_viewUpdated = true;}
@@ -73,7 +73,7 @@ void ft::MousePicker::createPickingRenderPass() {
 
 void ft::MousePicker::createPickingResources() {
     ImageBuilder imageBuilder;
-    _ftColorImage = imageBuilder.setWidthHeight(_ftSwapChain->getWidth(), _ftSwapChain->getHeight())
+    _ftColorImage = imageBuilder.setWidthHeight(_width, _height)
             .setMipLevel(1)
             .setSampleCount(VK_SAMPLE_COUNT_1_BIT)
             .setFormat(VK_FORMAT_R32_UINT)
@@ -84,7 +84,7 @@ void ft::MousePicker::createPickingResources() {
             .build(_ftDevice);
 
     VkFormat depthFormat = _ftDevice->findDepthFormat();
-    _ftDepthImage = imageBuilder.setWidthHeight(_ftSwapChain->getWidth(), _ftSwapChain->getHeight())
+    _ftDepthImage = imageBuilder.setWidthHeight(_width, _height)
             .setMipLevel(1)
             .setSampleCount(VK_SAMPLE_COUNT_1_BIT)
             .setFormat(depthFormat)
@@ -107,8 +107,8 @@ void ft::MousePicker::createPickingResources() {
     framebufferCreateInfo.renderPass = _ftRenderPass->getVKRenderPass();
     framebufferCreateInfo.attachmentCount = (uint32_t) attachments.size();
     framebufferCreateInfo.pAttachments = attachments.data();
-    framebufferCreateInfo.width = _ftSwapChain->getWidth();
-    framebufferCreateInfo.height = _ftSwapChain->getHeight();
+    framebufferCreateInfo.width = _width;
+    framebufferCreateInfo.height = _height;
     framebufferCreateInfo.layers = 1;
 
     if (vkCreateFramebuffer(_ftDevice->getVKDevice(), &framebufferCreateInfo, nullptr, &(_pickingFrameBuffer)) != VK_SUCCESS) {
@@ -121,7 +121,7 @@ void ft::MousePicker::createPickingResources() {
 
     _ftColorBuffer = bufferBuilder
             .setIsMapped(true)
-            .setSize(_ftSwapChain->getWidth() * _ftSwapChain->getHeight() * 4)
+            .setSize(_width * _height * 4)
             .setMappedOffset(0)
             .setMappedFlags(0)
             .setMemoryProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
@@ -158,7 +158,7 @@ void ft::MousePicker::drawIDs(ft::Scene::pointer &scene) {
     renderPassBeginInfo.renderPass = _ftRenderPass->getVKRenderPass();
     renderPassBeginInfo.framebuffer = _pickingFrameBuffer;
     renderPassBeginInfo.renderArea.offset = {0, 0};
-    renderPassBeginInfo.renderArea.extent = _ftSwapChain->getVKSwapChainExtent();
+    renderPassBeginInfo.renderArea.extent = {_width, _height};
     renderPassBeginInfo.clearValueCount = (uint32_t) clearValues.size();
     renderPassBeginInfo.pClearValues = clearValues.data();
 
@@ -180,15 +180,15 @@ void ft::MousePicker::drawIDs(ft::Scene::pointer &scene) {
     VkViewport viewport{};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = static_cast<float>(_ftSwapChain->getVKSwapChainExtent().width);
-    viewport.height = static_cast<float>(_ftSwapChain->getVKSwapChainExtent().height);
+    viewport.width = static_cast<float>(_width);
+    viewport.height = static_cast<float>(_height);
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
     vkCmdSetViewport(_ftCommandBuffer->getVKCommandBuffer(), 0, 1, &viewport);
 
     VkRect2D scissor{};
     scissor.offset = {0, 0};
-    scissor.extent = _ftSwapChain->getVKSwapChainExtent();
+    scissor.extent = {_width, _height};
     vkCmdSetScissor(_ftCommandBuffer->getVKCommandBuffer(), 0, 1, &scissor);
 
 
@@ -238,17 +238,17 @@ void ft::MousePicker::createPickingSyncObjs() {
         throw std::runtime_error("failed to create the picking fence objects!");
 }
 
-void ft::MousePicker::updateResources() {
+void ft::MousePicker::updateResources(uint32_t width, uint32_t height) {
     // wait for previous frame
     vkWaitForFences(_ftDevice->getVKDevice(), 1, &_fence, VK_TRUE, UINT64_MAX);
 
+    _width = width;
+    _height = height;
     _ftColorImage.reset();
     _ftDepthImage.reset();
     vkDestroyFramebuffer(_ftDevice->getVKDevice(), _pickingFrameBuffer, nullptr);
-    _ftCommandBuffer.reset();
     createPickingResources();
     _viewUpdated = true;
-    vkResetFences(_ftDevice->getVKDevice(), 1, &_fence);
 }
 
 
