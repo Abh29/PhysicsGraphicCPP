@@ -20,6 +20,7 @@ namespace ft {
 		glm::mat4& 			getViewMatrix();
 		[[nodiscard]] const glm::mat4& 	getProjMatrix() const;
 		glm::mat4& 			getProjMatrix();
+        glm::vec3&          getEyePosition();
 		void hardSet(glm::vec3 eye, glm::vec3 target, glm::vec3 up);
         void updateAspect(float aspect);
 

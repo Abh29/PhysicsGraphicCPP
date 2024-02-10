@@ -40,13 +40,32 @@ layout(location = 14) in uint modelID;
 
 // output
 layout(location = 0) out vec3 fragColor;
-layout(location = 1) out vec2 fragTexCoord;
+vec2 positions[3] = vec2[](
+vec2(0.0, -0.5),
+vec2(0.5, 0.5),
+vec2(-0.5, 0.5)
+);
+
+vec3 colors[3] = vec3[](
+vec3(1.0, 0.0, 0.0),
+vec3(0.0, 1.0, 0.0),
+vec3(0.0, 0.0, 1.0)
+);
+
 
 void main() {
-    fragTexCoord = inTexCoord;
+    gl_Position = vec4(positions[gl_VertexIndex], 0.0, 1.0);
+    fragColor = colors[gl_VertexIndex];
+}
+
+void main2() {
+    fragColor = inColor2;
     gl_PointSize = 2;
+
+    //     Transform the vertex position, normal, and calculate the light direction in view space
     vec4 worldPos = modelMatrix * vec4(inPosition, 1.0);
     vec3 worldNormal = mat3(transpose(inverse(modelMatrix))) * normal;
+    //    vec3 worldNormal = mat3(normalMatrix) * normal;
     vec3 viewDir = normalize(-vec3(ubo.view * worldPos));
 
     // Calculate diffuse reflection
@@ -55,9 +74,12 @@ void main() {
 
     // Calculate ambient reflection
     vec3 ambient = push.ambient * inColor2;
-
     // Calculate final color by combining ambient and diffuse components
     fragColor = ambient + diffuse;
-
+    //    fragColor = inColor2;
+    //     Transform the vertex position to clip space for later use in the fragment shader
     gl_Position = ubo.proj * ubo.view * worldPos;
+    //    gl_Position = ubo.proj * ubo.view * modelMatrix * vec4(inPosition, 1.0);
 }
+
+

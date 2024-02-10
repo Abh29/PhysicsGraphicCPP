@@ -3,10 +3,7 @@ project(ftGraphics)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_compile_options(-Wall -Werror -Wextra)
-#set(CMAKE_CXX_FLAGS " -lEGL -lGLU -lOpenGL ")
-#add_link_options( -lSDL2 -lGL -lSDL2_image )
-#add_link_options( -lglfw -lGL -lGLEW -lvulkan -ldl -lpthread -lX11 -lXxf86vm -lXrandr -lXi)
+add_compile_options(-Wall -Werror -Wextra -pg -O3)
 
 ## Imgui
 add_subdirectory(imgui)
@@ -22,11 +19,17 @@ file(GLOB_RECURSE GLSL_SOURCE_FILES
         shaders/shader.frag
         shaders/SimpleRdrSys.vert
         shaders/SimpleRdrSys.frag
-        shaders/TexturedRdrSys.vert
-        shaders/TexturedRdrSys.frag
+        shaders/InstanceRdrSys.vert
+        shaders/InstanceRdrSys.frag
+        shaders/OneTextureRdrSys.vert
+        shaders/OneTextureRdrSys.frag
+        shaders/TwoTextureRdrSys.vert
+        shaders/TwoTextureRdrSys.frag
         shaders/Picker.vert
         shaders/Picker.frag
         )
+
+set(GLSLC_FLAGS -g -Werror)
 
 foreach(GLSL_F ${GLSL_SOURCE_FILES})
     GET_FILENAME_COMPONENT(FILE_NAME ${GLSL_F} NAME)
@@ -34,7 +37,7 @@ foreach(GLSL_F ${GLSL_SOURCE_FILES})
     ADD_CUSTOM_COMMAND(
             OUTPUT ${SPIRV}
             COMMAND ${CMAKE_COMMAND} -E make_directory "${PROJECT_BINARY_DIR}/shaders"
-            COMMAND ${GLSLC} ${GLSL_F} -o ${SPIRV}
+            COMMAND ${GLSLC} ${GLSLC_FLAGS} ${GLSL_F} -o ${SPIRV}
             DEPENDS ${GLSL_F}
             VERBATIM
     )
@@ -63,7 +66,7 @@ add_custom_target(Models)
 #
 ##add_library(ktx STATIC ${KTX_SOURCE})
 
-add_link_options( -lglfw -lGL -lGLEW -lvulkan -ldl -lpthread -lktx)
+add_link_options( -lglfw -lGL -lGLEW -lvulkan -ldl -lpthread -lktx -pg -O3)
 add_executable(ftGraphics main.cpp src/ft_window.cpp src/ft_app.cpp
         src/ft_callbacks.cpp src/ft_shader.cpp src/ft_instance.cpp
         src/ft_physicalDevice.cpp src/ft_device.cpp src/ft_surface.cpp

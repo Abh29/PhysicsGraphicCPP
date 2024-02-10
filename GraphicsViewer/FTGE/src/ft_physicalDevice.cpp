@@ -69,7 +69,7 @@ bool ft::PhysicalDevice::isDeviceSuitable(VkPhysicalDevice device) {
 	// print which suitable device found
 	VkPhysicalDeviceProperties deviceProperties;
 	vkGetPhysicalDeviceProperties(device, &deviceProperties);
-	std::cout << "suitable device: " << deviceProperties.deviceName << std::endl;
+//	std::cout << "suitable device: " << deviceProperties.deviceName << std::endl;
 
 	return true;
 }

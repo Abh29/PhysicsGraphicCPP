@@ -20,7 +20,7 @@ namespace ft {
      MousePicker(Device::pointer device, uint32_t width, uint32_t height, PickingRdrSys::pointer rdrSys);
      ~MousePicker();
 
-     [[nodiscard]] uint32_t pick(Scene::pointer &scene, uint32_t x, uint32_t y);
+     [[nodiscard]] uint32_t pick(const Scene::pointer &scene, uint32_t x, uint32_t y);
      void notifyUpdatedView();
      void updateResources(uint32_t width, uint32_t height);
      [[nodiscard]] VkFence getVkFence() const;
@@ -29,7 +29,7 @@ namespace ft {
      void createPickingResources();
      void createPickingRenderPass();
      void createPickingSyncObjs();
-     void drawIDs(Scene::pointer &scene);
+     void drawIDs(const Scene::pointer &scene);
 
 
      Device::pointer                    _ftDevice;

@@ -20,6 +20,8 @@ glm::mat4 &ft::Camera::getViewMatrix() { return _viewMatrix;}
 
 const glm::mat4 &ft::Camera::getProjMatrix() const { return _projMatrix;}
 
+glm::vec3& ft::Camera::getEyePosition() {return _eyePosition;}
+
 void ft::Camera::vRotate(float deg) {
 	auto m = glm::rotate(glm::mat4(1.0f), glm::radians(deg), _rightVec);
 	_frontVec = glm::vec3(m * glm::vec4(_frontVec, 1.0f));

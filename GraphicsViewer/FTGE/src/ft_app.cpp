@@ -24,7 +24,7 @@ void ft::Application::run() {
 	while(!_ftWindow->shouldClose()) {
 		_ftWindow->pollEvents();
 		_ftGui->newFrame();
-		_ftGui->showGUI();
+//		_ftGui->showGUI();
 //		_ftGui->showDemo();
 		drawFrame();
 		#ifdef SHOW_FRAME_RATE
@@ -97,8 +97,8 @@ void ft::Application::initApplication() {
 	_ftRenderer = std::make_shared<ft::Renderer>(_ftWindow, _ftSurface, _ftPhysicalDevice, _ftDevice);
 
 
-	_ftGui = std::make_shared<Gui>(_ftInstance, _ftPhysicalDevice, _ftDevice,
-								   _ftWindow, _ftRenderer->getRenderPass(), MAX_FRAMES_IN_FLIGHT);
+//	_ftGui = std::make_shared<Gui>(_ftInstance, _ftPhysicalDevice, _ftDevice,
+//								   _ftWindow, _ftRenderer->getRenderPass(), MAX_FRAMES_IN_FLIGHT);
 
     _ftMaterialPool = std::make_shared<ft::TexturePool>(_ftDevice);
 	_ftDescriptorPool = std::make_shared<ft::DescriptorPool>(_ftDevice);
@@ -106,7 +106,8 @@ void ft::Application::initApplication() {
 	_ftSimpleRdrSys = std::make_shared<ft::SimpleRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
 	_ftSimpleRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
 
-	_ftTexturedRdrSys = std::make_shared<ft::TexturedRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
+	_ftTexturedRdrSys = std::make_shared<ft::OneTextureRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
+	_ft2TexturedRdrSys = std::make_shared<ft::TwoTextureRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
 
     _ftPickingRdrSys = std::make_shared<ft::PickingRdrSys>(_ftDevice, _ftRenderer, _ftDescriptorPool);
     _ftPickingRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
@@ -128,50 +129,49 @@ void ft::Application::createScene() {
 				.setZNearFar(0.5f, 1000.0f)
 				.setAspect(_ftRenderer->getSwapChain()->getAspect())
 				.build());
-	_ftScene->setGeneralLight({1.0f,1.0f,1.0f}, {10.0, -50.0, 10.0}, 0.2f);
-	ft::InstanceData data{};
+	_ftScene->setGeneralLight({1.0f,1.0f,1.0f}, {0.0, 2.5f, 0.0f}, 0.2f);
+	ft::InstanceData data{}; (void)data;
 	uint32_t  id;	(void) id;
 
-    // Z
-    data.model = glm::mat4(1.0f);
-	data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
-	data.color = {0.f, 0.0f, 0.9f};
-	data.normalMatrix = glm::mat4(1.0f);
-	id = _ftScene->addModelFromObj("models/axis.obj", data);
+//    // Z
+//    data.model = glm::mat4(1.0f);
+//	data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+//	data.color = {0.f, 0.0f, 0.9f};
+//	data.normalMatrix = glm::mat4(1.0f);
+//	id = _ftScene->addModelFromObj("models/axis.obj", data);
 
-    // Y
-    data.model = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
-    data.color = {0.0f, 0.9f, 0.0f};
-	data.normalMatrix = glm::mat4(1.0f);
-	id = _ftScene->addObjectCopyToTheScene(id, data);
-
-    // X
-	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
-	data.color = {0.9f, 0.0f, 0.0f};
-	data.normalMatrix = glm::mat4(1.0f);
-	_ftScene->addObjectCopyToTheScene(id, data);
-
-	// plane
-	data.model = glm::mat4(1.0f);
-	data.color = {0.95f, .95f, .95f};
-	data.normalMatrix = glm::mat4(1.0f);
-	data.model = glm::scale(data.model, {100, 100, 100});
-	id = _ftScene->addModelFromObj("models/plane.mtl.obj", data);
+//    // Y
+//    data.model = glm::rotate(glm::mat4(1), glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+//    data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+//    data.color = {0.0f, 0.9f, 0.0f};
+//	data.normalMatrix = glm::mat4(1.0f);
+//	id = _ftScene->addObjectCopyToTheScene(id, data);
+//
+//    // X
+//	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+//    data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+//	data.color = {0.9f, 0.0f, 0.0f};
+//	data.normalMatrix = glm::mat4(1.0f);
+//	_ftScene->addObjectCopyToTheScene(id, data);
+//
+//	// plane
+//	data.model = glm::mat4(1.0f);
+//	data.color = {0.95f, .95f, .95f};
+//	data.normalMatrix = glm::mat4(1.0f);
+//	data.model = glm::scale(data.model, {100, 100, 100});
+//	id = _ftScene->addModelFromObj("models/plane.mtl.obj", data);
 
 
     id  = _ftScene->addModelsFromGltf("assets/models/sponza/sponza.gltf",
-                                      _ftTexturedRdrSys->getDescriptorPool(),
-                                      _ftTexturedRdrSys->getDescriptorSetLayout());
-
+                                      _ft2TexturedRdrSys->getDescriptorPool(),
+                                      _ft2TexturedRdrSys->getDescriptorSetLayout());
+    (void) id;
 
 //     m = _ftMaterialPool->createTexture("textures/cubemap_space.ktx", _ftRenderer->getSampler(),
 //                                       _ftTexturedRdrSys->getDescriptorPool(),
 //                                       _ftTexturedRdrSys->getDescriptorSetLayout(),
 //                                       Texture::FileType::FT_TEXTURE_KTX);
 //    _ftScene->addTextureToObject(id, m);
-
 
 
 //	data.model = glm::mat4(1.0f);
@@ -275,29 +275,14 @@ void ft::Application::drawFrame() {
 	// begin the render pass
 	_ftRenderer->beginRenderPass(commandBuffer, index);
 
-	// recording the command buffer
-	// for each pipeline
-    vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftSimpleRdrSys->getGraphicsPipeline()->getVKPipeline());
-    vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-                            _ftSimpleRdrSys->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
-                            &(_ftSimpleRdrSys->getDescriptorSets()[_currentFrame]->getVKDescriptorSet()),
-                            0, nullptr);
 
-    _ftScene->drawSimpleObjs(commandBuffer, _ftSimpleRdrSys->getGraphicsPipeline(), _currentFrame);
+    _ftScene->drawSimpleObjs(commandBuffer, _ftSimpleRdrSys->getGraphicsPipeline(), _ftSimpleRdrSys, _currentFrame);
 
-
-//	// bind the graphics pipeline
-//	vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS, _ftTexturedRdrSys->getGraphicsPipeline()->getVKPipeline());
-//	// bind the descriptor sets
-//	vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-//							_ftTexturedRdrSys->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
-//							&(_ftTexturedRdrSys->getDescriptorSets()[_currentFrame]->getVKDescriptorSet()),
-//							0, nullptr);
-
-    _ftScene->drawTexturedObjs(commandBuffer, _ftTexturedRdrSys->getGraphicsPipeline(), _ftTexturedRdrSys, _currentFrame);
+	// bind the graphics pipeline
+    _ftScene->draw2TexturedObjs(commandBuffer, _ft2TexturedRdrSys->getGraphicsPipeline(), _ft2TexturedRdrSys, _currentFrame);
 
 	// gui
-	_ftGui->render(commandBuffer);
+//	_ftGui->render(commandBuffer);
 
 	// end the render pass
 	_ftRenderer->endRenderPass(commandBuffer, index);

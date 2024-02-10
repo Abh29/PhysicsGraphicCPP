@@ -30,6 +30,7 @@ namespace ft {
     [[nodiscard]] Sampler::pointer getSampler() const;
 
     [[nodiscard]] DescriptorSet::pointer getDescriptorSet(uint32_t index) const;
+    void createDescriptorSets(DescriptorSetLayout::pointer layout, DescriptorPool::pointer pool);
     void setDescriptorSets(std::vector<DescriptorSet::pointer> descriptorSets);
     std::vector<DescriptorSet::pointer>& getDescriptorSets();
 
@@ -50,6 +51,43 @@ namespace ft {
 
  };
 
+class Material {
+
+public:
+    using pointer = std::shared_ptr<Material>;
+
+    Material(Device::pointer device);
+    ~Material() = default;
+
+    ft::DescriptorSet::pointer getDescriptorSet(uint32_t index);
+    void addTexture(Texture::pointer texture);
+    void createDescriptors(DescriptorPool::pointer pool, DescriptorSetLayout::pointer layout);
+    void bindDescriptor(uint32_t frameIndex, uint32_t textureIndex, uint32_t binding);
+
+    void setColorFactor(glm::vec4 v);
+    void setAlphaMode(std::string a);
+    void setAlphaCutOff(float a);
+    void setDoubleSided(bool v);
+
+    glm::vec4 getColorFactor() const;
+    std::string getAlphaMode() const;
+    float getAlphaCutOff() const;
+    bool isDoubleSided() const;
+    uint32_t getTexturesSize() const;
+    Texture::pointer getTexture(uint32_t index) const;
+
+private:
+
+    Device::pointer                                     _ftDevice;
+    std::vector<DescriptorSet::pointer>                 _ftDescriptorSets;
+    std::vector<Texture::pointer>                       _ftTextures;
+    glm::vec4                                           _colorFactor = glm::vec4(1.0f);
+    std::string                                         _alphaMode = "OPAQUE";
+    float                                               _alphaCutOff = 0;
+    bool                                                _doubleSided = false;
+};
+
+
  class TexturePool {
 
  public:
@@ -57,15 +95,15 @@ namespace ft {
      explicit TexturePool(Device::pointer device);
      ~TexturePool() = default;
 
-     Texture::pointer createTexture(std::string path, const DescriptorPool::pointer& pool, const DescriptorSetLayout::pointer& layout, Texture::FileType fileType);
+     Texture::pointer createTexture(std::string path, Texture::FileType fileType);
      Texture::pointer getTextureByID(uint32_t id);
-     uint32_t addMaterial(Material m);
-     Material& getMaterialByID(uint32_t id);
+     uint32_t addMaterial(Material::pointer m);
+     Material::pointer getMaterialByID(uint32_t id);
 
  private:
      Device::pointer                                    _ftDevice;
      std::map<std::string, Texture::pointer>            _textures;
-     std::vector<Material>                              _materials;
+     std::vector<Material::pointer>                     _materials;
      std::map<uint32_t , Texture::pointer>              _ids;
 
  };

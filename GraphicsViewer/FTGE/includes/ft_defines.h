@@ -5,8 +5,10 @@
 
 namespace ft {
 
+    #define NDEBUG
+
 	static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-	constexpr int POINT_LIGHT_MAX_COUNT = 100;
+	constexpr int POINT_LIGHT_MAX_COUNT = 5;
 
 	struct QueueFamilyIndices {
 		std::optional<uint32_t> graphicsFamily;
@@ -32,46 +34,21 @@ namespace ft {
 	};
 
 	struct UniformBufferObject {
+        alignas(16) glm::vec3 	        lightColor;
+        alignas(16) glm::vec3 	        lightDirection;
+        alignas(4)  float		        ambient;
 		alignas(16) glm::mat4 			view;
 		alignas(16) glm::mat4 			proj;
+        alignas(16) glm::vec3           eyePosition;
 		alignas(4) uint32_t 			pLCount;
-		alignas(16) PointLightObject	lights[POINT_LIGHT_MAX_COUNT];
+		alignas(16) PointLightObject	lights[POINT_LIGHT_MAX_COUNT] = {};
 	};
 
 	struct PushConstantObject {
-		alignas(16) glm::vec3 	lightColor;
-		alignas(16) glm::vec3 	lightDirection;
-		alignas(4)  float		ambient;
+        alignas(16) glm::mat4 			model;
+        uint32_t                        id;
 	};
 
-    struct Material {
-        glm::vec4   colorFactor = glm::vec4(1.0f);
-        uint32_t    colorTextureIndex;
-        uint32_t    normalTextureIndex;
-        std::string alphaModel = "OPAQUE";
-        float alphaCutOff;
-        bool doubleSided = false;
-    };
-
-    struct Primitive {
-        uint32_t firstIndex;
-        uint32_t indexCount;
-        uint32_t materialIndex;
-    };
-
-    struct Node {
-        Node* parent;
-        uint32_t    id;
-        std::vector<Node*> children;
-        std::vector<Primitive> mesh;
-        glm::mat4 matrix;
-        std::string name;
-        bool visible = true;
-        ~Node() {
-            for (auto& child: children)
-                delete child;
-        }
-    };
 
 	enum class KeyActions {
 		KEY_PRESS,
@@ -219,13 +196,17 @@ namespace ft {
 
 	constexpr uint32_t MODEL_HIDDEN_BIT = 1u;
 	constexpr uint32_t MODEL_SELECTABLE_BIT = 1u << 1;
-	constexpr uint32_t MODEL_SELECTED_BIT = 1u << 2;
+    constexpr uint32_t MODEL_SELECTED_BIT = 1u << 2;
     constexpr uint32_t MODEL_HAS_COLOR_TEXTURE_BIT = 1u << 3;
     constexpr uint32_t MODEL_HAS_NORMAL_TEXTURE_BIT = 1u << 4;
-	constexpr uint32_t MODEL_TEXTURED_BIT = 1u << 10;
-	constexpr uint32_t MODEL_TRIANGLE_BIT = 1U << 11;
-	constexpr uint32_t MODEL_LINE_BIT = 1U << 12;
-	constexpr uint32_t MODEL_POINT_BIT = 1U << 13;
+    constexpr uint32_t MODEL_HAS_INSTANCES_BIT = 1u << 5;
+    constexpr uint32_t MODEL_HAS_INDICES_BIT = 1u << 6;
+    constexpr uint32_t MODEL_SIMPLE_BIT = 1u << 7;
+    constexpr uint32_t MODEL_IS_EMPTY_BIT = 1u << 8;
+    constexpr uint32_t MODEL_TEXTURED_BIT = 1u << 10;
+    constexpr uint32_t MODEL_TRIANGLE_BIT = 1u << 11;
+    constexpr uint32_t MODEL_LINE_BIT = 1u << 12;
+    constexpr uint32_t MODEL_POINT_BIT = 1u << 13;
 
 
 }

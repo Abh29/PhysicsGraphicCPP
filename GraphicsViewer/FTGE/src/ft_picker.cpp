@@ -17,7 +17,7 @@ ft::MousePicker::~MousePicker() {
     vkDestroyFramebuffer(_ftDevice->getVKDevice(), _pickingFrameBuffer, nullptr);
 }
 
-uint32_t ft::MousePicker::pick(ft::Scene::pointer &scene, uint32_t x, uint32_t y) {
+uint32_t ft::MousePicker::pick(const ft::Scene::pointer &scene, uint32_t x, uint32_t y) {
     if (_viewUpdated) {
         drawIDs(scene);
         _viewUpdated = false;
@@ -129,7 +129,7 @@ void ft::MousePicker::createPickingResources() {
             .build(_ftDevice);
 }
 
-void ft::MousePicker::drawIDs(ft::Scene::pointer &scene) {
+void ft::MousePicker::drawIDs(const ft::Scene::pointer &scene) {
     // wait for previous frame
     vkWaitForFences(_ftDevice->getVKDevice(), 1, &_fence, VK_TRUE, UINT64_MAX);
     vkResetFences(_ftDevice->getVKDevice(), 1, &_fence);
@@ -192,7 +192,7 @@ void ft::MousePicker::drawIDs(ft::Scene::pointer &scene) {
     vkCmdSetScissor(_ftCommandBuffer->getVKCommandBuffer(), 0, 1, &scissor);
 
 
-    scene->drawPickableObjs(_ftCommandBuffer, _ftPickingRdrSys->getGraphicsPipeline(), 0);
+    scene->drawPickObjs(_ftCommandBuffer, _ftPickingRdrSys->getGraphicsPipeline(), 0);
 
 
     // render pass end

@@ -35,14 +35,28 @@ layout(location = 2) in vec3 normal;
 layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) in vec4 tangent;
 
+
 // output
-layout(location = 0) out uint fragColor;
+layout(location = 0) out vec3 fragColor;
+layout(location = 1) out vec2 fragTexCoord;
+layout (location = 2) out vec3 outNormal;
+layout (location = 3) out vec3 outViewVec;
+layout (location = 4) out vec3 outLightVec;
+layout (location = 5) out vec4 outTangent;
+layout (location = 6) out float ambient;
 
-
-void main() {
-    fragColor = push.modelID;
-    gl_PointSize = 2;
+void main()
+{
+    outNormal = normal;
+    fragColor = inColor;
+    fragTexCoord = inTexCoord;
+    outTangent = tangent;
     gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
+    gl_Position.y = - gl_Position.y;
+    ambient = ubo.ambient;
+
+    outNormal = mat3(push.modelMatrix) * normal;
+    vec4 pos = push.modelMatrix * vec4(inPosition, 1.0);
+    outLightVec = ubo.lightDirection - inPosition;
+    outViewVec = ubo.eyePosition - inPosition;
 }
-
-

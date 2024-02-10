@@ -1,5 +1,3 @@
-#include <utility>
-
 #include "../includes/ft_renderer.h"
 
 ft::Renderer::Renderer(Window::pointer window, Surface::pointer surface, PhysicalDevice::pointer physicalDevice,
@@ -47,7 +45,7 @@ std::pair<uint32_t, ft::CommandBuffer::pointer> ft::Renderer::beginFrame() {
 	return {result.second, commandBuffer};
 }
 
-void ft::Renderer::endFrame(CommandBuffer::pointer commandBuffer, uint32_t imageIndex) {
+void ft::Renderer::endFrame(const CommandBuffer::pointer& commandBuffer, uint32_t imageIndex) {
 	// end command buffer
 	commandBuffer->end();
 
@@ -62,7 +60,7 @@ void ft::Renderer::endFrame(CommandBuffer::pointer commandBuffer, uint32_t image
 	_currentFrame = (_currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
 
-void ft::Renderer::beginRenderPass(CommandBuffer::pointer commandBuffer, uint32_t imageIndex) {
+void ft::Renderer::beginRenderPass(const CommandBuffer::pointer& commandBuffer, uint32_t imageIndex) {
 	// starting render pass
 	std::array<VkClearValue, 2> clearValues = {};
 	clearValues[0].color =	{{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -96,7 +94,7 @@ void ft::Renderer::beginRenderPass(CommandBuffer::pointer commandBuffer, uint32_
 	vkCmdSetScissor(commandBuffer->getVKCommandBuffer(), 0, 1, &scissor);
 }
 
-void ft::Renderer::endRenderPass(CommandBuffer::pointer commandBuffer, uint32_t imageIndex) {
+void ft::Renderer::endRenderPass(const CommandBuffer::pointer& commandBuffer, uint32_t imageIndex) {
 	(void) imageIndex;
 	// render pass end
 	vkCmdEndRenderPass(commandBuffer->getVKCommandBuffer());

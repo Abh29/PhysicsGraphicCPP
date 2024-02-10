@@ -27,9 +27,9 @@ namespace ft {
 		~Renderer();
 
 		std::pair<uint32_t, CommandBuffer::pointer> beginFrame();
-		void endFrame(CommandBuffer::pointer commandBuffer, uint32_t imageIndex);
-		void beginRenderPass(CommandBuffer::pointer commandBuffer, uint32_t imageIndex);
-		void endRenderPass(CommandBuffer::pointer commandBuffer, uint32_t imageIndex);
+		void endFrame(const CommandBuffer::pointer& commandBuffer, uint32_t imageIndex);
+		void beginRenderPass(const CommandBuffer::pointer& commandBuffer, uint32_t imageIndex);
+		void endRenderPass(const CommandBuffer::pointer& commandBuffer, uint32_t imageIndex);
 		CommandBuffer::pointer getCurrentCommandBuffer();
 		[[nodiscard]] SwapChain::pointer getSwapChain() const;
 		[[nodiscard]] RenderPass::pointer getRenderPass() const;

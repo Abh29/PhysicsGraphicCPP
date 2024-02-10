@@ -57,7 +57,8 @@ namespace ft {
 		Scene::pointer 						_ftScene;
 		Renderer::pointer					_ftRenderer;
 		SimpleRdrSys::pointer 				_ftSimpleRdrSys;
-		TexturedRdrSys::pointer				_ftTexturedRdrSys;
+		OneTextureRdrSys::pointer			_ftTexturedRdrSys;
+		TwoTextureRdrSys::pointer			_ft2TexturedRdrSys;
         PickingRdrSys::pointer              _ftPickingRdrSys;
         MousePicker::pointer                _ftMousePicker;
 

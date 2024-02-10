@@ -66,8 +66,8 @@ namespace ft {
 
 		void create();
 
-		VkRenderPassCreateInfo	getVKRenderPassCreateInfo() const;
-		VkRenderPass getVKRenderPass() const;
+		[[nodiscard]] VkRenderPassCreateInfo getVKRenderPassCreateInfo() const;
+		[[nodiscard]] VkRenderPass getVKRenderPass() const;
 		bool isCreated() const;
 
 		void addSubpass(SubPass::pointer &subPass);

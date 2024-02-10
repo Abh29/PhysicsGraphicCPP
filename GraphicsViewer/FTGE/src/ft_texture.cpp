@@ -143,26 +143,76 @@ ft::DescriptorSet::pointer ft::Texture::getDescriptorSet(uint32_t index) const {
     return _ftDescriptorSets[index];
 }
 
+void ft::Texture::createDescriptorSets(DescriptorSetLayout::pointer layout, DescriptorPool::pointer pool) {
+    _ftDescriptorSets.resize(ft::MAX_FRAMES_IN_FLIGHT);
+    for (uint32_t i = 0; i < ft::MAX_FRAMES_IN_FLIGHT; ++i) {
+        _ftDescriptorSets[i] = pool->allocateSet(layout);
+    }
+}
+
 std::vector<ft::DescriptorSet::pointer> &ft::Texture::getDescriptorSets() {return _ftDescriptorSets;}
 
 void ft::Texture::setDescriptorSets(std::vector<DescriptorSet::pointer> descriptorSets) { _ftDescriptorSets = std::move(descriptorSets);}
+
+/***************************************Material*************************************************/
+
+ft::Material::Material(Device::pointer device) : _ftDevice(std::move(device)) {}
+
+ft::DescriptorSet::pointer ft::Material::getDescriptorSet(uint32_t index) {
+    assert(index < _ftDescriptorSets.size());
+    return _ftDescriptorSets[index];
+}
+
+void ft::Material::addTexture(Texture::pointer texture) {
+    _ftTextures.push_back(texture);
+}
+
+void ft::Material::createDescriptors(DescriptorPool::pointer pool, DescriptorSetLayout::pointer layout) {
+    _ftDescriptorSets.resize(ft::MAX_FRAMES_IN_FLIGHT);
+
+    for (uint32_t i = 0; i < ft::MAX_FRAMES_IN_FLIGHT; ++i)
+        _ftDescriptorSets[i] = pool->allocateSet(layout);
+}
+
+void ft::Material::bindDescriptor(uint32_t frameIndex, uint32_t textureIndex, uint32_t binding) {
+    assert(textureIndex < _ftTextures.size());
+    _ftDescriptorSets[frameIndex]->updateDescriptorImage(binding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
+                                                         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+                                                         _ftTextures[textureIndex]->getTextureImage(),
+                                                         _ftTextures[textureIndex]->getSampler());
+}
+
+void ft::Material::setColorFactor(glm::vec4 v) {_colorFactor = v;}
+
+void ft::Material::setAlphaMode(std::string a) { _alphaMode = a;}
+
+void ft::Material::setAlphaCutOff(float a) { _alphaCutOff = a;}
+
+void ft::Material::setDoubleSided(bool v) { _doubleSided = v;}
+
+glm::vec4 ft::Material::getColorFactor() const {return _colorFactor;}
+
+std::string ft::Material::getAlphaMode() const {return _alphaMode;}
+
+float ft::Material::getAlphaCutOff() const {return _alphaCutOff;}
+
+bool ft::Material::isDoubleSided() const {return _doubleSided;}
+
+uint32_t ft::Material::getTexturesSize() const {return _ftTextures.size();}
+
+ft::Texture::pointer ft::Material::getTexture(uint32_t index) const {return _ftTextures[index];}
 
 /***************************************TexturePool*************************************************/
 
 ft::TexturePool::TexturePool(Device::pointer device): _ftDevice(std::move(device)) {}
 
-ft::Texture::pointer ft::TexturePool::createTexture(std::string path, const DescriptorPool::pointer& pool, const DescriptorSetLayout::pointer& layout, Texture::FileType fileType) {
+ft::Texture::pointer ft::TexturePool::createTexture(std::string path, Texture::FileType fileType) {
     if (_textures.find(path) != _textures.end()) return _textures[path];
 
     Texture::pointer m;
 
     try {
         m = std::make_shared<ft::Texture>(_ftDevice, path, fileType);
-        std::vector<DescriptorSet::pointer> descriptorSets(ft::MAX_FRAMES_IN_FLIGHT);
-        for (auto& ds : descriptorSets) {
-            ds = pool->allocateSet(layout);
-        }
-        m->setDescriptorSets(descriptorSets);
     } catch (std::exception& e) {
         return nullptr;
     }
@@ -173,12 +223,13 @@ ft::Texture::pointer ft::TexturePool::createTexture(std::string path, const Desc
 
 ft::Texture::pointer ft::TexturePool::getTextureByID(uint32_t id) {return _ids[id];}
 
-ft::Material &ft::TexturePool::getMaterialByID(uint32_t id) {
+ft::Material::pointer ft::TexturePool::getMaterialByID(uint32_t id) {
     assert(id < _materials.size());
     return _materials[id];
 }
 
-uint32_t ft::TexturePool::addMaterial(ft::Material m) {
+uint32_t ft::TexturePool::addMaterial(ft::Material::pointer m) {
     _materials.push_back(m);
     return _materials.size();
 }
+

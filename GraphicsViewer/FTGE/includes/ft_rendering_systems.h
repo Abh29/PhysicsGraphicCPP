@@ -36,9 +36,27 @@ namespace ft {
 
 	};
 
-
-	class SimpleRdrSys final : public RenderingSystem {
+	class InstanceRdrSys final : public RenderingSystem {
 		
+	public:
+		using pointer = std::shared_ptr<InstanceRdrSys>;
+
+		explicit InstanceRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+		~InstanceRdrSys() override = default;
+
+		void populateUBODescriptors(std::vector<Buffer::pointer> ubos);
+        [[nodiscard]] std::vector<DescriptorSet::pointer> getDescriptorSets() const;
+
+	private:
+		void createDescriptors();
+		void createGraphicsPipeline();
+
+        std::vector<DescriptorSet::pointer>			_ftDescriptorSets;
+	};
+
+
+    class SimpleRdrSys final : public RenderingSystem {
+
 	public:
 		using pointer = std::shared_ptr<SimpleRdrSys>;
 
@@ -53,15 +71,14 @@ namespace ft {
 		void createGraphicsPipeline();
 
         std::vector<DescriptorSet::pointer>			_ftDescriptorSets;
-
 	};
 
-	class TexturedRdrSys final : public RenderingSystem {
+	class OneTextureRdrSys final : public RenderingSystem {
 	public:
-		using pointer = std::shared_ptr<TexturedRdrSys>;
+		using pointer = std::shared_ptr<OneTextureRdrSys>;
 
-		TexturedRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
-		~TexturedRdrSys() override = default;
+		OneTextureRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+		~OneTextureRdrSys() override = default;
 
 		void populateUBODescriptors(std::vector<Buffer::pointer> ubos, const Texture::pointer& material);
 		void populateTextureDescriptors(const Texture::pointer& material);
@@ -74,6 +91,34 @@ namespace ft {
 
         uint32_t                        _samplerBinding;
         uint32_t                        _textureImageBinding;
+	};
+
+   	class TwoTextureRdrSys final : public RenderingSystem {
+	public:
+		using pointer = std::shared_ptr<TwoTextureRdrSys>;
+
+        TwoTextureRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+		~TwoTextureRdrSys() override = default;
+
+        void populateUBO(const Buffer::pointer& ubo, uint32_t index);
+        void populateTextureImage(const Image::pointer& texture, const Sampler::pointer& sampler, uint32_t index);
+        void populateNormalImage(const Image::pointer& texture, const Sampler::pointer& sampler, uint32_t index);
+        void bindDescriptorSet(const CommandBuffer::pointer& commandBuffer, uint32_t index);
+
+        [[nodiscard]] std::vector<DescriptorSet::pointer> getDescriptorSets() const;
+        [[nodiscard]] uint32_t getNormalsImageBinding() const;
+        [[nodiscard]] uint32_t getTextureImageBinding() const;
+        [[nodiscard]] uint32_t getUboBinding() const;
+
+	private:
+		void createDescriptorSetLayout();
+		void createGraphicsPipeline();
+        void createDescriptors();
+
+        uint32_t                                    _uboBinding;
+        uint32_t                                    _textureImageBinding;
+        uint32_t                                    _normalsImageBinding;
+        std::vector<DescriptorSet::pointer>			_ftDescriptorSets;
 	};
 
     class PickingRdrSys final : public RenderingSystem {
