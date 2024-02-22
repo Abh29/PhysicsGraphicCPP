@@ -25,6 +25,7 @@ layout(binding = 0) uniform UniformBufferOject {
 // push constanct for general lighting info
 layout(push_constant) uniform Push {
     mat4            modelMatrix;
+    vec3            baseColor;
     uint            modelID;
 } push;
 
@@ -49,20 +50,20 @@ void main2() {
 
 void main() {
     gl_PointSize = 2;
-    vec4 worldPos = push.modelMatrix * vec4(inPosition, 1.0);
-    vec3 worldNormal = mat3(transpose(inverse(push.modelMatrix))) * normal;
-    vec3 viewDir = normalize(-vec3(ubo.view * worldPos));
-
-//     Calculate diffuse reflection
-    float diffuseStrength = max(dot(worldNormal, -ubo.lightDirection), 0.0);
-    vec3 diffuse = diffuseStrength * ubo.lightColor * inColor;
-
-//     Calculate ambient reflection
-    vec3 ambient = ubo.ambient * inColor;
+//    vec4 worldPos = push.modelMatrix * vec4(inPosition, 1.0);
+//    vec3 worldNormal = mat3(transpose(inverse(push.modelMatrix))) * normal;
+//    vec3 viewDir = normalize(-vec3(ubo.view * worldPos));
+//
+////     Calculate diffuse reflection
+//    float diffuseStrength = max(dot(worldNormal, -ubo.lightDirection), 0.0);
+//    vec3 diffuse = diffuseStrength * ubo.lightColor * inColor;
+//
+////     Calculate ambient reflection
+//    vec3 ambient = ubo.ambient * inColor;
 
     // Calculate final color by combining ambient and diffuse components
 //    fragColor = ambient + diffuse;
-    fragColor = ubo.lightColor;
+    fragColor = inColor * push.baseColor;
 
     gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
 }

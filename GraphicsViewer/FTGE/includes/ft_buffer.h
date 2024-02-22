@@ -1,75 +1,71 @@
 #ifndef FTGRAPHICS_FT_BUFFER_H
 #define FTGRAPHICS_FT_BUFFER_H
 
-#include "ft_headers.h"
 #include "ft_device.h"
-#include "ft_command.h"
 #include "ft_image.h"
 
 namespace ft {
 
-	class Device;
+class Device;
 
-	class Buffer {
-	public:
+class Buffer {
+public:
+  using pointer = std::shared_ptr<Buffer>;
 
-		using pointer = std::shared_ptr<Buffer>;
+  Buffer(Device::pointer &device, VkDeviceSize size,
+         VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags memoryProperties,
+         bool mapped, VkDeviceSize mappedOffset, VkMemoryMapFlags mappedFlags);
 
-		Buffer(Device::pointer &device, VkDeviceSize size,
-			   VkBufferUsageFlags usageFlags, VkMemoryPropertyFlags	memoryProperties,
-			   bool mapped,  VkDeviceSize mappedOffset, VkMemoryMapFlags mappedFlags);
+  ~Buffer();
 
-		~Buffer();
+  [[nodiscard]] VkBuffer getVKBuffer() const;
+  [[nodiscard]] void *getMappedData() const;
+  [[nodiscard]] VkDeviceSize getSize() const;
+  void copyToMappedData(void *src, uint32_t size, uint32_t offset = 0);
+  void copyToBuffer(Buffer::pointer &other, VkDeviceSize size,
+                    VkDeviceSize srcOffset = 0,
+                    VkDeviceSize dstOffset = 0) const;
+  void copyToImage(Image::pointer &image, uint32_t width, uint32_t height,
+                   uint32_t mipLevels = 1, size_t *offsets = nullptr);
+  void copyFromImage(const Image::pointer &image, VkImageLayout layout);
+  bool isMapped() const;
 
+private:
+  Device::pointer _ftDevice;
+  VkDeviceSize _size;
+  VkBuffer _buffer;
+  VkDeviceMemory _bufferMemory;
+  void *_mappedData = nullptr;
+  bool _isMapped = false;
+  std::shared_ptr<Device> _dd;
+};
 
-		[[nodiscard]] VkBuffer getVKBuffer() const;
-		[[nodiscard]] void* getMappedData() const;
-		[[nodiscard]] VkDeviceSize getSize() const;
-		void copyToMappedData(void *src, uint32_t size, uint32_t offset = 0);
-		void copyToBuffer(Buffer::pointer &other, VkDeviceSize size,
-						  VkDeviceSize srcOffset = 0, VkDeviceSize dstOffset = 0) const;
-		void copyToImage(Image::pointer &image, uint32_t width, uint32_t height, uint32_t mipLevels = 1, size_t *offsets = nullptr);
-        void copyFromImage(const Image::pointer &image, VkImageLayout layout);
-		bool isMapped() const;
+class BufferBuilder {
 
+public:
+  using pointer = std::shared_ptr<BufferBuilder>;
 
-	private:
-		Device::pointer 					_ftDevice;
-		VkDeviceSize 						_size;
-		VkBuffer 							_buffer;
-		VkDeviceMemory 						_bufferMemory;
-		void*								_mappedData = nullptr;
-		bool								_isMapped = false;
-		std::shared_ptr<Device>				_dd;
-	};
+  BufferBuilder() = default;
+  ~BufferBuilder() = default;
 
+  BufferBuilder &setSize(VkDeviceSize size);
+  BufferBuilder &setUsageFlags(VkBufferUsageFlags usageFlags);
+  BufferBuilder &setMemoryProperties(VkMemoryPropertyFlags memoryProperties);
+  BufferBuilder &setIsMapped(bool isMapped);
+  BufferBuilder &setMappedOffset(VkDeviceSize mappedOffset);
+  BufferBuilder &setMappedFlags(VkMemoryMapFlags mappedFlags);
+  Buffer::pointer build(Device::pointer &device);
 
-	class BufferBuilder {
+private:
+  VkDeviceSize _size;
+  VkBufferUsageFlags _usageFlags;
+  VkMemoryPropertyFlags _memoryProperties;
+  std::unique_ptr<Buffer> _ftBuffer;
+  bool _isMapped = false;
+  VkDeviceSize _mappedOffset = 0;
+  VkMemoryMapFlags _mappedFlags = 0;
+};
 
-	public:
-		using pointer = std::shared_ptr<BufferBuilder>;
+} // namespace ft
 
-		BufferBuilder() = default;
-		~BufferBuilder() = default;
-
-		BufferBuilder& setSize(VkDeviceSize size);
-		BufferBuilder& setUsageFlags(VkBufferUsageFlags usageFlags);
-		BufferBuilder& setMemoryProperties(VkMemoryPropertyFlags memoryProperties);
-		BufferBuilder& setIsMapped(bool isMapped);
-		BufferBuilder& setMappedOffset(VkDeviceSize mappedOffset);
-		BufferBuilder& setMappedFlags(VkMemoryMapFlags mappedFlags);
-		Buffer::pointer build(Device::pointer &device);
-
-	private:
-		VkDeviceSize 						_size;
-		VkBufferUsageFlags 					_usageFlags;
-		VkMemoryPropertyFlags 				_memoryProperties;
-		std::unique_ptr<Buffer>				_ftBuffer;
-		bool 								_isMapped = false;
-		VkDeviceSize 						_mappedOffset = 0;
-		VkMemoryMapFlags 					_mappedFlags = 0;
-	};
-
-}
-
-#endif //FTGRAPHICS_FT_BUFFER_H
+#endif // FTGRAPHICS_FT_BUFFER_H

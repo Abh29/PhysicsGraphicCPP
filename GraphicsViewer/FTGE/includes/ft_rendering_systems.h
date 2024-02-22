@@ -80,8 +80,6 @@ namespace ft {
 		OneTextureRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
 		~OneTextureRdrSys() override = default;
 
-		void populateUBODescriptors(std::vector<Buffer::pointer> ubos, const Texture::pointer& material);
-		void populateTextureDescriptors(const Texture::pointer& material);
         [[nodiscard]] uint32_t getTextureImageBinding() const;
         [[nodiscard]] uint32_t getSamplerBinding() const;
 

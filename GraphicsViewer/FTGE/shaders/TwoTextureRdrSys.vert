@@ -25,6 +25,7 @@ layout(binding = 0) uniform UniformBufferOject {
 // push constanct for general lighting info
 layout(push_constant) uniform Push {
     mat4            modelMatrix;
+    vec3            baseColor;
     uint            modelID;
 } push;
 
@@ -52,7 +53,6 @@ void main()
     fragTexCoord = inTexCoord;
     outTangent = tangent;
     gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
-    gl_Position.y = - gl_Position.y;
     ambient = ubo.ambient;
 
     outNormal = mat3(push.modelMatrix) * normal;

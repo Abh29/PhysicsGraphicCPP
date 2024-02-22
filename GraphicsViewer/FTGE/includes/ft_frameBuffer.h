@@ -5,12 +5,11 @@
 
 namespace ft {
 
-	class FrameBuffer {
-	public:
-		using pointer = std::shared_ptr<FrameBuffer>;
+class FrameBuffer {
+public:
+  using pointer = std::shared_ptr<FrameBuffer>;
+};
 
-	};
+} // namespace ft
 
-}
-
-#endif //FTGRAPHICS_FT_FRAMEBUFFER_H
+#endif // FTGRAPHICS_FT_FRAMEBUFFER_H

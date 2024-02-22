@@ -25,6 +25,7 @@ layout(binding = 0) uniform UniformBufferOject {
 // push constanct for general lighting info
 layout(push_constant) uniform Push {
     mat4            modelMatrix;
+    vec3            baseColor;
     uint            modelID;
 } push;
 

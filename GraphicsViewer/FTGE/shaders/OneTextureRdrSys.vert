@@ -25,38 +25,66 @@ layout(binding = 0) uniform UniformBufferOject {
 // push constanct for general lighting info
 layout(push_constant) uniform Push {
     mat4            modelMatrix;
+    vec3            baseColor;
     uint            modelID;
 } push;
 
 // vertex data
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inColor;
-layout(location = 2) in vec3 normal;
+layout(location = 2) in vec3 inNormal;
 layout(location = 3) in vec2 inTexCoord;
 layout(location = 4) in vec4 tangent;
 
 
 // output
-layout(location = 0) out vec3 fragColor;
-layout(location = 1) out vec2 fragTexCoord;
-
+layout (location = 0) out vec3 outNormal;
+layout (location = 1) out vec3 outColor;
+layout (location = 2) out vec2 outUV;
+layout (location = 3) out vec3 outViewVec;
+layout (location = 4) out vec3 outLightVec;
 
 void main() {
-    fragTexCoord = inTexCoord;
-    gl_PointSize = 2;
-    vec4 worldPos = push.modelMatrix * vec4(inPosition, 1.0);
-    vec3 worldNormal = mat3(transpose(inverse(push.modelMatrix))) * normal;
-    vec3 viewDir = normalize(-vec3(ubo.view * worldPos));
+    outNormal = inNormal;
+    outColor = inColor;
+    outUV = inTexCoord;
+    gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
 
-    // Calculate diffuse reflection
-    float diffuseStrength = max(dot(worldNormal, -ubo.lightDirection), 0.0);
-    vec3 diffuse = diffuseStrength * ubo.lightColor * inColor;
+    vec4 pos = ubo.view * vec4(inPosition, 1.0);
+    outNormal = mat3(ubo.view) * inNormal;
+    vec3 lPos = mat3(ubo.view) * ubo.lightDirection.xyz;
+    outLightVec = ubo.lightDirection.xyz - pos.xyz;
+    outViewVec = ubo.eyePosition.xyz - pos.xyz;
+}
 
-    // Calculate ambient reflection
-    vec3 ambient = ubo.ambient * inColor;
 
-    // Calculate final color by combining ambient and diffuse components
-    fragColor = ambient + diffuse;
-
-    gl_Position = ubo.proj * ubo.view * worldPos;
+void main2() {
+//
+//    gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
+//    fragColor = inColor;
+//    fragTexCoord = inTexCoord;
+    //    gl_Position.y = - gl_Position.y;
+//    ambient = ubo.ambient;
+//
+//    outNormal = mat3(push.modelMatrix) * normal;
+//    vec4 pos = push.modelMatrix * vec4(inPosition, 1.0);
+//    outLightVec = ubo.lightDirection - inPosition;
+//    outViewVec = ubo.eyePosition - inPosition;
+//    fragTexCoord = inTexCoord;
+//    gl_PointSize = 2;
+//    vec4 worldPos = push.modelMatrix * vec4(inPosition, 1.0);
+//    vec3 worldNormal = mat3(transpose(inverse(push.modelMatrix))) * normal;
+//    vec3 viewDir = normalize(-vec3(ubo.view * worldPos));
+//
+//    // Calculate diffuse reflection
+//    float diffuseStrength = max(dot(worldNormal, -ubo.lightDirection), 0.0);
+//    vec3 diffuse = diffuseStrength * ubo.lightColor * inColor;
+//
+//    // Calculate ambient reflection
+//    vec3 ambient = ubo.ambient * inColor;
+//
+//    // Calculate final color by combining ambient and diffuse components
+//    fragColor = ambient + diffuse;
+//
+//    gl_Position = ubo.proj * ubo.view * worldPos;
 }

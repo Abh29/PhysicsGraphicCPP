@@ -5,15 +5,14 @@
 
 namespace ft {
 
-    struct tools {
+struct tools {
 
-        static bool fileExists(const std::string &filename) {
-            std::ifstream f(filename.c_str());
-            return !f.fail();
-        }
+  static bool fileExists(const std::string &filename) {
+    std::ifstream f(filename.c_str());
+    return !f.fail();
+  }
+};
 
-    };
+} // namespace ft
 
-}
-
-#endif //FTGRAPHICS_FT_TOOLS_H
+#endif // FTGRAPHICS_FT_TOOLS_H

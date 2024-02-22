@@ -1,52 +1,43 @@
 #ifndef FTGRAPHICS_FT_INSTANCE_H
 #define FTGRAPHICS_FT_INSTANCE_H
 
-#include "ft_headers.h"
 #include "ft_callbacks.h"
-
+#include "ft_headers.h"
 
 namespace ft {
 
 #ifdef NDEBUG
-	const bool enableValidationLayers = false;
+const bool enableValidationLayers = false;
 #else
-	const bool enableValidationLayers = true;
+const bool enableValidationLayers = true;
 #endif
 
-	class Instance {
+class Instance {
 
-	public:
+public:
+  using pointer = std::shared_ptr<Instance>;
 
-		using pointer = std::shared_ptr<Instance>;
+  Instance(VkApplicationInfo &applicationInfo,
+           const std::vector<const char *> &validationLayers,
+           const std::vector<const char *> &requiredExtensions);
 
-		Instance(
-				VkApplicationInfo& applicationInfo,
-				const std::vector<const char *>& validationLayers,
-				const std::vector<const char *>& requiredExtensions
-				);
+  ~Instance();
+  Instance(const Instance &other) = delete;
+  Instance operator=(const Instance &other) = delete;
 
-		~Instance();
-		Instance(const Instance& other) = delete;
-		Instance operator=(const Instance& other) = delete;
+  VkInstance getVKInstance() const;
 
-		VkInstance getVKInstance() const;
+private:
+  bool checkValidationLayerSupport();
+  void populateDebugMessengerCreateInfo(
+      VkDebugUtilsMessengerCreateInfoEXT &debugCreateInfoExt);
+  void setupDebugMessenger();
 
-	private:
+  VkInstance _instance;
+  VkDebugUtilsMessengerEXT _debugMessenger;
+  std::vector<const char *> _layers;
+  std::vector<const char *> _extensions;
+};
+} // namespace ft
 
-		bool checkValidationLayerSupport();
-		void populateDebugMessengerCreateInfo(VkDebugUtilsMessengerCreateInfoEXT& debugCreateInfoExt);
-		void setupDebugMessenger();
-
-
-
-		VkInstance 						_instance;
-		VkDebugUtilsMessengerEXT		_debugMessenger;
-		std::vector<const char *>		_layers;
-		std::vector<const char *>		_extensions;
-
-	};
-}
-
-
-
-#endif //FTGRAPHICS_FT_INSTANCE_H
+#endif // FTGRAPHICS_FT_INSTANCE_H

@@ -311,22 +311,6 @@ void ft::OneTextureRdrSys::createDescriptorSetLayout() {
     _textureImageBinding = 1u;
 }
 
-void ft::OneTextureRdrSys::populateUBODescriptors(std::vector<ft::Buffer::pointer> ubos, const ft::Texture::pointer& material) {
-	assert(ubos.size() >= material->getDescriptorSets().size());
-
-	for (uint32_t i = 0; i < material->getDescriptorSets().size(); ++i)
-		material->getDescriptorSets()[i]->updateDescriptorBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, ubos[i], 0);
-}
-
-void ft::OneTextureRdrSys::populateTextureDescriptors(const Texture::pointer& material) {
-
-	for (auto & _ftDescriptorSet : material->getDescriptorSets())
-	_ftDescriptorSet->updateDescriptorImage(1, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-												VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-												material->getTextureImage(), material->getSampler());
-
-}
-
 uint32_t ft::OneTextureRdrSys::getTextureImageBinding() const {return _textureImageBinding;}
 uint32_t ft::OneTextureRdrSys::getSamplerBinding() const {return _samplerBinding;}
 

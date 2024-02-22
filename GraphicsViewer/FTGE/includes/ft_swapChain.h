@@ -1,80 +1,79 @@
 #ifndef FTGRAPHICS_FT_SWAPCHAIN_H
 #define FTGRAPHICS_FT_SWAPCHAIN_H
 
-#include "ft_headers.h"
-#include "ft_defines.h"
-#include "ft_surface.h"
-#include "ft_renderPass.h"
 #include "ft_command.h"
+#include "ft_defines.h"
+#include "ft_headers.h"
+#include "ft_renderPass.h"
+#include "ft_surface.h"
 
 namespace ft {
 
-	class PhysicalDevice;
-	class Device;
-	class Image;
+class PhysicalDevice;
+class Device;
+class Image;
 
-	class SwapChain {
-	public:
+class SwapChain {
+public:
+  using pointer = std::shared_ptr<SwapChain>;
 
-		using pointer = std::shared_ptr<SwapChain>;
+  SwapChain(std::shared_ptr<PhysicalDevice> &physicalDevice,
+            std::shared_ptr<Device> &device, std::shared_ptr<Surface> &surface,
+            uint32_t width, uint32_t height,
+            VkPresentModeKHR preferredMode = VK_PRESENT_MODE_MAILBOX_KHR);
 
-		SwapChain(std::shared_ptr<PhysicalDevice> &physicalDevice,
-				  std::shared_ptr<Device> &device,
-				  std::shared_ptr<Surface> &surface,
-				  uint32_t width, uint32_t height,
-				  VkPresentModeKHR preferredMode = VK_PRESENT_MODE_MAILBOX_KHR);
+  ~SwapChain();
+  SwapChain(const SwapChain &other) = delete;
+  SwapChain operator=(const SwapChain &other) = delete;
 
-		~SwapChain();
-		SwapChain(const SwapChain &other) = delete;
-		SwapChain operator=(const SwapChain &other) = delete;
+  [[nodiscard]] VkSwapchainKHR getVKSwapChain() const;
+  [[nodiscard]] VkFormat getVKSwapChainImageFormat() const;
+  [[nodiscard]] VkExtent2D getVKSwapChainExtent() const;
+  [[nodiscard]] std::vector<VkImage> getVKSwapChainImages() const;
+  [[nodiscard]] std::vector<VkImageView> getVKSwapChainImageViews() const;
+  uint32_t getWidth() const;
+  uint32_t getHeight() const;
+  float getAspect() const;
+  std::pair<VkResult, uint32_t>
+  acquireNextImage(VkFence fence = VK_NULL_HANDLE);
+  [[nodiscard]] VkPresentModeKHR getPreferredPresentMode() const;
+  void createFrameBuffers(RenderPass::pointer renderPass);
+  std::vector<VkFramebuffer> &getFrameBuffers();
+  VkResult submit(CommandBuffer::pointer commandBuffer, uint32_t imageIndex);
 
-		[[nodiscard]] VkSwapchainKHR getVKSwapChain() const;
-		[[nodiscard]] VkFormat	getVKSwapChainImageFormat() const;
-		[[nodiscard]] VkExtent2D	getVKSwapChainExtent() const;
-		[[nodiscard]] std::vector<VkImage> getVKSwapChainImages() const;
-		[[nodiscard]] std::vector<VkImageView>	getVKSwapChainImageViews() const;
-		uint32_t getWidth() const;
-		uint32_t getHeight() const;
-		float getAspect() const;
-		std::pair<VkResult, uint32_t> acquireNextImage(VkFence fence = VK_NULL_HANDLE);
-		[[nodiscard]] VkPresentModeKHR getPreferredPresentMode() const;
-		void createFrameBuffers(RenderPass::pointer renderPass);
-		std::vector<VkFramebuffer> &getFrameBuffers();
-		VkResult submit(CommandBuffer::pointer commandBuffer, uint32_t imageIndex);
+private:
+  VkSurfaceFormatKHR chooseSwapSurfaceFormat(
+      const std::vector<VkSurfaceFormatKHR> &availableFormats);
+  SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
+  VkPresentModeKHR chooseSwapPresentMode(
+      const std::vector<VkPresentModeKHR> &availablePresentModes);
+  VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR &capabilitiesKhr);
+  void createImageViews();
+  void createColorResources();
+  void createDepthResources();
+  void createSyncObjects();
 
-	private:
-		VkSurfaceFormatKHR chooseSwapSurfaceFormat(const std::vector<VkSurfaceFormatKHR>& availableFormats);
-		SwapChainSupportDetails querySwapChainSupport(VkPhysicalDevice device);
-		VkPresentModeKHR chooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
-		VkExtent2D chooseSwapExtent(const VkSurfaceCapabilitiesKHR& capabilitiesKhr);
-		void createImageViews();
-		void createColorResources();
-		void createDepthResources();
-		void createSyncObjects();
+  std::shared_ptr<PhysicalDevice> _ftPhysicalDevice;
+  std::shared_ptr<Device> _ftDevice;
+  std::shared_ptr<Surface> _ftSurface;
+  VkSwapchainKHR _swapChain;
+  VkFormat _swapChainImageFormat;
+  VkExtent2D _swapChainExtent;
+  std::vector<VkImage> _swapChainImages;
+  std::vector<VkImageView> _swapChainImageViews;
+  std::vector<VkFramebuffer> _frameBuffers;
+  std::shared_ptr<Image> _ftDepthImage;
+  std::shared_ptr<Image> _ftColorImage;
+  VkPresentModeKHR _preferredMode;
+  uint32_t _width;
+  uint32_t _height;
+  uint32_t _imageNext = 0;
+  std::vector<VkSemaphore> _imageAvailableSemaphores;
+  std::vector<VkSemaphore> _renderFinishedSemaphores;
+  std::vector<VkFence> _inFlightFences;
+  uint32_t _currentFrame = 0;
+};
 
-		std::shared_ptr<PhysicalDevice>		_ftPhysicalDevice;
-		std::shared_ptr<Device>				_ftDevice;
-		std::shared_ptr<Surface>			_ftSurface;
-		VkSwapchainKHR 						_swapChain;
-		VkFormat							_swapChainImageFormat;
-		VkExtent2D 							_swapChainExtent;
-		std::vector<VkImage>				_swapChainImages;
-		std::vector<VkImageView>			_swapChainImageViews;
-		std::vector<VkFramebuffer>			_frameBuffers;
-		std::shared_ptr<Image>				_ftDepthImage;
-		std::shared_ptr<Image>				_ftColorImage;
-		VkPresentModeKHR 					_preferredMode;
-		uint32_t 							_width;
-		uint32_t 							_height;
-		uint32_t 							_imageNext = 0;
-		std::vector<VkSemaphore>			_imageAvailableSemaphores;
-		std::vector<VkSemaphore>			_renderFinishedSemaphores;
-		std::vector<VkFence>				_inFlightFences;
-		uint32_t 							_currentFrame = 0;
+} // namespace ft
 
-	};
-
-
-}
-
-#endif //FTGRAPHICS_FT_SWAPCHAIN_H
+#endif // FTGRAPHICS_FT_SWAPCHAIN_H

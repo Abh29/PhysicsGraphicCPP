@@ -2,48 +2,50 @@
 #define FTGRAPHICS_FT_DEVICE_H
 
 #include "ft_headers.h"
-#include "ft_physicalDevice.h"
 #include "ft_instance.h"
+#include "ft_physicalDevice.h"
 
 namespace ft {
 
-	class Device {
-	public:
+class Device {
+public:
+  using pointer = std::shared_ptr<Device>;
 
-		using pointer = std::shared_ptr<Device>;
+  Device(PhysicalDevice::pointer physicalDevice,
+         std::vector<const char *> &validationLayers,
+         std::vector<const char *> &deviceExtensions);
+  ~Device();
+  Device(const Device &other) = delete;
+  Device operator=(const Device &other) = delete;
 
-		Device(PhysicalDevice::pointer physicalDevice,
-			   std::vector<const char *> &validationLayers,
-			   std::vector<const char *> &deviceExtensions);
-		~Device();
-		Device(const Device& other) = delete;
-		Device operator=(const Device& other) = delete;
+  [[nodiscard]] VkDevice getVKDevice() const;
+  [[nodiscard]] VkQueue getVKGraphicsQueue() const;
+  [[nodiscard]] VkQueue getVKPresentQueue() const;
+  uint32_t findMemoryType(uint32_t typeFilter,
+                          VkMemoryPropertyFlags properties);
+  [[nodiscard]] VkSampleCountFlagBits getMSAASamples() const;
+  [[nodiscard]] VkPhysicalDeviceProperties
+  getVKPhysicalDeviceProperties() const;
+  VkFormatProperties getVKFormatProperties(VkFormat &format) const;
+  [[nodiscard]] VkFormat
+  selectSupportedFormat(const std::vector<VkFormat> &candidates,
+                        VkImageTiling tiling,
+                        VkFormatFeatureFlags features) const;
+  [[nodiscard]] VkFormat findDepthFormat() const;
+  [[nodiscard]] bool hasStencilComponent(VkFormat format) const;
+  [[nodiscard]] QueueFamilyIndices getQueueFamilyIndices() const;
+  [[nodiscard]] VkCommandPool getVKCommandPool() const;
 
+private:
+  void createCommandPool();
 
-		[[nodiscard]] VkDevice  getVKDevice() const;
-		[[nodiscard]] VkQueue   getVKGraphicsQueue() const;
-		[[nodiscard]] VkQueue   getVKPresentQueue() const;
-		uint32_t  findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-		[[nodiscard]] VkSampleCountFlagBits getMSAASamples() const;
-		[[nodiscard]] VkPhysicalDeviceProperties getVKPhysicalDeviceProperties() const;
-		VkFormatProperties getVKFormatProperties(VkFormat& format) const;
-		[[nodiscard]] VkFormat selectSupportedFormat(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) const;
-		[[nodiscard]] VkFormat findDepthFormat() const;
-		[[nodiscard]] bool hasStencilComponent(VkFormat format) const;
-		[[nodiscard]] QueueFamilyIndices getQueueFamilyIndices() const;
-		[[nodiscard]] VkCommandPool getVKCommandPool() const;
+  PhysicalDevice::pointer _ftPhysicalDevice;
+  VkDevice _device;
+  VkQueue _graphicsQueue;
+  VkQueue _presentQueue;
+  VkCommandPool _commandPool;
+};
 
-	private:
-		void createCommandPool();
+} // namespace ft
 
-		PhysicalDevice::pointer				_ftPhysicalDevice;
-		VkDevice 							_device;
-		VkQueue 							_graphicsQueue;
-		VkQueue 							_presentQueue;
-		VkCommandPool 						_commandPool;
-	};
-
-}
-
-
-#endif //FTGRAPHICS_FT_DEVICE_H
+#endif // FTGRAPHICS_FT_DEVICE_H
