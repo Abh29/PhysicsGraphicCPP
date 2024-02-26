@@ -8,6 +8,7 @@
 #include "ft_headers.h"
 #include "ft_image.h"
 #include "ft_sampler.h"
+#include <vulkan/vulkan_core.h>
 
 namespace ft {
 
@@ -16,7 +17,12 @@ class Texture {
 public:
   using pointer = std::shared_ptr<Texture>;
 
-  enum class FileType { FT_TEXTURE_KTX, FT_TEXTURE_PNG, FT_TEXTURE_UNDEFINED };
+  enum class FileType {
+    FT_TEXTURE_KTX,
+    FT_TEXTURE_KTX_CUBE,
+    FT_TEXTURE_PNG,
+    FT_TEXTURE_UNDEFINED
+  };
 
   Texture(Device::pointer, std::string texture,
           FileType type = FileType::FT_TEXTURE_UNDEFINED);
@@ -38,6 +44,7 @@ public:
 private:
   void createTextureResource();
   void createTextureFromKTXFile();
+  void createTextureCubeFromKTXFile();
   void createTextureFromPNGFile();
   static uint32_t ID();
 
