@@ -199,6 +199,7 @@ constexpr uint32_t MODEL_SELECTABLE_BIT = 1u << 1;
 constexpr uint32_t MODEL_SELECTED_BIT = 1u << 2;
 constexpr uint32_t MODEL_HAS_COLOR_TEXTURE_BIT = 1u << 3;
 constexpr uint32_t MODEL_HAS_NORMAL_TEXTURE_BIT = 1u << 4;
+constexpr uint32_t MODEL_HAS_CUBE_TEXTURE_BIT = 1u << 9;
 constexpr uint32_t MODEL_HAS_INSTANCES_BIT = 1u << 5;
 constexpr uint32_t MODEL_HAS_INDICES_BIT = 1u << 6;
 constexpr uint32_t MODEL_SIMPLE_BIT = 1u << 7;

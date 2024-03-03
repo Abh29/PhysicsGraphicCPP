@@ -51,6 +51,7 @@ private:
   SimpleRdrSys::pointer _ftSimpleRdrSys;
   OneTextureRdrSys::pointer _ftTexturedRdrSys;
   TwoTextureRdrSys::pointer _ft2TexturedRdrSys;
+  SkyBoxRdrSys::pointer _ftSkyBoxRdrSys;
   PickingRdrSys::pointer _ftPickingRdrSys;
   MousePicker::pointer _ftMousePicker;
 

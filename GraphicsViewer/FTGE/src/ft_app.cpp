@@ -1,4 +1,5 @@
 #include "../includes/ft_app.h"
+#include <memory>
 
 ft::Application::Application()
     : _ftEventListener(std::make_shared<ft::EventListener>()),
@@ -98,40 +99,58 @@ void ft::Application::initApplication() {
   applicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
   applicationInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
   applicationInfo.pNext = nullptr;
-
+  std::cout << "init14" << std::endl;
   _ftInstance = std::make_shared<Instance>(applicationInfo, _validationLayers,
                                            _ftWindow->getRequiredExtensions());
+  std::cout << "init13" << std::endl;
   _ftSurface = std::make_shared<Surface>(_ftInstance, _ftWindow);
+  std::cout << "init12" << std::endl;
   _ftPhysicalDevice = std::make_shared<PhysicalDevice>(_ftInstance, _ftSurface,
                                                        _deviceExtensions);
+  std::cout << "init11" << std::endl;
   _ftDevice = std::make_shared<Device>(_ftPhysicalDevice, _validationLayers,
                                        _deviceExtensions);
+  std::cout << "init10" << std::endl;
   _ftRenderer = std::make_shared<ft::Renderer>(_ftWindow, _ftSurface,
                                                _ftPhysicalDevice, _ftDevice);
 
+  std::cout << "init9" << std::endl;
   _ftGui = std::make_shared<Gui>(_ftInstance, _ftPhysicalDevice, _ftDevice,
                                  _ftWindow, _ftRenderer->getRenderPass(),
                                  MAX_FRAMES_IN_FLIGHT);
 
+  std::cout << "init8" << std::endl;
   _ftMaterialPool = std::make_shared<ft::TexturePool>(_ftDevice);
   _ftDescriptorPool = std::make_shared<ft::DescriptorPool>(_ftDevice);
 
+  std::cout << "init7" << std::endl;
   _ftSimpleRdrSys = std::make_shared<ft::SimpleRdrSys>(_ftDevice, _ftRenderer,
                                                        _ftDescriptorPool);
+  std::cout << "init6" << std::endl;
   _ftSimpleRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
 
+  std::cout << "init5" << std::endl;
   _ftTexturedRdrSys = std::make_shared<ft::OneTextureRdrSys>(
       _ftDevice, _ftRenderer, _ftDescriptorPool);
+  std::cout << "init4" << std::endl;
   _ft2TexturedRdrSys = std::make_shared<ft::TwoTextureRdrSys>(
       _ftDevice, _ftRenderer, _ftDescriptorPool);
 
+  std::cout << "init4.1" << std::endl;
+  _ftSkyBoxRdrSys = std::make_shared<ft::SkyBoxRdrSys>(_ftDevice, _ftRenderer,
+                                                       _ftDescriptorPool);
+
+  std::cout << "init3" << std::endl;
   _ftPickingRdrSys = std::make_shared<ft::PickingRdrSys>(_ftDevice, _ftRenderer,
                                                          _ftDescriptorPool);
+  std::cout << "init2" << std::endl;
   _ftPickingRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
 
+  std::cout << "init1" << std::endl;
   _ftMousePicker = std::make_shared<ft::MousePicker>(
       _ftDevice, _ftRenderer->getSwapChain()->getWidth(),
       _ftRenderer->getSwapChain()->getHeight(), _ftPickingRdrSys);
+  std::cout << "init0" << std::endl;
 }
 
 // TODO: replace this with a scene manager, read scene from disk
@@ -185,30 +204,29 @@ void ft::Application::createScene() {
   data.model = glm::scale(data.model, {100, 100, 100});
   //  id = _ftScene->addModelFromObj("models/plane.mtl.obj", data);
 
-  data.model = glm::mat4(1.0f);
-  data.color = {0.95f, .9f, .5f};
-  data.normalMatrix = glm::mat4(1.0f);
+  // data.model = glm::mat4(1.0f);
+  //  data.color = {0.95f, .9f, .5f};
+  //  data.normalMatrix = glm::mat4(1.0f);
 
   // auto model = _ftScene->addModelFromGltf("assets/models/cube.gltf", data);
 
   //_ftScene->createCubeMapTexture("assets/textures/cubemap_yokohama_rgba.ktx");
 
-  //    auto model = _ftScene->addCubeBox(
-  //        "assets/models/cube.gltf",
-  //        "assets/textures/cubemap_yokohama_rga.ktx",
-  //        _ftTexturedRdrSys->getDescriptorPool(),
-  //        _ftTexturedRdrSys->getDescriptorSetLayout(), data);
-  //
-  auto models = _ftScene->addSingleTexturedFromGltf(
-      "assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
-      _ftTexturedRdrSys->getDescriptorPool(),
-      _ftTexturedRdrSys->getDescriptorSetLayout());
+  auto model = _ftScene->addCubeBox(
+      "assets/models/cube.gltf", "assets/textures/cubemap_yokohama_rgba.ktx",
+      _ftSkyBoxRdrSys->getDescriptorPool(),
+      _ftSkyBoxRdrSys->getDescriptorSetLayout(), data);
 
-  for (const auto &model : models) {
-    glm::mat4 &mat = model->getRootModelMatrix();
-    mat = glm::rotate(mat, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
-    mat = glm::translate(mat, glm::vec3(0.0f, 0.45f, 0.0f));
-  }
+  // auto models = _ftScene->addSingleTexturedFromGltf(
+  //     "assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
+  //     _ftTexturedRdrSys->getDescriptorPool(),
+  //     _ftTexturedRdrSys->getDescriptorSetLayout());
+
+  // for (const auto &model : models) {
+  //   glm::mat4 &mat = model->getRootModelMatrix();
+  //   mat = glm::rotate(mat, glm::radians(180.0f), glm::vec3(1.0f, 0.0f,
+  //   0.0f)); mat = glm::translate(mat, glm::vec3(0.0f, 0.45f, 0.0f));
+  // }
 
   //    models  =
   //    _ftScene->addDoubleTexturedFromGltf("assets/models/sponza/sponza.gltf",
@@ -346,6 +364,9 @@ void ft::Application::drawFrame() {
   _ftScene->draw2TexturedObjs(commandBuffer,
                               _ft2TexturedRdrSys->getGraphicsPipeline(),
                               _ft2TexturedRdrSys, _currentFrame);
+
+  _ftScene->drawSkyBox(commandBuffer, _ftSkyBoxRdrSys->getGraphicsPipeline(),
+                       _ftSkyBoxRdrSys, _currentFrame);
 
   // gui
   _ftGui->render(commandBuffer);

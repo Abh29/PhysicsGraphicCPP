@@ -15,6 +15,7 @@
 #include "ft_texture.h"
 #include "ft_tools.h"
 #include "ft_vertex.h"
+#include <cstdint>
 
 namespace ft {
 
@@ -39,6 +40,9 @@ public:
   void draw2TexturedObjs(const CommandBuffer::pointer &,
                          const GraphicsPipeline::pointer &,
                          const TwoTextureRdrSys::pointer &, uint32_t index);
+  void drawSkyBox(const CommandBuffer::pointer &,
+                  const GraphicsPipeline::pointer &,
+                  const SkyBoxRdrSys::pointer &, uint32_t index);
   void drawPickObjs(const CommandBuffer::pointer &,
                     const GraphicsPipeline::pointer &, uint32_t index);
 

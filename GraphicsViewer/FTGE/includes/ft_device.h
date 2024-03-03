@@ -11,9 +11,9 @@ class Device {
 public:
   using pointer = std::shared_ptr<Device>;
 
-  Device(PhysicalDevice::pointer physicalDevice,
-         std::vector<const char *> &validationLayers,
-         std::vector<const char *> &deviceExtensions);
+  Device(const PhysicalDevice::pointer &physicalDevice,
+         const std::vector<const char *> &validationLayers,
+         const std::vector<const char *> &deviceExtensions);
   ~Device();
   Device(const Device &other) = delete;
   Device operator=(const Device &other) = delete;

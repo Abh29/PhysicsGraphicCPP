@@ -114,6 +114,33 @@ void ft::Scene::draw2TexturedObjs(
   }
 }
 
+void ft::Scene::drawSkyBox(const ft::CommandBuffer::pointer &commandBuffer,
+                           const ft::GraphicsPipeline::pointer &pipeline,
+                           const ft::SkyBoxRdrSys::pointer &system,
+                           uint32_t index) {
+  // bind the graphics pipeline
+  vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(),
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    system->getGraphicsPipeline()->getVKPipeline());
+
+  // vertex and index buffers
+  for (auto &model : _models) {
+    if (!model->hasFlag(ft::MODEL_HAS_CUBE_TEXTURE_BIT))
+      continue;
+    model->bind(commandBuffer, index);
+    model->draw_extended(
+        commandBuffer, pipeline, [&](const Model::Primitive &p) {
+          auto dsc = p.material->getDescriptorSet(index);
+          dsc->updateDescriptorBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
+                                      _ftUniformBuffers[index], 0);
+          vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(),
+                                  VK_PIPELINE_BIND_POINT_GRAPHICS,
+                                  pipeline->getVKPipelineLayout(), 0, 1,
+                                  &(dsc->getVKDescriptorSet()), 0, nullptr);
+        });
+  }
+}
+
 void ft::Scene::drawPickObjs(const ft::CommandBuffer::pointer &commandBuffer,
                              const ft::GraphicsPipeline::pointer &pipeline,
                              uint32_t index) {
@@ -287,7 +314,7 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
       uint32_t t = m.values["baseColorTexture"].TextureIndex();
       material->addTexture(txts[t]);
     } else if (!txts.empty()) {
-      material->addTexture(txts[0]);
+      //      material->addTexture(txts[0]);
     }
 
     material->setAlphaMode(m.alphaMode);
@@ -413,21 +440,20 @@ ft::Model::pointer ft::Scene::addCubeBox(
   std::string error, warning;
 
   // load a texture
-  _ftCubeTexture = _ftTexturePool->createTexture(
-      ktxTexture, ft::Texture::FileType::FT_TEXTURE_KTX_CUBE);
+  _ftCubeTexture = std::make_shared<ft::Texture>(
+      _ftDevice, ktxTexture, ft::Texture::FileType::FT_TEXTURE_KTX_CUBE);
   _ftCubeTexture->createDescriptorSets(layout, pool);
 
   // create a material
   auto material = std::make_shared<Material>(_ftDevice);
-  material->setColorFactor(glm::vec4(1.0f));
   material->addTexture(_ftCubeTexture);
-  material->setDoubleSided(true);
   material->createDescriptors(pool, layout);
   for (uint32_t j = 0; j < ft::MAX_FRAMES_IN_FLIGHT; ++j) {
     material->bindDescriptor(j, 0, 1);
   }
   _ftTexturePool->addMaterial(material);
-
+  (void)gltfModel;
+  (void)data;
   // load the model
   if (!gltfContext.LoadASCIIFromFile(&gltfInput, &error, &warning, gltfModel))
     throw std::runtime_error("Could not open GLTF file!\n" + error + "\n" +
@@ -444,10 +470,11 @@ ft::Model::pointer ft::Scene::addCubeBox(
       continue;
     auto rootNode = model->getAllNodes()[0];
     rootNode->mesh[0].material = material;
-    rootNode->state.flags |= ft::MODEL_HAS_COLOR_TEXTURE_BIT;
+    rootNode->state.flags |= ft::MODEL_HAS_CUBE_TEXTURE_BIT;
     model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
     model->setState(data);
     _models.push_back(model);
+    break;
   }
 
   return model;
