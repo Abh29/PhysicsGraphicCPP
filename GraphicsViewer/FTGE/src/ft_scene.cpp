@@ -1,4 +1,7 @@
 #include "../includes/ft_scene.h"
+#include <glm/fwd.hpp>
+#include <ktx.h>
+#include <memory>
 
 ft::Scene::Scene(ft::Device::pointer device,
                  std::vector<ft::Buffer::pointer> ubos)
@@ -392,4 +395,60 @@ void ft::Scene::unselectAll() {
   for (auto &m : _models) {
     m->unselectAll();
   }
+}
+
+void ft::Scene::createCubeMapTexture(const std::string &path) {
+  std::cout << "creating a cube map" << std::endl;
+  _ftCubeTexture = std::make_shared<ft::Texture>(
+      _ftDevice, path, ft::Texture::FileType::FT_TEXTURE_KTX_CUBE);
+}
+
+ft::Model::pointer ft::Scene::addCubeBox(
+    const std::string &gltfModel, const std::string &ktxTexture,
+    const DescriptorPool::pointer &pool,
+    const DescriptorSetLayout::pointer &layout, const ft::InstanceData data) {
+
+  tinygltf::Model gltfInput;
+  tinygltf::TinyGLTF gltfContext;
+  std::string error, warning;
+
+  // load a texture
+  _ftCubeTexture = _ftTexturePool->createTexture(
+      ktxTexture, ft::Texture::FileType::FT_TEXTURE_KTX_CUBE);
+  _ftCubeTexture->createDescriptorSets(layout, pool);
+
+  // create a material
+  auto material = std::make_shared<Material>(_ftDevice);
+  material->setColorFactor(glm::vec4(1.0f));
+  material->addTexture(_ftCubeTexture);
+  material->setDoubleSided(true);
+  material->createDescriptors(pool, layout);
+  for (uint32_t j = 0; j < ft::MAX_FRAMES_IN_FLIGHT; ++j) {
+    material->bindDescriptor(j, 0, 1);
+  }
+  _ftTexturePool->addMaterial(material);
+
+  // load the model
+  if (!gltfContext.LoadASCIIFromFile(&gltfInput, &error, &warning, gltfModel))
+    throw std::runtime_error("Could not open GLTF file!\n" + error + "\n" +
+                             warning);
+
+  // load gltf scene
+  tinygltf::Scene &scene = gltfInput.scenes[0];
+  Model::pointer model;
+  for (int i : scene.nodes) {
+    const tinygltf::Node node = gltfInput.nodes[i];
+    model = std::make_shared<Model>(_ftDevice, gltfInput, node,
+                                    _ftUniformBuffers.size());
+    if (model->empty())
+      continue;
+    auto rootNode = model->getAllNodes()[0];
+    rootNode->mesh[0].material = material;
+    rootNode->state.flags |= ft::MODEL_HAS_COLOR_TEXTURE_BIT;
+    model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
+    model->setState(data);
+    _models.push_back(model);
+  }
+
+  return model;
 }

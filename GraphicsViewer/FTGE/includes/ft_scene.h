@@ -14,6 +14,7 @@
 #include "ft_swapChain.h"
 #include "ft_texture.h"
 #include "ft_tools.h"
+#include "ft_vertex.h"
 
 namespace ft {
 
@@ -25,6 +26,7 @@ public:
   Scene(Device::pointer device, std::vector<Buffer::pointer> ubos);
   ~Scene() = default;
 
+  // drawing
   void drawInstancedObjs(const CommandBuffer::pointer &commandBuffer,
                          const GraphicsPipeline::pointer &pipeline,
                          uint32_t index);
@@ -39,6 +41,8 @@ public:
                          const TwoTextureRdrSys::pointer &, uint32_t index);
   void drawPickObjs(const CommandBuffer::pointer &,
                     const GraphicsPipeline::pointer &, uint32_t index);
+
+  // add objects to the scene
   uint32_t addModelFromObj(const std::string &objectPath,
                            ft::InstanceData data);
   std::vector<Model::pointer>
@@ -52,6 +56,14 @@ public:
   Model::pointer addModelFromGltf(const std::string &,
                                   const ft::InstanceData data);
   uint32_t addObjectCopyToTheScene(uint32_t id, InstanceData data);
+
+  Model::pointer addCubeBox(const std::string &gltfModel,
+                            const std::string &ktxTexture,
+                            const DescriptorPool::pointer &pool,
+                            const DescriptorSetLayout::pointer &layout,
+                            const ft::InstanceData data);
+
+  // set properties of the scene
   void addMaterialToObj(uint32_t id, Material::pointer texture);
   void addPointLightToTheScene(PointLightObject &pl);
   [[nodiscard]] Camera::pointer getCamera() const;
@@ -63,6 +75,7 @@ public:
   void setMaterialPool(TexturePool::pointer pool);
   bool select(uint32_t id);
   void unselectAll();
+  void createCubeMapTexture(const std::string &path);
 
 private:
   Device::pointer _ftDevice;
@@ -72,6 +85,7 @@ private:
   UniformBufferObject _ubo;
   TexturePool::pointer _ftTexturePool;
   std::map<uint32_t, std::vector<Model::pointer>> _materialToModel;
+  Texture::pointer _ftCubeTexture;
 };
 
 } // namespace ft

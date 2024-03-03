@@ -34,12 +34,12 @@ VkBool32 ft::Callback::debugCallback(
               << "\033[0m" << std::endl;
     break;
   case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
-    std::cerr << "validation layer [WARN]: " << pCallbackData->pMessage
-              << std::endl;
+    std::cerr << "\033[1;31mvalidation layer [WARN]: "
+              << pCallbackData->pMessage << "\033[0m" << std::endl;
     break;
   default:
-    std::cerr << "validation layer [ERROR]: " << pCallbackData->pMessage
-              << std::endl;
+    std::cerr << "v\033[1;31malidation layer [ERROR]: "
+              << pCallbackData->pMessage << "\033[0m" << std::endl;
   }
 
   return VK_FALSE;

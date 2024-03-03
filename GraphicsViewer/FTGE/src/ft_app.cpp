@@ -189,11 +189,21 @@ void ft::Application::createScene() {
   data.color = {0.95f, .9f, .5f};
   data.normalMatrix = glm::mat4(1.0f);
 
-  auto model = _ftScene->addModelFromGltf("assets/models/sphere.gltf", data);
+  // auto model = _ftScene->addModelFromGltf("assets/models/cube.gltf", data);
+
+  //_ftScene->createCubeMapTexture("assets/textures/cubemap_yokohama_rgba.ktx");
+
+  //    auto model = _ftScene->addCubeBox(
+  //        "assets/models/cube.gltf",
+  //        "assets/textures/cubemap_yokohama_rga.ktx",
+  //        _ftTexturedRdrSys->getDescriptorPool(),
+  //        _ftTexturedRdrSys->getDescriptorSetLayout(), data);
+  //
   //    auto models  =
-  //    _ftScene->addSingleTexturedFromGltf("assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
-  //                                      _ftTexturedRdrSys->getDescriptorPool(),
-  //                                      _ftTexturedRdrSys->getDescriptorSetLayout());
+  _ftScene->addSingleTexturedFromGltf(
+      "assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
+      _ftTexturedRdrSys->getDescriptorPool(),
+      _ftTexturedRdrSys->getDescriptorSetLayout());
   //
   //    for (const auto& model : models) {
   //        glm::mat4& mat = model->getRootModelMatrix();

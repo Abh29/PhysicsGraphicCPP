@@ -3,6 +3,7 @@
 
 #include "ft_device.h"
 #include "ft_image.h"
+#include <cstdint>
 
 namespace ft {
 
@@ -27,6 +28,9 @@ public:
                     VkDeviceSize dstOffset = 0) const;
   void copyToImage(Image::pointer &image, uint32_t width, uint32_t height,
                    uint32_t mipLevels = 1, size_t *offsets = nullptr);
+  void copyToImage2(const Image::pointer &image, uint32_t width,
+                    uint32_t height, uint32_t mipLevels, uint32_t layers,
+                    uint32_t offsetsSize, size_t *offsets = nullptr);
   void copyFromImage(const Image::pointer &image, VkImageLayout layout);
   bool isMapped() const;
 

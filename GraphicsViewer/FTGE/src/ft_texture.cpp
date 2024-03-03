@@ -160,7 +160,6 @@ void ft::Texture::createTextureCubeFromKTXFile() {
 
   ktxResult result = ktxTexture_CreateFromNamedFile(
       _path.c_str(), KTX_TEXTURE_CREATE_LOAD_IMAGE_DATA_BIT, &ktxTexture);
-
   if (result != KTX_SUCCESS)
     throw std::runtime_error("Could not load KTX file!");
 
@@ -170,17 +169,9 @@ void ft::Texture::createTextureCubeFromKTXFile() {
   uint32_t width = ktxTexture->baseWidth;
   uint32_t height = ktxTexture->baseHeight;
 
-  std::vector<size_t> mipOffsets;
-  for (uint32_t i = 0; i < mipLevels; ++i) {
-    ktx_size_t offset;
-    ktxTexture_GetImageOffset(ktxTexture, i, 0, 0, &offset);
-    mipOffsets.push_back(offset);
-  }
-
   // staging buffer and memory
   ft::BufferBuilder bufferBuilder;
   ft::ImageBuilder imageBuilder;
-
   auto stagingBuffer =
       bufferBuilder.setSize(textureSize)
           .setUsageFlags(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
@@ -192,34 +183,91 @@ void ft::Texture::createTextureCubeFromKTXFile() {
   stagingBuffer->copyToMappedData(data, textureSize);
 
   _ftTextureImage =
-      imageBuilder.setWidthHeight(width, height)
-          .setMipLevel(6)
+      imageBuilder.setWidthHeight(width, height, 1)
+          .setMipLevel(mipLevels)
           .setSampleCount(VK_SAMPLE_COUNT_1_BIT)
-          .setFormat(VK_FORMAT_R8G8B8A8_SRGB)
+          .setFormat(VK_FORMAT_R8G8B8A8_UNORM)
           .setTiling(VK_IMAGE_TILING_OPTIMAL)
-          .setUsageFlags(VK_IMAGE_USAGE_TRANSFER_SRC_BIT |
-                         VK_IMAGE_USAGE_TRANSFER_DST_BIT |
+          .setUsageFlags(VK_IMAGE_USAGE_TRANSFER_DST_BIT |
                          VK_IMAGE_USAGE_SAMPLED_BIT)
           .setMemoryProperties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT)
           .setAspectFlags(VK_IMAGE_ASPECT_COLOR_BIT)
-          .setCreateFlags(VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT)
+          .setCreateFlags(VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT) // required
+          .setLayout(VK_IMAGE_LAYOUT_UNDEFINED)
+          .setArrayLayers(6) // cube faces count as array layers in vulkan
+          .setViewType(VK_IMAGE_VIEW_TYPE_CUBE)
           .build(_ftDevice);
 
   // transition the image layout for dst copy
-  Image::transitionImageLayout(_ftDevice, _ftTextureImage->getVKImage(),
-                               VK_FORMAT_R8G8B8A8_SRGB,
-                               VK_IMAGE_LAYOUT_UNDEFINED,
-                               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, mipLevels);
+  // Image::transitionImageLayout(_ftDevice, _ftTextureImage->getVKImage(),
+  //                              VK_FORMAT_R8G8B8A8_SRGB,
+  //                              VK_IMAGE_LAYOUT_UNDEFINED,
+  //                              VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+  //                              mipLevels);
+
+  VkImageSubresourceRange subResourceRange = {};
+  subResourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+  subResourceRange.baseMipLevel = 0;
+  subResourceRange.levelCount = mipLevels;
+  subResourceRange.layerCount = 6;
+  _ftTextureImage->transitionLayout2(
+      VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+      subResourceRange, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 
   // copy the buffer to the image
-  stagingBuffer->copyToImage(_ftTextureImage, ktxTexture->baseWidth,
-                             ktxTexture->baseHeight, mipLevels,
-                             mipOffsets.data());
+  // get the offsets
+  std::vector<VkBufferImageCopy> bufferCopyRegions;
+  // Todo: refactor this into the buffer copyToImage method
+  for (uint32_t face = 0; face < 6; face++) {
+    for (uint32_t level = 0; level < mipLevels; level++) {
+      // Calculate offset into staging buffer for the current mip level and face
+      ktx_size_t offset;
+      KTX_error_code ret =
+          ktxTexture_GetImageOffset(ktxTexture, level, 0, face, &offset);
+      assert(ret == KTX_SUCCESS);
+      VkBufferImageCopy bufferCopyRegion = {};
+      bufferCopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+      bufferCopyRegion.imageSubresource.mipLevel = level;
+      bufferCopyRegion.imageSubresource.baseArrayLayer = face;
+      bufferCopyRegion.imageSubresource.layerCount = 1;
+      bufferCopyRegion.imageExtent.width = ktxTexture->baseWidth >> level;
+      bufferCopyRegion.imageExtent.height = ktxTexture->baseHeight >> level;
+      bufferCopyRegion.imageExtent.depth = 1;
+      bufferCopyRegion.bufferOffset = offset;
+      bufferCopyRegions.push_back(bufferCopyRegion);
+    }
+  }
 
+  auto commandBuffer = std::make_unique<CommandBuffer>(_ftDevice);
+  commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+  std::vector<VkBufferImageCopy> copyRegions;
+
+  vkCmdCopyBufferToImage(
+      commandBuffer->getVKCommandBuffer(), stagingBuffer->getVKBuffer(),
+      _ftTextureImage->getVKImage(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+      static_cast<uint32_t>(bufferCopyRegions.size()),
+      bufferCopyRegions.data());
+
+  commandBuffer->end();
+  commandBuffer->submit(_ftDevice->getVKGraphicsQueue());
+
+  //  stagingBuffer->copyToImage(_ftTextureImage, ktxTexture->baseWidth,
+  // ktxTexture->baseHeight, mipLevels, offsets.data());
+  // stagingBuffer->copyToImage2(_ftTextureImage, width, height, mipLevels, 6,
+  //                               static_cast<uint32_t>(offsets.size()),
+  //                              offsets.data());
+
+  // transition the layout to shader read optimal
+  _ftTextureImage->transitionLayout2(
+      VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, subResourceRange,
+      VK_PIPELINE_STAGE_ALL_COMMANDS_BIT, VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
   // generate mip maps
   //	generateMipmaps(_ftTextureImage->getVKImage(), VK_FORMAT_R8G8B8A8_SRGB,
   // texWidth, texHeight, mipLevels);
-  _ftTextureImage->generateMipmaps(VK_FORMAT_R8G8B8A8_SRGB);
+  //_ftTextureImage->generateMipmaps(VK_FORMAT_R8G8B8A8_SRGB);
   // clean up
   ktxTexture_Destroy(ktxTexture);
 }

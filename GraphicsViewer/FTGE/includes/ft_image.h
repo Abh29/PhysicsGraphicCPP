@@ -4,6 +4,7 @@
 #include "ft_command.h"
 #include "ft_device.h"
 #include "ft_headers.h"
+#include <cstdint>
 #include <vulkan/vulkan_core.h>
 
 namespace ft {
@@ -13,7 +14,8 @@ public:
   using pointer = std::shared_ptr<Image>;
 
   Image(Device::pointer device, VkImageCreateInfo createInfo,
-        VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags);
+        VkMemoryPropertyFlags properties, VkImageAspectFlags aspectFlags,
+        VkImageViewType viewType);
 
   ~Image();
 
@@ -25,6 +27,10 @@ public:
                                     uint32_t mipLevels);
   void transitionLayout(VkFormat format, VkImageLayout layout);
   void generateMipmaps(VkFormat imageFormat);
+  void transitionLayout2(VkImageLayout oldLayout, VkImageLayout newLayout,
+                         VkImageSubresourceRange subresourceRange,
+                         VkPipelineStageFlags srcStageMask,
+                         VkPipelineStageFlags dstStageMask);
   [[nodiscard]] uint32_t getHeight() const;
   [[nodiscard]] uint32_t getWidth() const;
 
@@ -58,6 +64,8 @@ public:
   ImageBuilder &setAspectFlags(VkImageAspectFlags aspectFlags);
   ImageBuilder &setLayout(VkImageLayout imageLayout);
   ImageBuilder &setCreateFlags(VkImageCreateFlags flags);
+  ImageBuilder &setArrayLayers(uint32_t layers);
+  ImageBuilder &setViewType(VkImageViewType viewType);
 
   Image::pointer build(Device::pointer &device);
 
@@ -65,6 +73,7 @@ private:
   VkImageCreateInfo _createInfo;
   VkMemoryPropertyFlags _memoryProperties;
   VkImageAspectFlags _aspectFlags;
+  VkImageViewType _imageViewType = VK_IMAGE_VIEW_TYPE_2D;
   Image::pointer _ftImage;
   Device::pointer _ftDevice;
 };

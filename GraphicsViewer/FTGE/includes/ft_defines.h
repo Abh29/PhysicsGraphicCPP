@@ -5,7 +5,7 @@
 
 namespace ft {
 
-#define NDEBUG
+// #define NDEBUG
 
 static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 constexpr int POINT_LIGHT_MAX_COUNT = 5;
