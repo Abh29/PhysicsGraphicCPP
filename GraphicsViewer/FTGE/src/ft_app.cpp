@@ -199,18 +199,16 @@ void ft::Application::createScene() {
   //        _ftTexturedRdrSys->getDescriptorPool(),
   //        _ftTexturedRdrSys->getDescriptorSetLayout(), data);
   //
-  //    auto models  =
-  _ftScene->addSingleTexturedFromGltf(
+  auto models = _ftScene->addSingleTexturedFromGltf(
       "assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
       _ftTexturedRdrSys->getDescriptorPool(),
       _ftTexturedRdrSys->getDescriptorSetLayout());
-  //
-  //    for (const auto& model : models) {
-  //        glm::mat4& mat = model->getRootModelMatrix();
-  //        mat = glm::rotate(mat, glm::radians(180.0f), glm::vec3(1.0f, 0.0f,
-  //        0.0f)); mat = glm::translate(mat,  glm::vec3(0.0f, 0.45f, 0.0f));
-  //    }
-  //
+
+  for (const auto &model : models) {
+    glm::mat4 &mat = model->getRootModelMatrix();
+    mat = glm::rotate(mat, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    mat = glm::translate(mat, glm::vec3(0.0f, 0.45f, 0.0f));
+  }
 
   //    models  =
   //    _ftScene->addDoubleTexturedFromGltf("assets/models/sponza/sponza.gltf",
