@@ -1,4 +1,5 @@
 #include "../includes/ft_app.h"
+#include <glm/ext/matrix_transform.hpp>
 #include <memory>
 
 ft::Application::Application()
@@ -201,8 +202,9 @@ void ft::Application::createScene() {
   data.model = glm::mat4(1.0f);
   data.color = {0.95f, .95f, .95f};
   data.normalMatrix = glm::mat4(1.0f);
-  data.model = glm::scale(data.model, {100, 100, 100});
-  //  id = _ftScene->addModelFromObj("models/plane.mtl.obj", data);
+  data.model = glm::translate(data.model, {0, 1, 0});
+  data.model = glm::scale(data.model, {300, 300, 300});
+  id = _ftScene->addModelFromObj("models/plane.mtl.obj", data);
 
   // data.model = glm::mat4(1.0f);
   //  data.color = {0.95f, .9f, .5f};
@@ -211,9 +213,13 @@ void ft::Application::createScene() {
   // auto model = _ftScene->addModelFromGltf("assets/models/cube.gltf", data);
 
   //_ftScene->createCubeMapTexture("assets/textures/cubemap_yokohama_rgba.ktx");
+  data.model = glm::mat4(1.0f);
+  data.color = {0.95f, .95f, .95f};
+  data.normalMatrix = glm::mat4(1.0f);
+  data.model = glm::scale(data.model, {300, 300, 300});
 
   auto model = _ftScene->addCubeBox(
-      "assets/models/cube.gltf", "assets/textures/cubemap_yokohama_rgba.ktx",
+      "assets/models/sphere.gltf", "assets/textures/cubemap_space.ktx",
       _ftSkyBoxRdrSys->getDescriptorPool(),
       _ftSkyBoxRdrSys->getDescriptorSetLayout(), data);
 
@@ -228,18 +234,17 @@ void ft::Application::createScene() {
   //   0.0f)); mat = glm::translate(mat, glm::vec3(0.0f, 0.45f, 0.0f));
   // }
 
-  //    models  =
-  //    _ftScene->addDoubleTexturedFromGltf("assets/models/sponza/sponza.gltf",
-  //                                      _ft2TexturedRdrSys->getDescriptorPool(),
-  //                                      _ft2TexturedRdrSys->getDescriptorSetLayout());
-  //
-  //   for (const auto& model : models) {
-  //       glm::mat4& mat = model->getRootModelMatrix();
-  //       mat = glm::rotate(mat, glm::radians(180.0f), glm::vec3(1.0f, 0.0f,
-  //       0.0f)); mat = glm::translate(mat,  glm::vec3(0.0f, 0.45f, 0.0f)); mat
-  //       = glm::scale(mat, {2.0f, 2.0f, 2.0f});
-  //   }
-  //
+  auto models = _ftScene->addDoubleTexturedFromGltf(
+      "assets/models/sponza/sponza.gltf",
+      _ft2TexturedRdrSys->getDescriptorPool(),
+      _ft2TexturedRdrSys->getDescriptorSetLayout());
+
+  for (const auto &model : models) {
+    glm::mat4 &mat = model->getRootModelMatrix();
+    mat = glm::rotate(mat, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    mat = glm::translate(mat, glm::vec3(0.0f, 0.45f, 0.0f));
+    mat = glm::scale(mat, {2.0f, 2.0f, 2.0f});
+  }
 
   //     m = _ftMaterialPool->createTexture("textures/cubemap_space.ktx",
   //     _ftRenderer->getSampler(),
