@@ -1,4 +1,5 @@
 #include "../includes/ft_rendering_systems.h"
+#include <vulkan/vulkan_core.h>
 
 ft::RenderingSystem::RenderingSystem(Device::pointer device,
                                      Renderer::pointer renderer,
@@ -100,8 +101,9 @@ void ft::InstanceRdrSys::createGraphicsPipeline() {
       VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   pipelineConfig.inputAssemblyState.primitiveRestartEnable = VK_FALSE;
   //		pipelineConfig.inputAssemblyState.topology =
-  //VK_PRIMITIVE_TOPOLOGY_LINE_LIST; 		pipelineConfig.inputAssemblyState.topology
-  //= VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+  // VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+  // pipelineConfig.inputAssemblyState.topology =
+  // VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
   // view port and scissors
   pipelineConfig.viewport.x = 0.0f;
@@ -260,8 +262,9 @@ void ft::SimpleRdrSys::createGraphicsPipeline() {
       VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   pipelineConfig.inputAssemblyState.primitiveRestartEnable = VK_FALSE;
   //		pipelineConfig.inputAssemblyState.topology =
-  //VK_PRIMITIVE_TOPOLOGY_LINE_LIST; 		pipelineConfig.inputAssemblyState.topology
-  //= VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+  // VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+  // pipelineConfig.inputAssemblyState.topology =
+  // VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
   // view port and scissors
   pipelineConfig.viewport.x = 0.0f;
@@ -418,8 +421,9 @@ void ft::OneTextureRdrSys::createGraphicsPipeline() {
       VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   pipelineConfig.inputAssemblyState.primitiveRestartEnable = VK_FALSE;
   //		pipelineConfig.inputAssemblyState.topology =
-  //VK_PRIMITIVE_TOPOLOGY_LINE_LIST; 		pipelineConfig.inputAssemblyState.topology
-  //= VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+  // VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+  // pipelineConfig.inputAssemblyState.topology =
+  // VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
   // view port and scissors
   pipelineConfig.viewport.x = 0.0f;
@@ -504,7 +508,6 @@ ft::TwoTextureRdrSys::TwoTextureRdrSys(Device::pointer device,
                                        ft::DescriptorPool::pointer pool)
     : RenderingSystem(std::move(device), std::move(renderer), std::move(pool)) {
   createDescriptorSetLayout();
-  createDescriptors();
   createGraphicsPipeline();
 }
 
@@ -528,45 +531,6 @@ void ft::TwoTextureRdrSys::createDescriptorSetLayout() {
   _normalsImageBinding = 2u;
 }
 
-std::vector<ft::DescriptorSet::pointer>
-ft::TwoTextureRdrSys::getDescriptorSets() const {
-  return _ftDescriptorSets;
-}
-
-void ft::TwoTextureRdrSys::populateUBO(const Buffer::pointer &ubo,
-                                       uint32_t index) {
-  assert(index < _ftDescriptorSets.size());
-  _ftDescriptorSets[index]->updateDescriptorBuffer(
-      _uboBinding, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, ubo, 0);
-}
-
-void ft::TwoTextureRdrSys::populateTextureImage(const Image::pointer &texture,
-                                                const Sampler::pointer &sampler,
-                                                uint32_t index) {
-  assert(index < _ftDescriptorSets.size());
-  _ftDescriptorSets[index]->updateDescriptorImage(
-      _textureImageBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, texture, sampler);
-}
-
-void ft::TwoTextureRdrSys::populateNormalImage(const Image::pointer &texture,
-                                               const Sampler::pointer &sampler,
-                                               uint32_t index) {
-  assert(index < _ftDescriptorSets.size());
-  _ftDescriptorSets[index]->updateDescriptorImage(
-      _normalsImageBinding, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,
-      VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, texture, sampler);
-}
-
-void ft::TwoTextureRdrSys::bindDescriptorSet(
-    const ft::CommandBuffer::pointer &commandBuffer, uint32_t index) {
-  assert(index < _ftDescriptorSets.size());
-  vkCmdBindDescriptorSets(
-      commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
-      _ftPipeline->getVKPipelineLayout(), 0, 1,
-      &(_ftDescriptorSets[index]->getVKDescriptorSet()), 0, nullptr);
-}
-
 uint32_t ft::TwoTextureRdrSys::getNormalsImageBinding() const {
   return _normalsImageBinding;
 }
@@ -574,13 +538,6 @@ uint32_t ft::TwoTextureRdrSys::getTextureImageBinding() const {
   return _textureImageBinding;
 }
 uint32_t ft::TwoTextureRdrSys::getUboBinding() const { return _uboBinding; }
-
-void ft::TwoTextureRdrSys::createDescriptors() {
-  _ftDescriptorSets.resize(ft::MAX_FRAMES_IN_FLIGHT);
-
-  for (auto &set : _ftDescriptorSets)
-    set = _ftDescriptorPool->allocateSet(_ftDescriptorSetLayout);
-}
 
 void ft::TwoTextureRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
@@ -624,8 +581,9 @@ void ft::TwoTextureRdrSys::createGraphicsPipeline() {
       VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   pipelineConfig.inputAssemblyState.primitiveRestartEnable = VK_FALSE;
   //		pipelineConfig.inputAssemblyState.topology =
-  //VK_PRIMITIVE_TOPOLOGY_LINE_LIST; 		pipelineConfig.inputAssemblyState.topology
-  //= VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+  // VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+  // pipelineConfig.inputAssemblyState.topology =
+  // VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
   // view port and scissors
   pipelineConfig.viewport.x = 0.0f;
@@ -932,8 +890,9 @@ void ft::SkyBoxRdrSys::createGraphicsPipeline() {
       VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   pipelineConfig.inputAssemblyState.primitiveRestartEnable = VK_FALSE;
   //		pipelineConfig.inputAssemblyState.topology =
-  //VK_PRIMITIVE_TOPOLOGY_LINE_LIST; 		pipelineConfig.inputAssemblyState.topology
-  //= VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+  // VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
+  // pipelineConfig.inputAssemblyState.topology =
+  // VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
   // view port and scissors
   pipelineConfig.viewport.x = 0.0f;

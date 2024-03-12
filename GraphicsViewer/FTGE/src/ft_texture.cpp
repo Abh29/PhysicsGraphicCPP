@@ -2,7 +2,9 @@
 #include "../includes/ft_tools.h"
 #include "stb/stb_image.h"
 #include <cstdint>
+#include <iostream>
 #include <ktx.h>
+#include <ostream>
 #include <vulkan/vulkan_core.h>
 
 ft::Texture::Texture(Device::pointer device, std::string texture,
@@ -13,6 +15,8 @@ ft::Texture::Texture(Device::pointer device, std::string texture,
   if (!ft::tools::fileExists(_path))
     throw std::runtime_error("Could not load " + _path +
                              ", make sure the file exists!");
+
+  std::cout << "loading texture " << _path << std::endl;
 
   switch (fileType) {
   case ft::Texture::FileType::FT_TEXTURE_KTX:
@@ -318,7 +322,7 @@ void ft::Texture::setDescriptorSets(
 
 ft::Material::Material(Device::pointer device) : _ftDevice(std::move(device)) {}
 
-ft::DescriptorSet::pointer ft::Material::getDescriptorSet(uint32_t index) {
+ft::DescriptorSet::pointer &ft::Material::getDescriptorSet(uint32_t index) {
   assert(index < _ftDescriptorSets.size());
   return _ftDescriptorSets[index];
 }

@@ -2,13 +2,15 @@
 #define FTGRAPHICS_FT_DEFINES_H
 
 #include "ft_headers.h"
+#include <cstdint>
 
 namespace ft {
 
 // #define NDEBUG
 
 static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-constexpr int POINT_LIGHT_MAX_COUNT = 5;
+constexpr int POINT_LIGHT_MAX_COUNT = 1;
+static constexpr uint32_t THREAD_POOL_SIZE = 10;
 
 struct QueueFamilyIndices {
   std::optional<uint32_t> graphicsFamily;

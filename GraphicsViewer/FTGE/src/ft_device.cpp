@@ -5,13 +5,11 @@ ft::Device::Device(const std::shared_ptr<PhysicalDevice> &physicalDevice,
                    const std::vector<const char *> &deviceExtensions)
     : _ftPhysicalDevice(physicalDevice) {
 
-  std::cout << "init77" << std::endl;
   ft::QueueFamilyIndices indices = _ftPhysicalDevice->getQueueFamilyIndices();
   std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
   std::set<uint32_t> uniqueQueueFamilies = {indices.graphicsFamily.value(),
                                             indices.presentFamily.value()};
 
-  std::cout << "init66" << std::endl;
   float queuePriority = 1.0f;
   for (uint32_t queueFamily : uniqueQueueFamilies) {
     VkDeviceQueueCreateInfo queueCreateInfo{};
@@ -23,16 +21,13 @@ ft::Device::Device(const std::shared_ptr<PhysicalDevice> &physicalDevice,
     queueCreateInfos.push_back(queueCreateInfo);
   }
 
-  std::cout << "init55" << std::endl;
   VkPhysicalDeviceFeatures deviceFeatures{};
   deviceFeatures.samplerAnisotropy = VK_TRUE;
 
-  std::cout << "init44" << std::endl;
   VkPhysicalDeviceExtendedDynamicStateFeaturesEXT ext{};
   ext.sType =
       VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_EXTENDED_DYNAMIC_STATE_FEATURES_EXT;
   ext.extendedDynamicState = VK_TRUE;
-  std::cout << "init33" << std::endl;
 
   VkDeviceCreateInfo deviceCreateInfo{};
   deviceCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -52,16 +47,13 @@ ft::Device::Device(const std::shared_ptr<PhysicalDevice> &physicalDevice,
     deviceCreateInfo.enabledLayerCount = 0;
   }
 
-  std::cout << "init22" << std::endl;
   if (vkCreateDevice(_ftPhysicalDevice->getVKPhysicalDevice(),
                      &deviceCreateInfo, nullptr, &_device) != VK_SUCCESS)
     throw std::runtime_error("failed to create a logical device!");
 
-  std::cout << "init11" << std::endl;
   vkGetDeviceQueue(_device, indices.graphicsFamily.value(), 0, &_graphicsQueue);
   vkGetDeviceQueue(_device, indices.presentFamily.value(), 0, &_presentQueue);
   createCommandPool();
-  std::cout << "init00" << std::endl;
 }
 
 ft::Device::~Device() {

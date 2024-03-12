@@ -74,7 +74,7 @@ public:
   [[nodiscard]] uint32_t getID() const;
   [[nodiscard]] std::vector<Node *> getAllNodes() const;
   void setState(const InstanceData &data);
-  void addMaterial(Material::pointer material);
+  void addMaterial(const Material::pointer &material);
   glm::mat4 &getRootModelMatrix();
 
   // state manager

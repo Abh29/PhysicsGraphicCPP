@@ -64,7 +64,7 @@ public:
   Material(Device::pointer device);
   ~Material() = default;
 
-  ft::DescriptorSet::pointer getDescriptorSet(uint32_t index);
+  ft::DescriptorSet::pointer &getDescriptorSet(uint32_t index);
   void addTexture(Texture::pointer texture);
   void createDescriptors(DescriptorPool::pointer pool,
                          DescriptorSetLayout::pointer layout);

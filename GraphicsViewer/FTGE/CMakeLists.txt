@@ -103,9 +103,9 @@ add_executable(
   src/ft_camera.cpp
   src/ft_sampler.cpp
   src/ft_texture.cpp
-  includes/ft_picker.h
   src/ft_picker.cpp
-  includes/ft_tools.h)
+  includes/ft_tools.h
+  includes/ft_threads.h)
 
 target_link_libraries(ftGraphics imgui)
 add_dependencies(ftGraphics Shaders)

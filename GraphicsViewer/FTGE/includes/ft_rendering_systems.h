@@ -95,14 +95,6 @@ public:
   TwoTextureRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
   ~TwoTextureRdrSys() override = default;
 
-  void populateUBO(const Buffer::pointer &ubo, uint32_t index);
-  void populateTextureImage(const Image::pointer &texture,
-                            const Sampler::pointer &sampler, uint32_t index);
-  void populateNormalImage(const Image::pointer &texture,
-                           const Sampler::pointer &sampler, uint32_t index);
-  void bindDescriptorSet(const CommandBuffer::pointer &commandBuffer,
-                         uint32_t index);
-
   [[nodiscard]] std::vector<DescriptorSet::pointer> getDescriptorSets() const;
   [[nodiscard]] uint32_t getNormalsImageBinding() const;
   [[nodiscard]] uint32_t getTextureImageBinding() const;
@@ -111,12 +103,10 @@ public:
 private:
   void createDescriptorSetLayout();
   void createGraphicsPipeline();
-  void createDescriptors();
 
   uint32_t _uboBinding;
   uint32_t _textureImageBinding;
   uint32_t _normalsImageBinding;
-  std::vector<DescriptorSet::pointer> _ftDescriptorSets;
 };
 
 class PickingRdrSys final : public RenderingSystem {

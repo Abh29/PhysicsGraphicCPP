@@ -47,8 +47,8 @@ public:
                     const GraphicsPipeline::pointer &, uint32_t index);
 
   // add objects to the scene
-  uint32_t addModelFromObj(const std::string &objectPath,
-                           ft::InstanceData data);
+  Model::pointer addModelFromObj(const std::string &objectPath,
+                                 ft::InstanceData data);
   std::vector<Model::pointer>
   addDoubleTexturedFromGltf(const std::string &,
                             const DescriptorPool::pointer &,

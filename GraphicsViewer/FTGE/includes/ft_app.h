@@ -15,6 +15,7 @@
 #include "ft_scene.h"
 #include "ft_surface.h"
 #include "ft_texture.h"
+#include "ft_threads.h"
 #include "ft_window.h"
 
 namespace ft {
@@ -54,6 +55,7 @@ private:
   SkyBoxRdrSys::pointer _ftSkyBoxRdrSys;
   PickingRdrSys::pointer _ftPickingRdrSys;
   MousePicker::pointer _ftMousePicker;
+  ThreadPool::pointer _ftThreadPool;
 
   DescriptorPool::pointer _ftDescriptorPool;
   std::vector<DescriptorSet::pointer> _ftDescriptorSets;

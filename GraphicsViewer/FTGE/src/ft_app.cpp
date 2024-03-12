@@ -1,11 +1,13 @@
 #include "../includes/ft_app.h"
 #include <glm/ext/matrix_transform.hpp>
 #include <memory>
+#include <vulkan/vulkan_core.h>
 
 ft::Application::Application()
     : _ftEventListener(std::make_shared<ft::EventListener>()),
       _ftWindow{std::make_shared<Window>(W_WIDTH, W_HEIGHT, "applicationWindow",
-                                         nullptr, _ftEventListener)} {
+                                         nullptr, _ftEventListener)},
+      _ftThreadPool(std::make_shared<ft::ThreadPool>(ft::THREAD_POOL_SIZE)) {
   _validationLayers = {
       "VK_LAYER_KHRONOS_validation",
   };
@@ -56,6 +58,8 @@ void ft::Application::initEventListener() {
             _ftWindow->ACTION(KeyActions::KEY_PRESS)) {
           auto x = std::any_cast<double>(data[3]);
           auto y = std::any_cast<double>(data[4]);
+          if (y <= 30 || x >= (_ftRenderer->getSwapChain()->getWidth() - 200))
+            return;
           uint32_t id =
               _ftMousePicker->pick(_ftScene, (uint32_t)x, (uint32_t)y);
           std::cout << "id is: " << id << std::endl;
@@ -100,58 +104,35 @@ void ft::Application::initApplication() {
   applicationInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
   applicationInfo.apiVersion = VK_MAKE_API_VERSION(0, 1, 3, 0);
   applicationInfo.pNext = nullptr;
-  std::cout << "init14" << std::endl;
   _ftInstance = std::make_shared<Instance>(applicationInfo, _validationLayers,
                                            _ftWindow->getRequiredExtensions());
-  std::cout << "init13" << std::endl;
   _ftSurface = std::make_shared<Surface>(_ftInstance, _ftWindow);
-  std::cout << "init12" << std::endl;
   _ftPhysicalDevice = std::make_shared<PhysicalDevice>(_ftInstance, _ftSurface,
                                                        _deviceExtensions);
-  std::cout << "init11" << std::endl;
   _ftDevice = std::make_shared<Device>(_ftPhysicalDevice, _validationLayers,
                                        _deviceExtensions);
-  std::cout << "init10" << std::endl;
   _ftRenderer = std::make_shared<ft::Renderer>(_ftWindow, _ftSurface,
                                                _ftPhysicalDevice, _ftDevice);
-
-  std::cout << "init9" << std::endl;
   _ftGui = std::make_shared<Gui>(_ftInstance, _ftPhysicalDevice, _ftDevice,
                                  _ftWindow, _ftRenderer->getRenderPass(),
                                  MAX_FRAMES_IN_FLIGHT);
-
-  std::cout << "init8" << std::endl;
   _ftMaterialPool = std::make_shared<ft::TexturePool>(_ftDevice);
   _ftDescriptorPool = std::make_shared<ft::DescriptorPool>(_ftDevice);
-
-  std::cout << "init7" << std::endl;
   _ftSimpleRdrSys = std::make_shared<ft::SimpleRdrSys>(_ftDevice, _ftRenderer,
                                                        _ftDescriptorPool);
-  std::cout << "init6" << std::endl;
   _ftSimpleRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
-
-  std::cout << "init5" << std::endl;
   _ftTexturedRdrSys = std::make_shared<ft::OneTextureRdrSys>(
       _ftDevice, _ftRenderer, _ftDescriptorPool);
-  std::cout << "init4" << std::endl;
   _ft2TexturedRdrSys = std::make_shared<ft::TwoTextureRdrSys>(
       _ftDevice, _ftRenderer, _ftDescriptorPool);
-
-  std::cout << "init4.1" << std::endl;
   _ftSkyBoxRdrSys = std::make_shared<ft::SkyBoxRdrSys>(_ftDevice, _ftRenderer,
                                                        _ftDescriptorPool);
-
-  std::cout << "init3" << std::endl;
   _ftPickingRdrSys = std::make_shared<ft::PickingRdrSys>(_ftDevice, _ftRenderer,
                                                          _ftDescriptorPool);
-  std::cout << "init2" << std::endl;
   _ftPickingRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
-
-  std::cout << "init1" << std::endl;
   _ftMousePicker = std::make_shared<ft::MousePicker>(
       _ftDevice, _ftRenderer->getSwapChain()->getWidth(),
       _ftRenderer->getSwapChain()->getHeight(), _ftPickingRdrSys);
-  std::cout << "init0" << std::endl;
 }
 
 // TODO: replace this with a scene manager, read scene from disk
@@ -180,61 +161,60 @@ void ft::Application::createScene() {
   data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
   data.color = {0.f, 0.0f, 0.9f};
   data.normalMatrix = glm::mat4(1.0f);
-  id = _ftScene->addModelFromObj("models/axis.obj", data);
-
-  // Y
-  data.model = glm::rotate(glm::mat4(1), glm::radians(90.0f),
-                           glm::vec3(1.0f, 0.0f, 0.0f));
-  data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
-  data.color = {0.0f, 0.9f, 0.0f};
-  data.normalMatrix = glm::mat4(1.0f);
-  id = _ftScene->addModelFromObj("models/axis.obj", data);
-
-  // X
-  data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
-                           glm::vec3(0.0f, 0.0f, 1.0f));
-  data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
-  data.color = {0.9f, 0.0f, 0.0f};
-  data.normalMatrix = glm::mat4(1.0f);
-  id = _ftScene->addModelFromObj("models/axis.obj", data);
-
+  _ftScene->addModelFromObj("models/axis.obj", data);
+  //
+  //   // Y
+  //   data.model = glm::rotate(glm::mat4(1), glm::radians(90.0f),
+  //                            glm::vec3(1.0f, 0.0f, 0.0f));
+  //   data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+  //   data.color = {0.0f, 0.9f, 0.0f};
+  //   data.normalMatrix = glm::mat4(1.0f);
+  //   _ftScene->addModelFromObj("models/axis.obj", data);
+  //
+  //   // X
+  //   data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
+  //                            glm::vec3(0.0f, 0.0f, 1.0f));
+  //   data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+  //   data.color = {0.9f, 0.0f, 0.0f};
+  //   data.normalMatrix = glm::mat4(1.0f);
+  //   _ftScene->addModelFromObj("models/axis.obj", data);
+  //
   // plane
   data.model = glm::mat4(1.0f);
   data.color = {0.95f, .95f, .95f};
   data.normalMatrix = glm::mat4(1.0f);
   data.model = glm::translate(data.model, {0, 1, 0});
   data.model = glm::scale(data.model, {300, 300, 300});
-  id = _ftScene->addModelFromObj("models/plane.mtl.obj", data);
+  _ftScene->addModelFromObj("models/plane.mtl.obj", data);
 
   // data.model = glm::mat4(1.0f);
   //  data.color = {0.95f, .9f, .5f};
   //  data.normalMatrix = glm::mat4(1.0f);
 
-  // auto model = _ftScene->addModelFromGltf("assets/models/cube.gltf", data);
+  auto model1 = _ftScene->addModelFromGltf("assets/models/cube.gltf", data);
 
-  //_ftScene->createCubeMapTexture("assets/textures/cubemap_yokohama_rgba.ktx");
   data.model = glm::mat4(1.0f);
   data.color = {0.95f, .95f, .95f};
   data.normalMatrix = glm::mat4(1.0f);
   data.model = glm::scale(data.model, {300, 300, 300});
 
-  auto model = _ftScene->addCubeBox(
-      "assets/models/sphere.gltf", "assets/textures/cubemap_space.ktx",
-      _ftSkyBoxRdrSys->getDescriptorPool(),
-      _ftSkyBoxRdrSys->getDescriptorSetLayout(), data);
+  // auto model = _ftScene->addCubeBox(
+  //     "assets/models/sphere.gltf", "assets/textures/cubemap_space.ktx",
+  //     _ftSkyBoxRdrSys->getDescriptorPool(),
+  //     _ftSkyBoxRdrSys->getDescriptorSetLayout(), data);
 
-  // auto models = _ftScene->addSingleTexturedFromGltf(
-  //     "assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
-  //     _ftTexturedRdrSys->getDescriptorPool(),
-  //     _ftTexturedRdrSys->getDescriptorSetLayout());
+  auto models = _ftScene->addSingleTexturedFromGltf(
+      "assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
+      _ftTexturedRdrSys->getDescriptorPool(),
+      _ftTexturedRdrSys->getDescriptorSetLayout());
 
-  // for (const auto &model : models) {
-  //   glm::mat4 &mat = model->getRootModelMatrix();
-  //   mat = glm::rotate(mat, glm::radians(180.0f), glm::vec3(1.0f, 0.0f,
-  //   0.0f)); mat = glm::translate(mat, glm::vec3(0.0f, 0.45f, 0.0f));
-  // }
+  for (const auto &model : models) {
+    glm::mat4 &mat = model->getRootModelMatrix();
+    mat = glm::rotate(mat, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+    mat = glm::translate(mat, glm::vec3(0.0f, 0.45f, 0.0f));
+  }
 
-  auto models = _ftScene->addDoubleTexturedFromGltf(
+  models = _ftScene->addDoubleTexturedFromGltf(
       "assets/models/sponza/sponza.gltf",
       _ft2TexturedRdrSys->getDescriptorPool(),
       _ft2TexturedRdrSys->getDescriptorSetLayout());
@@ -246,19 +226,26 @@ void ft::Application::createScene() {
     mat = glm::scale(mat, {2.0f, 2.0f, 2.0f});
   }
 
-  //     m = _ftMaterialPool->createTexture("textures/cubemap_space.ktx",
-  //     _ftRenderer->getSampler(),
-  //                                       _ftTexturedRdrSys->getDescriptorPool(),
-  //                                       _ftTexturedRdrSys->getDescriptorSetLayout(),
-  //                                       Texture::FileType::FT_TEXTURE_KTX);
-  //    _ftScene->addTextureToObject(id, m);
+  data.model = glm::mat4(1.0f);
+  data.color = {0.0f, 0.9f, 0.2f};
+  data.normalMatrix = glm::mat4(1.0f);
+  data.model = glm::rotate(data.model, glm::radians(90.0f), {1, 0, 0});
+  auto model = _ftScene->addModelFromObj("models/viking_room.obj", data);
 
-  //	data.model = glm::mat4(1.0f);
-  //	data.color = {0.0f, 0.9f, 0.2f};
-  //	data.normalMatrix = glm::mat4(1.0f);
-  //	data.model = glm::rotate(data.model, glm::radians(90.0f), {1,0,0});
-  //	id = _ftScene->addModelFromObj("models/viking_room.obj", data);
-
+  auto t = _ftMaterialPool->createTexture(
+      "textures/viking_room.png", ft::Texture::FileType::FT_TEXTURE_PNG);
+  auto material = std::make_shared<Material>(_ftDevice);
+  material->addTexture(t);
+  material->createDescriptors(_ftTexturedRdrSys->getDescriptorPool(),
+                              _ftTexturedRdrSys->getDescriptorSetLayout());
+  for (int i = 0; i < ft::MAX_FRAMES_IN_FLIGHT; ++i) {
+    material->bindDescriptor(i, 0, 1);
+  }
+  _ftMaterialPool->addMaterial(material);
+  model->addMaterial(material);
+  model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
+  // model->setFlags(model->getID(), ft::MODEL_HAS_COLOR_TEXTURE_BIT);
+  //
   //     m = _ftTexturePool->createTexture("textures/viking_room.png",
   //     _ftRenderer->getSampler(),
   //                                            _ftTexturedRdrSys->getDescriptorPool(),

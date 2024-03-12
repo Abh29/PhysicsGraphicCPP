@@ -2,6 +2,7 @@
 #include <glm/fwd.hpp>
 #include <ktx.h>
 #include <memory>
+#include <vulkan/vulkan_core.h>
 
 ft::Scene::Scene(ft::Device::pointer device,
                  std::vector<ft::Buffer::pointer> ubos)
@@ -76,6 +77,7 @@ void ft::Scene::drawTexturedObjs(
     model->draw_extended(
         commandBuffer, pipeline, [&](const Model::Primitive &p) {
           auto dsc = p.material->getDescriptorSet(index);
+          // auto dsc = p.material->getTexture(0)->getDescriptorSet(index);
           dsc->updateDescriptorBuffer(0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
                                       _ftUniformBuffers[index], 0);
           vkCmdBindDescriptorSets(commandBuffer->getVKCommandBuffer(),
@@ -97,8 +99,8 @@ void ft::Scene::draw2TexturedObjs(
 
   // vertex and index buffers
   for (auto &model : _models) {
-    if (!model->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT |
-                        ft::MODEL_HAS_NORMAL_TEXTURE_BIT))
+    if (!model->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT) ||
+        !model->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT))
       continue;
     model->bind(commandBuffer, index);
     model->draw_extended(
@@ -153,15 +155,16 @@ void ft::Scene::drawPickObjs(const ft::CommandBuffer::pointer &commandBuffer,
 
 // load
 
-uint32_t ft::Scene::addModelFromObj(const std::string &objectPath,
-                                    ft::InstanceData data) {
+ft::Model::pointer ft::Scene::addModelFromObj(const std::string &objectPath,
+                                              ft::InstanceData data) {
   Model::pointer model =
       std::make_shared<Model>(_ftDevice, objectPath, _ftUniformBuffers.size());
   data.normalMatrix = glm::inverseTranspose(data.model * _ubo.view);
   data.id = model->getID();
   model->setState(data);
+  model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
   _models.push_back(model);
-  return model->getID();
+  return model;
 }
 
 // load from gltf
@@ -186,6 +189,7 @@ ft::Model::pointer ft::Scene::addModelFromGltf(const std::string &gltfPath,
                                     _ftUniformBuffers.size());
     if (model->empty())
       continue;
+    model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
     _models.push_back(model);
   }
   model->setState(data);
@@ -296,7 +300,6 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
   for (auto &image : gltfInput.images) {
     auto t = _ftTexturePool->createTexture(
         path + "/" + image.uri, ft::Texture::FileType::FT_TEXTURE_PNG);
-    t->createDescriptorSets(layout, pool);
     txts.push_back(t);
   }
 
@@ -313,8 +316,8 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
     if (m.values.find("baseColorTexture") != m.values.end()) {
       uint32_t t = m.values["baseColorTexture"].TextureIndex();
       material->addTexture(txts[t]);
-    } else if (!txts.empty()) {
-      //      material->addTexture(txts[0]);
+    } else {
+      material->addTexture(txts[0]);
     }
 
     material->setAlphaMode(m.alphaMode);
@@ -350,6 +353,56 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
   }
 
   return out;
+}
+
+ft::Model::pointer ft::Scene::addCubeBox(
+    const std::string &gltfModel, const std::string &ktxTexture,
+    const DescriptorPool::pointer &pool,
+    const DescriptorSetLayout::pointer &layout, const ft::InstanceData data) {
+
+  tinygltf::Model gltfInput;
+  tinygltf::TinyGLTF gltfContext;
+  std::string error, warning;
+
+  // load a texture
+  _ftCubeTexture = std::make_shared<ft::Texture>(
+      _ftDevice, ktxTexture, ft::Texture::FileType::FT_TEXTURE_KTX_CUBE);
+  _ftCubeTexture->createDescriptorSets(layout, pool);
+
+  // create a material
+  auto material = std::make_shared<Material>(_ftDevice);
+  material->addTexture(_ftCubeTexture);
+  material->createDescriptors(pool, layout);
+  for (uint32_t j = 0; j < ft::MAX_FRAMES_IN_FLIGHT; ++j) {
+    material->bindDescriptor(j, 0, 1);
+  }
+  _ftTexturePool->addMaterial(material);
+  (void)gltfModel;
+  (void)data;
+  // load the model
+  if (!gltfContext.LoadASCIIFromFile(&gltfInput, &error, &warning, gltfModel))
+    throw std::runtime_error("Could not open GLTF file!\n" + error + "\n" +
+                             warning);
+
+  // load gltf scene
+  tinygltf::Scene &scene = gltfInput.scenes[0];
+  Model::pointer model;
+  for (int i : scene.nodes) {
+    const tinygltf::Node node = gltfInput.nodes[i];
+    model = std::make_shared<Model>(_ftDevice, gltfInput, node,
+                                    _ftUniformBuffers.size());
+    if (model->empty())
+      continue;
+    auto rootNode = model->getAllNodes()[0];
+    rootNode->mesh[0].material = material;
+    rootNode->state.flags |= ft::MODEL_HAS_CUBE_TEXTURE_BIT;
+    model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
+    model->setState(data);
+    _models.push_back(model);
+    break;
+  }
+
+  return model;
 }
 
 // set
@@ -422,60 +475,4 @@ void ft::Scene::unselectAll() {
   for (auto &m : _models) {
     m->unselectAll();
   }
-}
-
-void ft::Scene::createCubeMapTexture(const std::string &path) {
-  std::cout << "creating a cube map" << std::endl;
-  _ftCubeTexture = std::make_shared<ft::Texture>(
-      _ftDevice, path, ft::Texture::FileType::FT_TEXTURE_KTX_CUBE);
-}
-
-ft::Model::pointer ft::Scene::addCubeBox(
-    const std::string &gltfModel, const std::string &ktxTexture,
-    const DescriptorPool::pointer &pool,
-    const DescriptorSetLayout::pointer &layout, const ft::InstanceData data) {
-
-  tinygltf::Model gltfInput;
-  tinygltf::TinyGLTF gltfContext;
-  std::string error, warning;
-
-  // load a texture
-  _ftCubeTexture = std::make_shared<ft::Texture>(
-      _ftDevice, ktxTexture, ft::Texture::FileType::FT_TEXTURE_KTX_CUBE);
-  _ftCubeTexture->createDescriptorSets(layout, pool);
-
-  // create a material
-  auto material = std::make_shared<Material>(_ftDevice);
-  material->addTexture(_ftCubeTexture);
-  material->createDescriptors(pool, layout);
-  for (uint32_t j = 0; j < ft::MAX_FRAMES_IN_FLIGHT; ++j) {
-    material->bindDescriptor(j, 0, 1);
-  }
-  _ftTexturePool->addMaterial(material);
-  (void)gltfModel;
-  (void)data;
-  // load the model
-  if (!gltfContext.LoadASCIIFromFile(&gltfInput, &error, &warning, gltfModel))
-    throw std::runtime_error("Could not open GLTF file!\n" + error + "\n" +
-                             warning);
-
-  // load gltf scene
-  tinygltf::Scene &scene = gltfInput.scenes[0];
-  Model::pointer model;
-  for (int i : scene.nodes) {
-    const tinygltf::Node node = gltfInput.nodes[i];
-    model = std::make_shared<Model>(_ftDevice, gltfInput, node,
-                                    _ftUniformBuffers.size());
-    if (model->empty())
-      continue;
-    auto rootNode = model->getAllNodes()[0];
-    rootNode->mesh[0].material = material;
-    rootNode->state.flags |= ft::MODEL_HAS_CUBE_TEXTURE_BIT;
-    model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
-    model->setState(data);
-    _models.push_back(model);
-    break;
-  }
-
-  return model;
 }
