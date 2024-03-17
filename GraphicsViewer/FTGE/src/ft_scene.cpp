@@ -156,7 +156,8 @@ void ft::Scene::drawPickObjs(const ft::CommandBuffer::pointer &commandBuffer,
                              uint32_t index) {
   // vertex and index buffers
   for (auto &model : _models) {
-    if (model->hasFlag(ft::MODEL_HIDDEN_BIT))
+    if (model->hasFlag(ft::MODEL_HIDDEN_BIT) ||
+        !model->hasFlag(ft::MODEL_SELECTABLE_BIT))
       continue;
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, pipeline);
@@ -230,7 +231,6 @@ void ft::Scene::drawLinesTopology(
     if (!model->hasFlag(ft::MODEL_LINE_BIT) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
-    std::cout << "drawing lined models \n";
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, lrdr->getGraphicsPipeline());
   }
@@ -564,8 +564,10 @@ void ft::Scene::unselectAll() {
 
 void ft::Scene::hideSelected() {
   for (auto &m : _models)
-    if (m->hasFlag(ft::MODEL_SELECTED_BIT))
+    if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
       m->setFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
+      m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+    }
 }
 
 void ft::Scene::unhideSelected() {
@@ -578,10 +580,29 @@ void ft::Scene::unhideAll() {
   for (auto &m : _models)
     m->unsetFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
 }
+void ft::Scene::resetAll() {
+  for (auto &m : _models) {
+    m->unsetFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
+    m->unsetFlags(m->getID(), ft::MODEL_LINE_BIT);
+    m->unsetFlags(m->getID(), ft::MODEL_POINT_BIT);
+    m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+  }
+}
 
-ft::Model::raw_ptr ft::Scene::getSelectedModel() {
+void ft::Scene::toggleLinesTopo() {
   for (auto &m : _models)
-    if (m->hasFlag(ft::MODEL_SELECTED_BIT))
-      return m.get();
-  return nullptr;
+    if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
+      m->toggleFlags(m->getID(), ft::MODEL_LINE_BIT);
+      m->unsetFlags(m->getID(), ft::MODEL_POINT_BIT);
+      m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+    }
+}
+
+void ft::Scene::togglePointsTopo() {
+  for (auto &m : _models)
+    if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
+      m->toggleFlags(m->getID(), ft::MODEL_POINT_BIT);
+      m->unsetFlags(m->getID(), ft::MODEL_LINE_BIT);
+      m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+    }
 }

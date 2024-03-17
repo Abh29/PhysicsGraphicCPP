@@ -9,6 +9,7 @@
 #include "ft_texture.h"
 #include "ft_vertex.h"
 #include <cstdint>
+#include <vector>
 
 #define MAX_COPY_COUNT 100
 
@@ -95,6 +96,8 @@ public:
   [[nodiscard]] bool hasNodeFlag(uint32_t id, uint32_t flag) const;
   [[nodiscard]] bool hasMaterial();
   [[nodiscard]] bool isUpdated() const;
+  inline std::vector<Vertex> &getVertices() { return _vertices; };
+  inline std::vector<uint32_t> &getIndices() { return _indices; };
 
 private:
   Model() = default;

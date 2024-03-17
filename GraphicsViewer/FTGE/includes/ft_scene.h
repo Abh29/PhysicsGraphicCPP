@@ -92,6 +92,9 @@ public:
   void hideSelected();
   void unhideSelected();
   void unhideAll();
+  void resetAll();
+  void togglePointsTopo();
+  void toggleLinesTopo();
   ft::Model::raw_ptr getSelectedModel();
 
 private:

@@ -899,10 +899,6 @@ void ft::SkyBoxRdrSys::createGraphicsPipeline() {
   pipelineConfig.inputAssemblyState.topology =
       VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
   pipelineConfig.inputAssemblyState.primitiveRestartEnable = VK_FALSE;
-  //		pipelineConfig.inputAssemblyState.topology =
-  // VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-  // pipelineConfig.inputAssemblyState.topology =
-  // VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
 
   // view port and scissors
   pipelineConfig.viewport.x = 0.0f;
@@ -923,7 +919,7 @@ void ft::SkyBoxRdrSys::createGraphicsPipeline() {
   pipelineConfig.rasterizerState.rasterizerDiscardEnable = VK_FALSE;
   pipelineConfig.rasterizerState.polygonMode = VK_POLYGON_MODE_FILL;
   pipelineConfig.rasterizerState.lineWidth = 1.0f;
-  pipelineConfig.rasterizerState.cullMode = VK_CULL_MODE_NONE; // mode_back_bit
+  pipelineConfig.rasterizerState.cullMode = VK_CULL_MODE_BACK_BIT;
   pipelineConfig.rasterizerState.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
   pipelineConfig.rasterizerState.depthBiasEnable = VK_FALSE;
   pipelineConfig.rasterizerState.depthBiasConstantFactor = 0.0f;
@@ -933,8 +929,6 @@ void ft::SkyBoxRdrSys::createGraphicsPipeline() {
   // multisampling
   pipelineConfig.multisampleState.sType =
       VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-  //		pipelineConfig.multisampleState.sampleShadingEnable = VK_TRUE;
-  //		pipelineConfig.multisampleState.minSampleShading = 0.2f;
   pipelineConfig.multisampleState.sampleShadingEnable = VK_FALSE;
   pipelineConfig.multisampleState.rasterizationSamples =
       _ftDevice->getMSAASamples();
