@@ -211,6 +211,9 @@ constexpr uint32_t MODEL_TRIANGLE_BIT = 1u << 11;
 constexpr uint32_t MODEL_LINE_BIT = 1u << 12;
 constexpr uint32_t MODEL_POINT_BIT = 1u << 13;
 
+#define real_t float
+#define real_pow std::powf;
+
 } // namespace ft
 
 #endif // FTGRAPHICS_FT_DEFINES_H

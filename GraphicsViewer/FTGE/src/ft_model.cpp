@@ -1,4 +1,5 @@
 #include "../includes/ft_model.h"
+#include <cstdint>
 
 ft::Model::Model(Device::pointer device, std::string filePath,
                  uint32_t bufferCount)
@@ -430,7 +431,7 @@ void ft::Model::selectAll() {
 
 void ft::Model::unselectAll() {
   for (const auto &n : _allNodes) {
-    n.second->state.flags |= ft::MODEL_SELECTED_BIT;
+    n.second->state.flags &= ~ft::MODEL_SELECTED_BIT;
     _node->state.updated = true;
   }
 }
@@ -476,6 +477,16 @@ bool ft::Model::hasNodeFlag(uint32_t id, uint32_t flag) const {
   for (const auto &n : _allNodes) {
     if (n.second->state.id == id) {
       return (n.second->state.flags & flag);
+    }
+  }
+  return false;
+}
+
+bool ft::Model::toggleFlags(uint32_t id, uint32_t flag) {
+  for (const auto &n : _allNodes) {
+    if (n.second->state.id == id) {
+      n.second->state.flags ^= flag;
+      return true;
     }
   }
   return false;

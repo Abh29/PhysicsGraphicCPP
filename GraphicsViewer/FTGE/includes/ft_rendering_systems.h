@@ -145,6 +145,54 @@ private:
   uint32_t _textureImageBinding;
 };
 
+class OutlineRdrSys final : public RenderingSystem {
+public:
+  using pointer = std::shared_ptr<OutlineRdrSys>;
+
+  OutlineRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+  ~OutlineRdrSys() override = default;
+
+  [[nodiscard]] uint32_t getUboBinding() const;
+
+private:
+  void createDescriptorSetLayout();
+  void createGraphicsPipeline();
+
+  uint32_t _uboBinding;
+};
+
+class PointRdrSys final : public RenderingSystem {
+public:
+  using pointer = std::shared_ptr<PointRdrSys>;
+
+  PointRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+  ~PointRdrSys() override = default;
+
+  [[nodiscard]] uint32_t getUboBinding() const;
+
+private:
+  void createDescriptorSetLayout();
+  void createGraphicsPipeline();
+
+  uint32_t _uboBinding;
+};
+
+class LineRdrSys final : public RenderingSystem {
+public:
+  using pointer = std::shared_ptr<LineRdrSys>;
+
+  LineRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+  ~LineRdrSys() override = default;
+
+  [[nodiscard]] uint32_t getUboBinding() const;
+
+private:
+  void createDescriptorSetLayout();
+  void createGraphicsPipeline();
+
+  uint32_t _uboBinding;
+};
+
 } // namespace ft
 
 #endif // FTGRAPHICS_FT_RENDERING_SYSTEMS_H

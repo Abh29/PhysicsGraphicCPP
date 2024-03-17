@@ -8,6 +8,7 @@
 #include "ft_pipeline.h"
 #include "ft_texture.h"
 #include "ft_vertex.h"
+#include <cstdint>
 
 #define MAX_COPY_COUNT 100
 
@@ -52,6 +53,8 @@ public:
   };
 
   using pointer = std::shared_ptr<Model>;
+  using wpointer = std::weak_ptr<Model>;
+  using raw_ptr = Model *;
   Model(Device::pointer device, std::string filePath, uint32_t bufferCount);
 
   Model(Device::pointer device, const tinygltf::Model &gltfInput,
@@ -87,6 +90,7 @@ public:
   bool overrideFlags(uint32_t id, uint32_t flags);
   bool setFlags(uint32_t id, uint32_t flags);
   bool unsetFlags(uint32_t id, uint32_t flags);
+  bool toggleFlags(uint32_t id, uint32_t flags);
   [[nodiscard]] bool hasFlag(uint32_t flag) const;
   [[nodiscard]] bool hasNodeFlag(uint32_t id, uint32_t flag) const;
   [[nodiscard]] bool hasMaterial();

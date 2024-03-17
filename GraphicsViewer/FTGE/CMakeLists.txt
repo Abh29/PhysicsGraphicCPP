@@ -29,7 +29,9 @@ file(
   shaders/Picker.vert
   shaders/Picker.frag
   shaders/SkyBoxRdrSys.frag
-  shaders/SkyBoxRdrSys.vert)
+  shaders/SkyBoxRdrSys.vert
+  shaders/OutlineRdrSys.vert
+  shaders/OutlineRdrSys.frag)
 
 set(GLSLC_FLAGS -g -Werror)
 

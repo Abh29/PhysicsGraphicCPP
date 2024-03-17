@@ -1,4 +1,5 @@
 #include "../includes/ft_scene.h"
+#include <cstdint>
 #include <glm/fwd.hpp>
 #include <ktx.h>
 #include <memory>
@@ -29,7 +30,7 @@ void ft::Scene::drawInstancedObjs(const CommandBuffer::pointer &commandBuffer,
   _ftUniformBuffers[index]->copyToMappedData(&_ubo, sizeof(_ubo));
   // vertex and index buffers
   for (auto &model : _models) {
-    if (model->hasMaterial())
+    if (model->hasMaterial() || model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, pipeline);
@@ -52,7 +53,9 @@ void ft::Scene::drawSimpleObjs(const CommandBuffer::pointer &commandBuffer,
 
   // vertex and index buffers
   for (auto &model : _models) {
-    if (!model->hasFlag(ft::MODEL_SIMPLE_BIT))
+    if (!model->hasFlag(ft::MODEL_SIMPLE_BIT) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_SELECTED_BIT |
+                       ft::MODEL_LINE_BIT | ft::MODEL_POINT_BIT))
       continue;
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, pipeline);
@@ -71,7 +74,9 @@ void ft::Scene::drawTexturedObjs(
   // vertex and index buffers
   for (auto &model : _models) {
     if (!model->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT) ||
-        model->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT))
+        model->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_SELECTED_BIT |
+                       ft::MODEL_LINE_BIT | ft::MODEL_POINT_BIT))
       continue;
     model->bind(commandBuffer, index);
     model->draw_extended(
@@ -100,7 +105,9 @@ void ft::Scene::draw2TexturedObjs(
   // vertex and index buffers
   for (auto &model : _models) {
     if (!model->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT) ||
-        !model->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT))
+        !model->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_SELECTED_BIT |
+                       ft::MODEL_LINE_BIT | ft::MODEL_POINT_BIT))
       continue;
     model->bind(commandBuffer, index);
     model->draw_extended(
@@ -127,7 +134,8 @@ void ft::Scene::drawSkyBox(const ft::CommandBuffer::pointer &commandBuffer,
 
   // vertex and index buffers
   for (auto &model : _models) {
-    if (!model->hasFlag(ft::MODEL_HAS_CUBE_TEXTURE_BIT))
+    if (!model->hasFlag(ft::MODEL_HAS_CUBE_TEXTURE_BIT) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
     model->bind(commandBuffer, index);
     model->draw_extended(
@@ -148,8 +156,83 @@ void ft::Scene::drawPickObjs(const ft::CommandBuffer::pointer &commandBuffer,
                              uint32_t index) {
   // vertex and index buffers
   for (auto &model : _models) {
+    if (model->hasFlag(ft::MODEL_HIDDEN_BIT))
+      continue;
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, pipeline);
+  }
+}
+
+void ft::Scene::drawOulines(const ft::CommandBuffer::pointer &commandBuffer,
+                            const ft::SimpleRdrSys::pointer &srdr,
+                            const ft::OutlineRdrSys::pointer &ordr,
+                            uint32_t index) {
+  // bind the graphics pipeline
+  vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(),
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    ordr->getGraphicsPipeline()->getVKPipeline());
+
+  vkCmdBindDescriptorSets(
+      commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+      ordr->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+      &(srdr->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
+
+  // vertex and index buffers
+  for (auto &model : _models) {
+    if (!model->hasFlag(ft::MODEL_SELECTED_BIT) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT))
+      continue;
+    model->bind(commandBuffer, index);
+    model->draw(commandBuffer, ordr->getGraphicsPipeline());
+  }
+}
+
+void ft::Scene::drawPointsTopology(
+    const ft::CommandBuffer::pointer &commandBuffer,
+    const ft::SimpleRdrSys::pointer &srdr, const ft::PointRdrSys::pointer &prdr,
+    uint32_t index) {
+  // bind the graphics pipeline
+  vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(),
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    prdr->getGraphicsPipeline()->getVKPipeline());
+
+  vkCmdBindDescriptorSets(
+      commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+      prdr->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+      &(srdr->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
+
+  // vertex and index buffers
+  for (auto &model : _models) {
+    if (!model->hasFlag(ft::MODEL_POINT_BIT) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT))
+      continue;
+    model->bind(commandBuffer, index);
+    model->draw(commandBuffer, prdr->getGraphicsPipeline());
+  }
+}
+
+void ft::Scene::drawLinesTopology(
+    const ft::CommandBuffer::pointer &commandBuffer,
+    const ft::SimpleRdrSys::pointer &srdr, const ft::LineRdrSys::pointer &lrdr,
+    uint32_t index) {
+  // bind the graphics pipeline
+  vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(),
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    lrdr->getGraphicsPipeline()->getVKPipeline());
+
+  vkCmdBindDescriptorSets(
+      commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+      lrdr->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+      &(srdr->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
+
+  // vertex and index buffers
+  for (auto &model : _models) {
+    if (!model->hasFlag(ft::MODEL_LINE_BIT) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT))
+      continue;
+    std::cout << "drawing lined models \n";
+    model->bind(commandBuffer, index);
+    model->draw(commandBuffer, lrdr->getGraphicsPipeline());
   }
 }
 
@@ -465,7 +548,9 @@ void ft::Scene::setMaterialPool(TexturePool::pointer pool) {
 bool ft::Scene::select(uint32_t id) {
   for (auto &m : _models) {
     if (m->findID(id)) {
-      return m->select(id);
+      if (!m->hasFlag(ft::MODEL_SELECTABLE_BIT))
+        return false;
+      return m->toggleFlags(m->getID(), ft::MODEL_SELECTED_BIT);
     }
   }
   return false;
@@ -475,4 +560,28 @@ void ft::Scene::unselectAll() {
   for (auto &m : _models) {
     m->unselectAll();
   }
+}
+
+void ft::Scene::hideSelected() {
+  for (auto &m : _models)
+    if (m->hasFlag(ft::MODEL_SELECTED_BIT))
+      m->setFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
+}
+
+void ft::Scene::unhideSelected() {
+  for (auto &m : _models)
+    if (m->hasFlag(ft::MODEL_SELECTED_BIT))
+      m->unsetFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
+}
+
+void ft::Scene::unhideAll() {
+  for (auto &m : _models)
+    m->unsetFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
+}
+
+ft::Model::raw_ptr ft::Scene::getSelectedModel() {
+  for (auto &m : _models)
+    if (m->hasFlag(ft::MODEL_SELECTED_BIT))
+      return m.get();
+  return nullptr;
 }

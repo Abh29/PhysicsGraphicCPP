@@ -45,6 +45,15 @@ public:
                   const SkyBoxRdrSys::pointer &, uint32_t index);
   void drawPickObjs(const CommandBuffer::pointer &,
                     const GraphicsPipeline::pointer &, uint32_t index);
+  void drawOulines(const CommandBuffer::pointer &,
+                   const SimpleRdrSys::pointer &,
+                   const OutlineRdrSys::pointer &, uint32_t index);
+  void drawPointsTopology(const CommandBuffer::pointer &,
+                          const SimpleRdrSys::pointer &,
+                          const PointRdrSys::pointer &, uint32_t index);
+  void drawLinesTopology(const CommandBuffer::pointer &,
+                         const SimpleRdrSys::pointer &,
+                         const LineRdrSys::pointer &, uint32_t index);
 
   // add objects to the scene
   Model::pointer addModelFromObj(const std::string &objectPath,
@@ -80,6 +89,10 @@ public:
   bool select(uint32_t id);
   void unselectAll();
   void createCubeMapTexture(const std::string &path);
+  void hideSelected();
+  void unhideSelected();
+  void unhideAll();
+  ft::Model::raw_ptr getSelectedModel();
 
 private:
   Device::pointer _ftDevice;

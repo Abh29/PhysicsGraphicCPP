@@ -39,7 +39,8 @@ layout(location = 4) in vec4 tangent;
 
 // output
 layout(location = 0) out vec3 fragColor;
-
+layout(location = 1) out vec3 outNormal;
+layout(location = 2) out vec3 outLightVec;
 
 void main2() {
     gl_PointSize = 2;
@@ -48,7 +49,7 @@ void main2() {
 }
 
 
-void main() {
+void main1() {
     gl_PointSize = 2;
 //    vec4 worldPos = push.modelMatrix * vec4(inPosition, 1.0);
 //    vec3 worldNormal = mat3(transpose(inverse(push.modelMatrix))) * normal;
@@ -66,4 +67,14 @@ void main() {
     fragColor = inColor * push.baseColor;
 
     gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
+}
+
+void main() {
+    gl_PointSize = 2;
+    fragColor = inColor * push.baseColor; 
+    gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition.xyz, 1.0);
+    outNormal = mat3(push.modelMatrix) * normal;
+    vec4 pos = push.modelMatrix * vec4(inPosition, 1.0);
+    vec3 lPos = mat3(push.modelMatrix) * ubo.lightDirection;
+    outLightVec = lPos - pos.xyz;
 }
