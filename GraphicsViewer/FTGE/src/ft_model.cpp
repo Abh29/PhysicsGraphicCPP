@@ -1,5 +1,11 @@
 #include "../includes/ft_model.h"
 #include <cstdint>
+#include <glm/ext/quaternion_geometric.hpp>
+#include <glm/ext/scalar_constants.hpp>
+#include <glm/ext/vector_relational.hpp>
+#include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
+#include <vulkan/vulkan_core.h>
 
 ft::Model::Model(Device::pointer device, std::string filePath,
                  uint32_t bufferCount)
@@ -89,9 +95,10 @@ void ft::Model::bind(const ft::CommandBuffer::pointer &commandBuffer,
 }
 
 void ft::Model::draw(const ft::CommandBuffer::pointer &commandBuffer,
-                     const GraphicsPipeline::pointer &pipeline) {
+                     const GraphicsPipeline::pointer &pipeline,
+                     const VkShaderStageFlags stages) {
 
-  drawNode(commandBuffer, _node, pipeline, ignored);
+  drawNode(commandBuffer, _node, pipeline, ignored, stages);
   //    if (_node->state.flags & ft::MODEL_HAS_INDICES_BIT) {
   //        drawNode(commandBuffer, _node, pipeline);
   //    } else {
@@ -108,12 +115,69 @@ void ft::Model::draw(const ft::CommandBuffer::pointer &commandBuffer,
   //    }
 }
 
-void ft::Model::draw_extended(
-    const CommandBuffer::pointer &commandBuffer,
-    const GraphicsPipeline::pointer &pipeline,
-    const std::function<void(const Primitive &)> &fun) {
-  drawNode(commandBuffer, _node, pipeline, fun);
+void ft::Model::draw_extended(const CommandBuffer::pointer &commandBuffer,
+                              const GraphicsPipeline::pointer &pipeline,
+                              const std::function<void(const Primitive &)> &fun,
+                              const VkShaderStageFlags stages) {
+  drawNode(commandBuffer, _node, pipeline, fun, stages);
   _node->state.updated = false;
+}
+
+void ft::Model::updateVertexBuffer() {
+  VkDeviceSize bufferSize = sizeof(_vertices[0]) * _vertices.size();
+  BufferBuilder bufferBuilder;
+
+  auto stagingBuffer =
+      bufferBuilder.setSize(bufferSize)
+          .setUsageFlags(VK_BUFFER_USAGE_TRANSFER_SRC_BIT)
+          .setMemoryProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                               VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)
+          .setIsMapped(true)
+          .build(_ftDevice);
+
+  // fill the staging vertex buffer
+  stagingBuffer->copyToMappedData(_vertices.data(), bufferSize);
+
+  // copy the data
+  stagingBuffer->copyToBuffer(_ftVertexBuffer, bufferSize);
+}
+
+void ft::Model::reshade() {
+  uint count = 0;
+  for (auto &v : _vertices)
+    v.normal = {};
+  for (size_t i = 0; i < _indices.size(); i += 3) {
+    glm::vec3 a = _vertices[_indices[i + 1]].pos - _vertices[_indices[i]].pos;
+    glm::vec3 b = _vertices[_indices[i + 2]].pos - _vertices[_indices[i]].pos;
+    if (glm::length2(_vertices[_indices[i]].normal) < 1e-6) {
+      _vertices[_indices[i]].normal = glm::normalize(glm::cross(a, b));
+    } else {
+      _vertices[_indices[i]].normal =
+          glm::normalize(_vertices[_indices[i]].normal + glm::cross(a, b));
+    }
+    ++count;
+
+    a = _vertices[_indices[i + 2]].pos - _vertices[_indices[i + 1]].pos;
+    b = _vertices[_indices[i]].pos - _vertices[_indices[i + 1]].pos;
+    if (glm::length2(_vertices[_indices[i + 1]].normal) < 1e-6) {
+      _vertices[_indices[i + 1]].normal = glm::normalize(glm::cross(a, b));
+    } else {
+      _vertices[_indices[i + 1]].normal =
+          glm::normalize(_vertices[_indices[i + 1]].normal + glm::cross(a, b));
+    }
+    ++count;
+
+    a = _vertices[_indices[i]].pos - _vertices[_indices[i + 2]].pos;
+    b = _vertices[_indices[i + 1]].pos - _vertices[_indices[i + 2]].pos;
+    if (glm::length2(_vertices[_indices[i + 2]].normal) < 1e-6) {
+      _vertices[_indices[i + 2]].normal = glm::normalize(glm::cross(a, b));
+    } else {
+      _vertices[_indices[i + 2]].normal =
+          glm::normalize(_vertices[_indices[i + 2]].normal + glm::cross(a, b));
+    }
+    ++count;
+  }
+  std::cout << "normals calculated " << count << std::endl;
 }
 
 void ft::Model::loadModel() {
@@ -501,17 +565,12 @@ bool ft::Model::isUpdated() const { return _node->state.updated = true; }
 
 void ft::Model::drawNode(const CommandBuffer::pointer &commandBuffer,
                          Node *node, const GraphicsPipeline::pointer &pipeline,
-                         const std::function<void(const Primitive &)> &fun) {
+                         const std::function<void(const Primitive &)> &fun,
+                         const VkShaderStageFlags stages) {
   if (node->state.flags & ft::MODEL_HIDDEN_BIT)
     return;
 
-  if (!node->state.updated) {
-    PushConstantObject push{node->state.updatedMatrix, node->state.baseColor,
-                            node->state.id};
-    vkCmdPushConstants(
-        commandBuffer->getVKCommandBuffer(), pipeline->getVKPipelineLayout(),
-        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantObject), &push);
-  } else {
+  if (node->state.updated) {
     node->state.updatedMatrix = node->state.modelMatrix;
     Node *currentParent = node->parent;
     while (currentParent) {
@@ -519,15 +578,23 @@ void ft::Model::drawNode(const CommandBuffer::pointer &commandBuffer,
           currentParent->state.modelMatrix * node->state.updatedMatrix;
       currentParent = currentParent->parent;
     }
-
-    PushConstantObject push{node->state.updatedMatrix, node->state.baseColor,
-                            node->state.id};
-    vkCmdPushConstants(
-        commandBuffer->getVKCommandBuffer(), pipeline->getVKPipelineLayout(),
-        VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstantObject), &push);
     node->state.updated = false;
   }
 
+  // push constants
+  PushConstantObject push{node->state.updatedMatrix, node->state.baseColor,
+                          node->state.id};
+  vkCmdPushConstants(commandBuffer->getVKCommandBuffer(),
+                     pipeline->getVKPipelineLayout(), stages, 0,
+                     sizeof(PushConstantObject), &push);
+
+  //   if (hasGeom)
+  //     vkCmdPushConstants(commandBuffer->getVKCommandBuffer(),
+  //                        pipeline->getVKPipelineLayout(),
+  //                        VK_SHADER_STAGE_ALL, sizeof(PushConstantObject),
+  //                        sizeof(glm::mat4),
+  //                        &(node->state.updatedMatrix));
+  //
   for (const auto &p : node->mesh) {
     if (p.indexCount > 0) {
       fun(p);
@@ -536,7 +603,7 @@ void ft::Model::drawNode(const CommandBuffer::pointer &commandBuffer,
     }
   }
   for (auto &n : node->children)
-    drawNode(commandBuffer, n, pipeline, fun);
+    drawNode(commandBuffer, n, pipeline, fun, stages);
 }
 
 uint32_t ft::Model::addCopy(const ft::InstanceData &copyData) {

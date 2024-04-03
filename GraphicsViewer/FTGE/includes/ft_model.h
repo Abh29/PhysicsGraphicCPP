@@ -10,6 +10,7 @@
 #include "ft_vertex.h"
 #include <cstdint>
 #include <vector>
+#include <vulkan/vulkan_core.h>
 
 #define MAX_COPY_COUNT 100
 
@@ -69,11 +70,16 @@ public:
 
   void bind(const CommandBuffer::pointer &commandBuffer, uint32_t index);
   void draw(const CommandBuffer::pointer &commandBuffer,
-            const GraphicsPipeline::pointer &pipeline);
-  void draw_extended(const CommandBuffer::pointer &,
-                     const GraphicsPipeline::pointer &,
-                     const std::function<void(const Primitive &)> &fun);
+            const GraphicsPipeline::pointer &pipeline,
+            const VkShaderStageFlags stages = VK_SHADER_STAGE_VERTEX_BIT);
+  void
+  draw_extended(const CommandBuffer::pointer &,
+                const GraphicsPipeline::pointer &,
+                const std::function<void(const Primitive &)> &fun,
+                const VkShaderStageFlags stages = VK_SHADER_STAGE_VERTEX_BIT);
 
+  void updateVertexBuffer();
+  void reshade();
   [[nodiscard]] bool findID(uint32_t id) const;
   [[nodiscard]] uint32_t getID() const;
   [[nodiscard]] std::vector<Node *> getAllNodes() const;
@@ -109,7 +115,8 @@ private:
                 Node *parent);
   void drawNode(const CommandBuffer::pointer &, Node *node,
                 const GraphicsPipeline::pointer &,
-                const std::function<void(const Primitive &)> &);
+                const std::function<void(const Primitive &)> &,
+                const VkShaderStageFlags);
 
   static void ignored(const Primitive &primitive);
 

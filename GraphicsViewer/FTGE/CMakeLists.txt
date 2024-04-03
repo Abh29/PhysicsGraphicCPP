@@ -31,7 +31,10 @@ file(
   shaders/SkyBoxRdrSys.frag
   shaders/SkyBoxRdrSys.vert
   shaders/OutlineRdrSys.vert
-  shaders/OutlineRdrSys.frag)
+  shaders/OutlineRdrSys.frag
+  shaders/NormDebugRdrSys.vert
+  shaders/NormDebugRdrSys.frag
+  shaders/NormDebugRdrSys.geom)
 
 set(GLSLC_FLAGS -g -Werror)
 

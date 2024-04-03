@@ -210,6 +210,7 @@ constexpr uint32_t MODEL_TEXTURED_BIT = 1u << 10;
 constexpr uint32_t MODEL_TRIANGLE_BIT = 1u << 11;
 constexpr uint32_t MODEL_LINE_BIT = 1u << 12;
 constexpr uint32_t MODEL_POINT_BIT = 1u << 13;
+constexpr uint32_t MODEL_HAS_NORMAL_DEBUG_BIT = 1u << 14;
 
 #define real_t float
 #define real_pow std::powf;

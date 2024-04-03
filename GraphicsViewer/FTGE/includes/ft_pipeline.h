@@ -15,8 +15,10 @@ namespace ft {
 struct PipelineConfig {
   std::string vertShaderPath;
   std::string fragShaderPath;
+  std::string geomShaderPath = "";
   std::string vertShaderEntryPoint = "main";
   std::string fragShaderEntryPoint = "main";
+  std::string geomShaderEntryPoint = "main";
   std::vector<VkDynamicState> dynamicStates;
   VkPipelineDepthStencilStateCreateInfo depthStencilState;
   VkPipelineInputAssemblyStateCreateInfo inputAssemblyState;
@@ -53,6 +55,7 @@ private:
   VkPipelineLayout _pipelineLayout;
   Shader::pointer _ftVertexShader;
   Shader::pointer _ftFragmentShader;
+  Shader::pointer _ftGeometryShader;
 };
 
 } // namespace ft

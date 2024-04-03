@@ -1,4 +1,5 @@
 #include "../includes/ft_device.h"
+#include <vulkan/vulkan_core.h>
 
 ft::Device::Device(const std::shared_ptr<PhysicalDevice> &physicalDevice,
                    const std::vector<const char *> &validationLayers,
@@ -23,6 +24,7 @@ ft::Device::Device(const std::shared_ptr<PhysicalDevice> &physicalDevice,
 
   VkPhysicalDeviceFeatures deviceFeatures{};
   deviceFeatures.samplerAnisotropy = VK_TRUE;
+  deviceFeatures.geometryShader = VK_TRUE;
 
   VkPhysicalDeviceExtendedDynamicStateFeaturesEXT ext{};
   ext.sType =

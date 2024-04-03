@@ -57,6 +57,7 @@ private:
   OutlineRdrSys::pointer _ftOutlineRdrSys;
   PointRdrSys::pointer _ftPointRdrSys;
   LineRdrSys::pointer _ftLineRdrSys;
+  NormDebugRdrSys::pointer _ftNormDebugRdrSys;
   MousePicker::pointer _ftMousePicker;
   ThreadPool::pointer _ftThreadPool;
 

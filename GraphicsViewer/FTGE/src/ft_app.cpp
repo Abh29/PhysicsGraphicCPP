@@ -76,7 +76,7 @@ void ft::Application::initEventListener() {
         auto data = sev.getData();
         auto yOff = std::any_cast<double>(data[1]);
 
-        _ftScene->getCamera()->forward((float)yOff * 20);
+        _ftScene->getCamera()->forward((float)yOff * 3);
         _ftScene->updateCameraUBO();
         _ftMousePicker->notifyUpdatedView();
       });
@@ -141,6 +141,8 @@ void ft::Application::initApplication() {
                                                    _ftDescriptorPool);
   _ftPointRdrSys = std::make_shared<ft::PointRdrSys>(_ftDevice, _ftRenderer,
                                                      _ftDescriptorPool);
+  _ftNormDebugRdrSys = std::make_shared<ft::NormDebugRdrSys>(
+      _ftDevice, _ftRenderer, _ftDescriptorPool);
 }
 
 // TODO: replace this with a scene manager, read scene from disk
@@ -237,6 +239,8 @@ void ft::Application::createScene() {
   data.model = glm::rotate(data.model, glm::radians(90.0f), {1, 0, 0});
   data.model = glm::translate(data.model, {10.0f, 0.0f, 0.0f});
   auto room = _ftScene->addModelFromObj("models/viking_room.obj", data);
+  room->setFlags(room->getID(),
+                 ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
 
   auto t = _ftMaterialPool->createTexture(
       "textures/viking_room.png", ft::Texture::FileType::FT_TEXTURE_PNG);
@@ -261,7 +265,6 @@ void ft::Application::createScene() {
                            glm::vec3(0.0f, 1.0f, 1.0f));
   data.model = glm::translate(data.model, {0.0, 0.0, -5.7f});
   auto venus = _ftScene->addModelFromGltf("assets/models/venus.gltf", data);
-  venus->setFlags(venus->getID(), ft::MODEL_SELECTABLE_BIT);
   venus->setFlags(venus->getID(), ft::MODEL_SELECTABLE_BIT);
 
   //    data.model = glm::mat4(1.0f);
@@ -359,6 +362,9 @@ void ft::Application::drawFrame() {
   _ftScene->drawSkyBox(commandBuffer, _ftSkyBoxRdrSys->getGraphicsPipeline(),
                        _ftSkyBoxRdrSys, _currentFrame);
 
+  _ftScene->drawOulines(commandBuffer, _ftSimpleRdrSys, _ftOutlineRdrSys,
+                        _currentFrame);
+
   _ftScene->drawSimpleObjs(commandBuffer,
                            _ftSimpleRdrSys->getGraphicsPipeline(),
                            _ftSimpleRdrSys, _currentFrame);
@@ -377,7 +383,7 @@ void ft::Application::drawFrame() {
                               _ft2TexturedRdrSys->getGraphicsPipeline(),
                               _ft2TexturedRdrSys, _currentFrame);
 
-  _ftScene->drawOulines(commandBuffer, _ftSimpleRdrSys, _ftOutlineRdrSys,
+  _ftScene->drawNormals(commandBuffer, _ftSimpleRdrSys, _ftNormDebugRdrSys,
                         _currentFrame);
 
   // gui
@@ -438,6 +444,15 @@ void ft::Application::updateScene(int key) {
     _ftScene->togglePointsTopo();
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_L)) {
     _ftScene->toggleLinesTopo();
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_F4)) {
+    std::cout << "calculating the normals " << std::endl;
+    _ftScene->calculateNormals();
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_N)) {
+    _ftScene->toggleNormalDebug();
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_I)) {
+    std::cout << "info: \n";
+    std::cout << "sizeof pushconst: " << sizeof(PushConstantObject)
+              << std::endl;
   }
   _ftScene->updateCameraUBO();
   _ftMousePicker->notifyUpdatedView();

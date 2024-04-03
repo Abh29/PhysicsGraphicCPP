@@ -54,8 +54,8 @@ void ft::Scene::drawSimpleObjs(const CommandBuffer::pointer &commandBuffer,
   // vertex and index buffers
   for (auto &model : _models) {
     if (!model->hasFlag(ft::MODEL_SIMPLE_BIT) ||
-        model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_SELECTED_BIT |
-                       ft::MODEL_LINE_BIT | ft::MODEL_POINT_BIT))
+        model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_LINE_BIT |
+                       ft::MODEL_POINT_BIT))
       continue;
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, pipeline);
@@ -233,6 +233,30 @@ void ft::Scene::drawLinesTopology(
       continue;
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, lrdr->getGraphicsPipeline());
+  }
+}
+
+void ft::Scene::drawNormals(const ft::CommandBuffer::pointer &commandBuffer,
+                            const ft::SimpleRdrSys::pointer &srdr,
+                            const ft::NormDebugRdrSys::pointer &nrdr,
+                            uint32_t index) {
+  vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(),
+                    VK_PIPELINE_BIND_POINT_GRAPHICS,
+                    nrdr->getGraphicsPipeline()->getVKPipeline());
+
+  vkCmdBindDescriptorSets(
+      commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+      nrdr->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+      &(srdr->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
+
+  // vertex and index buffers
+  for (auto &model : _models) {
+    if (!model->hasFlag(ft::MODEL_HAS_NORMAL_DEBUG_BIT) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT))
+      continue;
+    model->bind(commandBuffer, index);
+    model->draw(commandBuffer, nrdr->getGraphicsPipeline(),
+                VK_SHADER_STAGE_GEOMETRY_BIT);
   }
 }
 
@@ -604,5 +628,28 @@ void ft::Scene::togglePointsTopo() {
       m->toggleFlags(m->getID(), ft::MODEL_POINT_BIT);
       m->unsetFlags(m->getID(), ft::MODEL_LINE_BIT);
       m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+    }
+}
+
+void ft::Scene::calculateNormals() {
+  for (auto &m : _models) {
+    if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
+      m->reshade();
+      m->updateVertexBuffer();
+      m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+      return;
+    }
+  }
+}
+
+void ft::Scene::toggleNormalDebug() {
+  for (auto &m : _models)
+    if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
+      m->toggleFlags(m->getID(), ft::MODEL_HAS_NORMAL_DEBUG_BIT);
+      m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+      std::cout << "normals "
+                << (m->hasFlag(ft::MODEL_HAS_NORMAL_DEBUG_BIT) ? "on" : "off")
+                << std::endl;
+      return;
     }
 }

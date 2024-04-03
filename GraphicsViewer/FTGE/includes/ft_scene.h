@@ -54,6 +54,9 @@ public:
   void drawLinesTopology(const CommandBuffer::pointer &,
                          const SimpleRdrSys::pointer &,
                          const LineRdrSys::pointer &, uint32_t index);
+  void drawNormals(const CommandBuffer::pointer &,
+                   const SimpleRdrSys::pointer &,
+                   const NormDebugRdrSys::pointer &, uint32_t index);
 
   // add objects to the scene
   Model::pointer addModelFromObj(const std::string &objectPath,
@@ -95,7 +98,11 @@ public:
   void resetAll();
   void togglePointsTopo();
   void toggleLinesTopo();
+  void toggleNormalDebug();
   ft::Model::raw_ptr getSelectedModel();
+
+  // testing features
+  void calculateNormals();
 
 private:
   Device::pointer _ftDevice;

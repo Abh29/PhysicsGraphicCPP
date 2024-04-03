@@ -14,7 +14,8 @@ public:
   using ShaderType = enum class _shaderType {
     FT_VERTEX_SHADER,
     FT_FRAGMENT_SHADER,
-    FT_COMPUTE_SHADER
+    FT_COMPUTE_SHADER,
+    FT_GEOMETRY_SHADER
   };
 
   using pointer = std::shared_ptr<Shader>;

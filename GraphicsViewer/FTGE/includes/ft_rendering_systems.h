@@ -193,6 +193,22 @@ private:
   uint32_t _uboBinding;
 };
 
+class NormDebugRdrSys final : public RenderingSystem {
+public:
+  using pointer = std::shared_ptr<NormDebugRdrSys>;
+
+  NormDebugRdrSys(Device::pointer, Renderer::pointer, DescriptorPool::pointer);
+  ~NormDebugRdrSys() override = default;
+
+  [[nodiscard]] uint32_t getVUboBinding() const;
+
+private:
+  void createDescriptorSetLayout();
+  void createGraphicsPipeline();
+
+  uint32_t _vertexUboBinding;
+};
+
 } // namespace ft
 
 #endif // FTGRAPHICS_FT_RENDERING_SYSTEMS_H
