@@ -53,12 +53,80 @@ void ft::Scene::drawSimpleObjs(const CommandBuffer::pointer &commandBuffer,
 
   // vertex and index buffers
   for (auto &model : _models) {
-    if (!model->hasFlag(ft::MODEL_SIMPLE_BIT) ||
+    if ((!model->hasFlag(ft::MODEL_SIMPLE_BIT) &&
+         !model->hasFlag(ft::MODEL_SELECTED_BIT)) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_LINE_BIT |
                        ft::MODEL_POINT_BIT))
       continue;
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, pipeline);
+  }
+
+  if (_ftGizmo) {
+    if (_state.lastSelect) {
+      _ftGizmo->bind(commandBuffer, index);
+      // _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+      _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+      _ftGizmo->draw(commandBuffer, pipeline);
+    }
+  }
+}
+
+void ft::Scene::drawSimpleObjsWithOutline(
+    const CommandBuffer::pointer &commandBuffer,
+    const SimpleRdrSys::pointer &srs, const OutlineRdrSys::pointer &ors,
+    uint32_t index) {
+
+  vkCmdBindDescriptorSets(
+      commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+      srs->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+      &(srs->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
+
+  bool toggle = true;
+
+  for (auto &model : _models) {
+    if ((!model->hasFlag(ft::MODEL_SIMPLE_BIT) &&
+         !model->hasFlag(ft::MODEL_SELECTED_BIT)) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_LINE_BIT |
+                       ft::MODEL_POINT_BIT))
+      continue;
+
+    model->bind(commandBuffer, index);
+
+    if (model->hasFlag(ft::MODEL_SELECTED_BIT)) {
+      // bind the graphics pipeline
+      vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(),
+                        VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        ors->getGraphicsPipeline()->getVKPipeline());
+      toggle = true;
+      model->draw(commandBuffer, ors->getGraphicsPipeline());
+    }
+
+    if (toggle) {
+      // bind the graphics pipeline
+      vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(),
+                        VK_PIPELINE_BIND_POINT_GRAPHICS,
+                        srs->getGraphicsPipeline()->getVKPipeline());
+
+      toggle = false;
+    }
+
+    // vertex and index buffers
+    model->draw(commandBuffer, srs->getGraphicsPipeline());
+  }
+
+  if (_ftGizmo) {
+    _ftGizmo->bind(commandBuffer, index);
+    for (auto &model : _models) {
+      if (!model->hasFlag(ft::MODEL_HIDDEN_BIT) &&
+          model->hasFlag(ft::MODEL_SELECTED_BIT)) {
+        // _ftGizmo->resetTransform().aabb(model->getAABB().first,
+        //                                model->getAABB().second);
+        //  _ftGizmo->resetTransform().at(model->getCentroid());
+        _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+        _ftGizmo->draw(commandBuffer, srs->getGraphicsPipeline());
+      }
+    }
   }
 }
 
@@ -162,6 +230,19 @@ void ft::Scene::drawPickObjs(const ft::CommandBuffer::pointer &commandBuffer,
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, pipeline);
   }
+
+  if (_ftGizmo) {
+    if (_state.lastSelect) {
+      _ftGizmo->bind(commandBuffer, index);
+      // _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+      // _ftGizmo->resetTransform()
+      //     .aabb(_state.lastSelect->getOldAABB().first,
+      //           _state.lastSelect->getOldAABB().second)
+      //     .at(_state.lastSelect->getCentroid());
+      _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+      _ftGizmo->draw(commandBuffer, pipeline);
+    }
+  }
 }
 
 void ft::Scene::drawOulines(const ft::CommandBuffer::pointer &commandBuffer,
@@ -202,11 +283,11 @@ void ft::Scene::drawPointsTopology(
       prdr->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
       &(srdr->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
 
-  // vertex and index buffers
   for (auto &model : _models) {
     if (!model->hasFlag(ft::MODEL_POINT_BIT) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
+
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, prdr->getGraphicsPipeline());
   }
@@ -233,6 +314,17 @@ void ft::Scene::drawLinesTopology(
       continue;
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, lrdr->getGraphicsPipeline());
+  }
+
+  if (_ftBoundingBox) {
+    if (_state.lastSelect) {
+      _ftBoundingBox->bind(commandBuffer, index);
+      auto &m = _state.lastSelect;
+      _ftBoundingBox->resetTransform()
+          .setTranslation(m->getState().translation)
+          .setRotation(m->getState().rotation);
+      _ftBoundingBox->draw(commandBuffer, lrdr->getGraphicsPipeline());
+    }
   }
 }
 
@@ -263,11 +355,9 @@ void ft::Scene::drawNormals(const ft::CommandBuffer::pointer &commandBuffer,
 // load
 
 ft::Model::pointer ft::Scene::addModelFromObj(const std::string &objectPath,
-                                              ft::InstanceData data) {
+                                              ft::ObjectState data) {
   Model::pointer model =
       std::make_shared<Model>(_ftDevice, objectPath, _ftUniformBuffers.size());
-  data.normalMatrix = glm::inverseTranspose(data.model * _ubo.view);
-  data.id = model->getID();
   model->setState(data);
   model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
   _models.push_back(model);
@@ -276,8 +366,8 @@ ft::Model::pointer ft::Scene::addModelFromObj(const std::string &objectPath,
 
 // load from gltf
 
-ft::Model::pointer ft::Scene::addModelFromGltf(const std::string &gltfPath,
-                                               ft::InstanceData data) {
+std::vector<ft::Model::pointer>
+ft::Scene::addModelFromGltf(const std::string &gltfPath, ft::ObjectState data) {
 
   tinygltf::Model gltfInput;
   tinygltf::TinyGLTF gltfContext;
@@ -289,18 +379,19 @@ ft::Model::pointer ft::Scene::addModelFromGltf(const std::string &gltfPath,
 
   // load gltf scene
   tinygltf::Scene &scene = gltfInput.scenes[0];
-  Model::pointer model;
+  std::vector<Model::pointer> out;
   for (int i : scene.nodes) {
     const tinygltf::Node node = gltfInput.nodes[i];
-    model = std::make_shared<Model>(_ftDevice, gltfInput, node,
-                                    _ftUniformBuffers.size());
+    auto model = std::make_shared<Model>(_ftDevice, gltfInput, node,
+                                         _ftUniformBuffers.size());
     if (model->empty())
       continue;
     model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
     _models.push_back(model);
+    model->setState(data);
+    out.push_back(model);
   }
-  model->setState(data);
-  return model;
+  return out;
 }
 
 std::vector<ft::Model::pointer> ft::Scene::addDoubleTexturedFromGltf(
@@ -465,7 +556,7 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
 ft::Model::pointer ft::Scene::addCubeBox(
     const std::string &gltfModel, const std::string &ktxTexture,
     const DescriptorPool::pointer &pool,
-    const DescriptorSetLayout::pointer &layout, const ft::InstanceData data) {
+    const DescriptorSetLayout::pointer &layout, const ft::ObjectState data) {
 
   tinygltf::Model gltfInput;
   tinygltf::TinyGLTF gltfContext;
@@ -510,6 +601,27 @@ ft::Model::pointer ft::Scene::addCubeBox(
   }
 
   return model;
+}
+
+// gizmo
+
+ft::Gizmo::pointer ft::Scene::loadGizmo(const std::string &gltfPath) {
+  _ftGizmo = std::make_shared<ft::Gizmo>(_ftDevice, gltfPath,
+                                         _ftUniformBuffers.size());
+  _ftGizmo->resetTransform();
+  return _ftGizmo;
+}
+
+ft::Gizmo::pointer ft::Scene::getGizmo() const { return _ftGizmo; }
+
+// bounding box
+
+ft::BoundingBox::pointer
+ft::Scene::loadBoundingBox(const std::string &gltfModel) {
+  _ftBoundingBox = std::make_shared<BoundingBox>(_ftDevice, gltfModel,
+                                                 _ftUniformBuffers.size());
+  _ftBoundingBox->resetTransform();
+  return _ftBoundingBox;
 }
 
 // set
@@ -574,7 +686,16 @@ bool ft::Scene::select(uint32_t id) {
     if (m->findID(id)) {
       if (!m->hasFlag(ft::MODEL_SELECTABLE_BIT))
         return false;
-      return m->toggleFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+      if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
+        m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+        _state.lastSelect = nullptr;
+      } else {
+        m->setFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+        if (_state.lastSelect)
+          _state.lastSelect->unselectAll();
+        _state.lastSelect = m.get();
+      }
+      return true;
     }
   }
   return false;
@@ -584,14 +705,20 @@ void ft::Scene::unselectAll() {
   for (auto &m : _models) {
     m->unselectAll();
   }
+  _state.lastSelect = nullptr;
 }
 
 void ft::Scene::hideSelected() {
-  for (auto &m : _models)
-    if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
-      m->setFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
-      m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
-    }
+  // for (auto &m : _models)
+  // if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
+  //   m->setFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
+  //   m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+  // }
+  if (_state.lastSelect) {
+    _state.lastSelect->setFlags(_state.lastSelect->getID(),
+                                ft::MODEL_HIDDEN_BIT);
+    _state.lastSelect = nullptr;
+  }
 }
 
 void ft::Scene::unhideSelected() {
@@ -652,4 +779,33 @@ void ft::Scene::toggleNormalDebug() {
                 << std::endl;
       return;
     }
+}
+
+void ft::Scene::showSelectedInfo() const {
+  _ftGizmo->printInfo();
+  _ftBoundingBox->printInfo();
+  if (_state.lastSelect) {
+    auto &m = _state.lastSelect;
+    std::cout << "model" << m->getID() << ": "
+              << glm::to_string(m->getCentroid()) << "\n";
+    std::cout << "\tvetices: " << _state.lastSelect->getVertices().size()
+              << "\n";
+    std::cout << "\tindices: " << _state.lastSelect->getIndices().size()
+              << "\n";
+    std::cout << "\taabb: \n"
+              << "\t\tmin: " << glm::to_string(m->getAABB().first) << "\n"
+              << "\t\tmax: " << glm::to_string(m->getAABB().second)
+              << std::endl;
+    std::cout << "scale:\n" << glm::to_string(m->getState().scaling) << "\n";
+    std::cout << "rotation:\n"
+              << glm::to_string(m->getState().rotation) << "\n";
+    std::cout << "transition:\n"
+              << glm::to_string(m->getState().translation) << "\n";
+
+    std::cout << "model: " << glm::to_string(m->getRootModelMatrix()) << "\n";
+  }
+}
+
+ft::Model::raw_ptr ft::Scene::getSelectedModel() const {
+  return _state.lastSelect;
 }

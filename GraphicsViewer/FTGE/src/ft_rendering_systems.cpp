@@ -259,9 +259,6 @@ void ft::SimpleRdrSys::createGraphicsPipeline() {
   pipelineConfig.depthStencilState.depthTestEnable = VK_TRUE;
   pipelineConfig.depthStencilState.depthWriteEnable = VK_TRUE;
   pipelineConfig.depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-  pipelineConfig.depthStencilState.depthBoundsTestEnable = VK_FALSE;
-  pipelineConfig.depthStencilState.minDepthBounds = 0.0f;
-  pipelineConfig.depthStencilState.maxDepthBounds = 1.0f;
   pipelineConfig.depthStencilState.stencilTestEnable = VK_TRUE;
   pipelineConfig.depthStencilState.front = stencil;
   pipelineConfig.depthStencilState.back = stencil;
@@ -1022,7 +1019,6 @@ void ft::OutlineRdrSys::createGraphicsPipeline() {
                                    vertexAttributes.end());
 
   // depth and stencil state
-
   VkStencilOpState stencil = {};
   stencil.compareOp = VK_COMPARE_OP_NOT_EQUAL;
   stencil.failOp = VK_STENCIL_OP_KEEP;
@@ -1034,13 +1030,8 @@ void ft::OutlineRdrSys::createGraphicsPipeline() {
 
   pipelineConfig.depthStencilState.sType =
       VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-  pipelineConfig.depthStencilState.depthTestEnable = VK_TRUE;
-  pipelineConfig.depthStencilState.depthWriteEnable = VK_TRUE;
-  pipelineConfig.depthStencilState.depthCompareOp = VK_COMPARE_OP_LESS;
-  pipelineConfig.depthStencilState.depthBoundsTestEnable = VK_FALSE;
-  pipelineConfig.depthStencilState.minDepthBounds = 0.0f;
-  pipelineConfig.depthStencilState.maxDepthBounds = 1.0f;
-  pipelineConfig.depthStencilState.stencilTestEnable = VK_FALSE;
+  pipelineConfig.depthStencilState.depthTestEnable = VK_FALSE;
+  pipelineConfig.depthStencilState.depthWriteEnable = VK_FALSE;
   pipelineConfig.depthStencilState.front = stencil;
   pipelineConfig.depthStencilState.back = stencil;
 

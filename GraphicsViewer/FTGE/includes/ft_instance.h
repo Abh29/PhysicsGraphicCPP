@@ -1,7 +1,6 @@
 #ifndef FTGRAPHICS_FT_INSTANCE_H
 #define FTGRAPHICS_FT_INSTANCE_H
 
-#include "ft_callbacks.h"
 #include "ft_headers.h"
 
 namespace ft {

@@ -34,6 +34,11 @@ public:
   void drawSimpleObjs(const CommandBuffer::pointer &,
                       const GraphicsPipeline::pointer &,
                       const SimpleRdrSys::pointer &, uint32_t index);
+
+  void drawSimpleObjsWithOutline(const CommandBuffer::pointer &,
+                                 const SimpleRdrSys::pointer &,
+                                 const OutlineRdrSys::pointer &, uint32_t);
+
   void drawTexturedObjs(const CommandBuffer::pointer &,
                         const GraphicsPipeline::pointer &,
                         const OneTextureRdrSys::pointer &, uint32_t index);
@@ -60,7 +65,7 @@ public:
 
   // add objects to the scene
   Model::pointer addModelFromObj(const std::string &objectPath,
-                                 ft::InstanceData data);
+                                 ft::ObjectState data);
   std::vector<Model::pointer>
   addDoubleTexturedFromGltf(const std::string &,
                             const DescriptorPool::pointer &,
@@ -69,15 +74,19 @@ public:
   addSingleTexturedFromGltf(const std::string &,
                             const DescriptorPool::pointer &,
                             const DescriptorSetLayout::pointer &);
-  Model::pointer addModelFromGltf(const std::string &,
-                                  const ft::InstanceData data);
+  std::vector<Model::pointer> addModelFromGltf(const std::string &,
+                                               const ft::ObjectState data);
   uint32_t addObjectCopyToTheScene(uint32_t id, InstanceData data);
 
   Model::pointer addCubeBox(const std::string &gltfModel,
                             const std::string &ktxTexture,
                             const DescriptorPool::pointer &pool,
                             const DescriptorSetLayout::pointer &layout,
-                            const ft::InstanceData data);
+                            const ft::ObjectState data);
+
+  ft::Gizmo::pointer loadGizmo(const std::string &gltfModel);
+  ft::BoundingBox::pointer loadBoundingBox(const std::string &gltfModel);
+  ft::Gizmo::pointer getGizmo() const;
 
   // set properties of the scene
   void addMaterialToObj(uint32_t id, Material::pointer texture);
@@ -99,12 +108,17 @@ public:
   void togglePointsTopo();
   void toggleLinesTopo();
   void toggleNormalDebug();
-  ft::Model::raw_ptr getSelectedModel();
+  void showSelectedInfo() const;
+  ft::Model::raw_ptr getSelectedModel() const;
 
   // testing features
   void calculateNormals();
 
 private:
+  struct State {
+    Model::raw_ptr lastSelect;
+  };
+
   Device::pointer _ftDevice;
   std::vector<Model::pointer> _models;
   std::vector<Buffer::pointer> _ftUniformBuffers;
@@ -113,6 +127,9 @@ private:
   TexturePool::pointer _ftTexturePool;
   std::map<uint32_t, std::vector<Model::pointer>> _materialToModel;
   Texture::pointer _ftCubeTexture;
+  Gizmo::pointer _ftGizmo;
+  BoundingBox::pointer _ftBoundingBox;
+  State _state;
 };
 
 } // namespace ft

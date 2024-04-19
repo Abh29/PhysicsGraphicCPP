@@ -10,6 +10,8 @@ class Event {
 public:
   using EventType = enum class et {
     MOUSE_BUTTON,
+    MOUSE_BUTTON_DRAG,
+    MOUSE_BUTTON_DRAG_RELEASE,
     KEYBOARD_EVENT,
     MOUSE_SCROLL,
     SCREEN_RESIZE_EVENT,
@@ -26,6 +28,20 @@ class CursorEvent : public Event {
 public:
   CursorEvent(int button, int action, int mods, double x, double y);
   ~CursorEvent() override = default;
+  [[nodiscard]] EventType getType() const override;
+};
+
+class CursorDragEvent : public Event {
+public:
+  CursorDragEvent(int button, double x, double y, double xold, double yold);
+  ~CursorDragEvent() override = default;
+  [[nodiscard]] EventType getType() const override;
+};
+
+class CursorDragReleaseEvent : public Event {
+public:
+  CursorDragReleaseEvent(int button, double x, double y);
+  ~CursorDragReleaseEvent() override = default;
   [[nodiscard]] EventType getType() const override;
 };
 

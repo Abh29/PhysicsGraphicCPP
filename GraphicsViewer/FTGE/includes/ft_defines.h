@@ -3,6 +3,7 @@
 
 #include "ft_headers.h"
 #include <cstdint>
+#include <glm/fwd.hpp>
 
 namespace ft {
 
@@ -50,6 +51,13 @@ struct PushConstantObject {
   alignas(4) glm::mat4 model;
   alignas(4) glm::vec3 baseColor;
   uint32_t id;
+};
+
+struct ObjectState {
+  glm::mat4 scaling = glm::mat4(1.0f);
+  glm::mat4 rotation = glm::mat4(1.0f);
+  glm::mat4 translation = glm::mat4(1.0f);
+  glm::vec3 color = glm::vec3(1.0f);
 };
 
 enum class KeyActions {

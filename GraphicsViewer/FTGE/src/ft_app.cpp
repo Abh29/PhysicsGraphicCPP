@@ -1,8 +1,22 @@
 #include "../includes/ft_app.h"
 #include <glm/ext/matrix_transform.hpp>
+#include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <memory>
 #include <vulkan/vulkan_core.h>
+
+#define SHOW_AXIS 1
+#define SHOW_PLANE 0
+#define SHOW_HELMET 0
+#define SHOW_SPONZA 0
+#define SHOW_VENUS 1
+#define SHOW_VIKINGS 1
+#define SHOW_SKYBOX 0
+#define SHOW_CAR 1
+#define SHOW_TERRAIN 0
+#define SHOW_ARROW 1
+#define SHOW_UNIT_BOX 0
+#define SHOW_GIZMO 0
 
 ft::Application::Application()
     : _ftEventListener(std::make_shared<ft::EventListener>()),
@@ -55,19 +69,17 @@ void ft::Application::initEventListener() {
       Event::EventType::MOUSE_BUTTON, [&](ft::Event &ev) {
         auto &cev = dynamic_cast<CursorEvent &>(ev);
         auto data = cev.getData();
-        if (std::any_cast<int>(data[1]) ==
-            _ftWindow->ACTION(KeyActions::KEY_PRESS)) {
-          auto x = std::any_cast<double>(data[3]);
-          auto y = std::any_cast<double>(data[4]);
-          if (y <= 30 || x >= (_ftRenderer->getSwapChain()->getWidth() - 200))
-            return;
-          uint32_t id =
-              _ftMousePicker->pick(_ftScene, (uint32_t)x, (uint32_t)y);
-          std::cout << "id is: " << id << std::endl;
-          if (id && _ftScene->select(id)) {
-            _ftMousePicker->notifyUpdatedView();
-          }
+        auto x = std::any_cast<double>(data[3]);
+        auto y = std::any_cast<double>(data[4]);
+        if (y <= 30 || x >= (_ftRenderer->getSwapChain()->getWidth() - 200))
+          return;
+        uint32_t id = _ftMousePicker->pick(_ftScene, (uint32_t)x, (uint32_t)y);
+        std::cout << "id is: " << id << std::endl;
+        if (id && _ftScene->select(id)) {
+          _ftMousePicker->notifyUpdatedView();
         }
+        _ftScene->getGizmo()->unselect();
+        _ftScene->getGizmo()->select(id);
       });
 
   _ftEventListener->addCallbackForEventType(
@@ -76,7 +88,41 @@ void ft::Application::initEventListener() {
         auto data = sev.getData();
         auto yOff = std::any_cast<double>(data[1]);
 
-        _ftScene->getCamera()->forward((float)yOff * 3);
+        if (_ftScene->getGizmo()->isSelected()) {
+          auto e = _ftScene->getGizmo()->getSelected();
+          auto m = _ftScene->getSelectedModel();
+          if (m == nullptr)
+            return;
+          switch (e) {
+          case ft::Gizmo::Elements::X_ARROW:
+            m->translate(glm::vec3(0.0f, 0.0f, -0.1f * yOff));
+            break;
+          case ft::Gizmo::Elements::Y_ARROW:
+            m->translate({0.1f * yOff, 0.0f, 0.00f});
+            std::cout << "scalling through y" << std::endl;
+            break;
+          case ft::Gizmo::Elements::Z_ARROW:
+            m->translate({0.0f, 0.1f * yOff, 0.0f});
+            std::cout << "scalling through z" << std::endl;
+            break;
+          case ft::Gizmo::Elements::X_RING:
+            m->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 10.0f * yOff);
+            std::cout << "rotating through x" << std::endl;
+            break;
+          case ft::Gizmo::Elements::Y_RING:
+            m->rotate(glm::vec3(0.0f, 0.0f, 1.0f), 10.0f * yOff);
+            std::cout << "rotating through y" << std::endl;
+            break;
+          case ft::Gizmo::Elements::Z_RING:
+            m->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 10.0f * yOff);
+            std::cout << "rotating through z" << std::endl;
+            break;
+          default:
+            break;
+          }
+        } else {
+          _ftScene->getCamera()->forward((float)yOff * 3);
+        }
         _ftScene->updateCameraUBO();
         _ftMousePicker->notifyUpdatedView();
       });
@@ -93,10 +139,62 @@ void ft::Application::initEventListener() {
             _ftRenderer->getSwapChain()->getWidth(),
             _ftRenderer->getSwapChain()->getHeight());
       });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::MOUSE_BUTTON_DRAG, [&](ft::Event &ev) {
+        auto &srev = dynamic_cast<CursorDragEvent &>(ev);
+        auto data = srev.getData();
+        auto x = std::any_cast<double>(data[1]);
+        auto y = std::any_cast<double>(data[2]);
+        if (y <= 30 || x >= (_ftRenderer->getSwapChain()->getWidth() - 200))
+          return;
+        // std::cout << "drag " << x << " " << y << " "
+        //           << _ftScene->getGizmo()->isSelected() << std::endl;
+        if (_ftScene->getGizmo()->isSelected()) {
+          auto e = _ftScene->getGizmo()->getSelected();
+          auto m = _ftScene->getSelectedModel();
+          if (m == nullptr)
+            return;
+          switch (e) {
+          case ft::Gizmo::Elements::X_ARROW:
+            m->translate(glm::vec3(0.0f, 0.0f, 0.1f));
+            break;
+          case ft::Gizmo::Elements::Y_ARROW:
+            m->translate({0.2f, 0.0f, 0.00f});
+            std::cout << "scalling through y" << std::endl;
+            break;
+          case ft::Gizmo::Elements::Z_ARROW:
+            m->translate({0.0f, -0.05f, 0.0f});
+            std::cout << "scalling through z" << std::endl;
+            break;
+          case ft::Gizmo::Elements::X_RING:
+            m->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 10.0f);
+            std::cout << "rotating through x" << std::endl;
+            break;
+          case ft::Gizmo::Elements::Y_RING:
+            m->rotate(glm::vec3(0.0f, 0.0f, 1.0f), 10.0f);
+            std::cout << "rotating through y" << std::endl;
+            break;
+          case ft::Gizmo::Elements::Z_RING:
+            m->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 10.0f);
+            std::cout << "rotating through z" << std::endl;
+            break;
+          default:
+            break;
+          }
+          _ftScene->updateCameraUBO();
+          _ftMousePicker->notifyUpdatedView();
+        }
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::MOUSE_BUTTON_DRAG_RELEASE, [&](ft::Event &ev) {
+        (void)ev;
+        _ftScene->getGizmo()->unselect();
+      });
 }
 
 void ft::Application::initApplication() {
-
   VkApplicationInfo applicationInfo{};
   applicationInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
   applicationInfo.pApplicationName = "Simple Application";
@@ -161,55 +259,58 @@ void ft::Application::createScene() {
                           .setAspect(_ftRenderer->getSwapChain()->getAspect())
                           .build());
   _ftScene->setGeneralLight({1.0f, 1.0f, 1.0f}, {0.0, 2.5f, 0.0f}, 0.2f);
-  ft::InstanceData data{};
+  auto gizmo = _ftScene->loadGizmo("models/gizmo.gltf");
+  auto box = _ftScene->loadBoundingBox("models/unit_box.gltf");
+  ft::ObjectState data{};
   (void)data;
   uint32_t id;
   (void)id;
 
+#if SHOW_AXIS
+
   // Z
-  data.model = glm::mat4(1.0f);
-  data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+  data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.f, 0.0f, 0.9f};
-  data.normalMatrix = glm::mat4(1.0f);
   _ftScene->addModelFromObj("models/axis.obj", data);
 
   // Y
-  data.model = glm::rotate(glm::mat4(1), glm::radians(90.0f),
-                           glm::vec3(1.0f, 0.0f, 0.0f));
-  data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+  data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
+                              glm::vec3(1.0f, 0.0f, 0.0f));
+  data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.0f, 0.9f, 0.0f};
-  data.normalMatrix = glm::mat4(1.0f);
   _ftScene->addModelFromObj("models/axis.obj", data);
 
   // X
-  data.model = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
-                           glm::vec3(0.0f, 0.0f, 1.0f));
-  data.model = glm::scale(data.model, {0.01f, 1.0f, 0.01f});
+  data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
+                              glm::vec3(0.0f, 0.0f, 1.0f));
+  data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.9f, 0.0f, 0.0f};
-  data.normalMatrix = glm::mat4(1.0f);
   _ftScene->addModelFromObj("models/axis.obj", data);
 
+#endif
+#if SHOW_PLANE
   // plane
-  data.model = glm::mat4(1.0f);
-  data.color = {0.95f, .95f, .95f};
-  data.normalMatrix = glm::mat4(1.0f);
-  data.model = glm::translate(data.model, {0, 1, 0});
-  data.model = glm::scale(data.model, {300, 3, 300});
+  data.color = glm::vec3{1.0f, 1.0f, 1.0f};
+  data.scaling = glm::scale(glm::mat4(1.0f), {300, 3, 300});
+  data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
+                              glm::vec3(0.0f, 1.0f, 0.0f));
   auto plane = _ftScene->addModelFromObj("models/plane.mtl.obj", data);
+#endif
+#if SHOW_SKYBOX
 
   // skybox
-  data.model = glm::mat4(1.0f);
   data.color = {0.95f, .95f, .95f};
-  data.normalMatrix = glm::mat4(1.0f);
-  data.model = glm::scale(data.model, {300, 300, 300});
+  data.scaling = glm::scale(glm::mat4(1.0f), {300, 300, 300});
   auto skybox = _ftScene->addCubeBox(
       "assets/models/sphere.gltf", "assets/textures/cubemap_space.ktx",
       _ftSkyBoxRdrSys->getDescriptorPool(),
       _ftSkyBoxRdrSys->getDescriptorSetLayout(), data);
-
+#endif
+#if SHOW_HELMET
   // helmet
   auto helmet = _ftScene->addSingleTexturedFromGltf(
-      "assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
+      "assets/models/FlightHelmet/glTF/"
+      "FlightHelmet.gltf",
       _ftTexturedRdrSys->getDescriptorPool(),
       _ftTexturedRdrSys->getDescriptorSetLayout());
   for (const auto &model : helmet) {
@@ -218,12 +319,14 @@ void ft::Application::createScene() {
     mat = glm::translate(mat, glm::vec3(5.0f, 0.45f, 10.0f));
     model->setFlags(model->getID(), ft::MODEL_SELECTABLE_BIT);
   }
-
+#endif
+#if SHOW_SPONZA
   // sponza
   auto sponza = _ftScene->addDoubleTexturedFromGltf(
       "assets/models/sponza/sponza.gltf",
       _ft2TexturedRdrSys->getDescriptorPool(),
       _ft2TexturedRdrSys->getDescriptorSetLayout());
+  std::cout << "loaded sponza " << sponza.size() << std::endl;
   for (const auto &model : sponza) {
     glm::mat4 &mat = model->getRootModelMatrix();
     mat = glm::rotate(mat, glm::radians(180.0f), glm::vec3(1.0f, 0.0f, 0.0f));
@@ -231,13 +334,14 @@ void ft::Application::createScene() {
     mat = glm::scale(mat, {12.0f, 12.0f, 12.0f});
     model->setFlags(model->getID(), ft::MODEL_SELECTABLE_BIT);
   }
-
+#endif
+#if SHOW_VIKINGS
   // viking's room
-  data.model = glm::mat4(1.0f);
+  data = {};
   data.color = {0.0f, 0.9f, 0.2f};
-  data.normalMatrix = glm::mat4(1.0f);
-  data.model = glm::rotate(data.model, glm::radians(90.0f), {1, 0, 0});
-  data.model = glm::translate(data.model, {10.0f, 0.0f, 0.0f});
+  // data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), {1, 0,
+  // 0}); data.translation = glm::translate(glm::mat4(1.0f), {10.0f, 0.0f,
+  // 0.0f});
   auto room = _ftScene->addModelFromObj("models/viking_room.obj", data);
   room->setFlags(room->getID(),
                  ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
@@ -256,26 +360,56 @@ void ft::Application::createScene() {
   room->unsetFlags(room->getID(), ft::MODEL_SIMPLE_BIT);
   room->setFlags(room->getID(),
                  ft::MODEL_HAS_COLOR_TEXTURE_BIT | ft::MODEL_SELECTABLE_BIT);
-
+#endif
+#if SHOW_VENUS
   // venus
-  data.model = glm::mat4(1.0f);
+  data = {};
   data.color = {0.95f, .9f, .5f};
-  data.normalMatrix = glm::mat4(1.0f);
-  data.model = glm::rotate(data.model, glm::radians(180.0f),
-                           glm::vec3(0.0f, 1.0f, 1.0f));
-  data.model = glm::translate(data.model, {0.0, 0.0, -5.7f});
+  data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f),
+                              glm::vec3(0.0f, 1.0f, 1.0f));
+  data.translation = glm::translate(glm::mat4(1.0f), {0.0, 0.0, -5.7f});
+  data.translation = glm::translate(glm::mat4(1.0f), {10, 10, 10});
   auto venus = _ftScene->addModelFromGltf("assets/models/venus.gltf", data);
-  venus->setFlags(venus->getID(), ft::MODEL_SELECTABLE_BIT);
+  venus[0]->setFlags(venus[0]->getID(), ft::MODEL_SELECTABLE_BIT);
+#endif
 
-  //    data.model = glm::mat4(1.0f);
-  //	data.color = {0.9f, 0.9f, 0.9f};
-  //	data.normalMatrix = glm::mat4(1.0f);
-  //    data.model = glm::translate(data.model, {0, 0, 3});
-  //    data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
-  //    data.model = glm::scale(data.model, {0.005,0.005,0.005});
-  //	id = _ftScene->addModelFromObj("models/car.obj", data);
+#if SHOW_CAR
+  data.color = {0.5f, 0.6f, 0.9f};
+  data.translation = glm::translate(glm::mat4(1.0f), {0, 0, 3});
+  data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), {1, 0, 0});
+  data.scaling = glm::scale(glm::mat4(1.0f), {0.005, 0.005, 0.005});
+  auto car = _ftScene->addModelFromObj("models/car.obj", data);
+  car->setFlags(car->getID(), ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
 
-  //    m = _ftTexturePool->createTexture("textures/car.png",
+#endif
+
+#if SHOW_ARROW
+  data.color = {0.9f, 0.1f, 0.2f};
+  // data.model = glm::translate(data.model, {0, 0,
+  // 3}); data.model = glm::rotate(data.model,
+  // glm::radians(180.0f), {1, 0, 0});
+  auto arrow = _ftScene->addModelFromObj("models/arrow.obj", data);
+  arrow->setFlags(arrow->getID(),
+                  ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
+
+#endif
+#if SHOW_UNIT_BOX
+  data = {};
+  data.color = {0.5f, 0.3f, 0.2f};
+  //  auto unit_box = _ftScene->addModelFromObj("models/unit_box.obj", data);
+  auto unit_box = _ftScene->addModelFromGltf("models/unit_box.gltf", data);
+  unit_box[0]->setFlags(unit_box[0]->getID(),
+                        ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
+
+#endif
+#if SHOW_GIZMO
+  data.color = {0.9f, 0.1f, 0.2f};
+  auto h = _ftScene->addModelFromObj("models/helmet.obj", data);
+  h->setFlags(h->getID(), ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
+#endif
+
+  //    m =
+  //    _ftTexturePool->createTexture("textures/car.png",
   //    _ftRenderer->getSampler(),
   //                                       _ftTexturedRdrSys->getDescriptorPool(),
   //                                       _ftTexturedRdrSys->getDescriptorSetLayout(),
@@ -285,51 +419,78 @@ void ft::Application::createScene() {
   //    data.model = glm::mat4(1.0f);
   //	data.color = {0.9f, 0.9f, 0.9f};
   //	data.normalMatrix = glm::mat4(1.0f);
-  //	data.model = glm::scale(data.model, {2, 2, 2});
-  //	data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
-  //	id = _ftScene->addModelFromObj("models/big_terrain.obj", data);
+  //	data.model = glm::scale(data.model, {2,
+  // 2, 2}); 	data.model =
+  // glm::rotate(data.model, glm::radians(180.0f),
+  // {1,0,0}); 	id =
+  //_ftScene->addModelFromObj("models/big_terrain.obj",
+  // data);
   //
-  //    auto m = _ftTexturePool->createTexture("textures/terrain.png",
-  //    _ftRenderer->getSampler()); _ftScene->addTextureToObject(id, m);
+  //    auto m =
+  //    _ftTexturePool->createTexture("textures/terrain.png",
+  //    _ftRenderer->getSampler());
+  //    _ftScene->addTextureToObject(id, m);
 
   //	data.model = glm::mat4(1.0f);
   //	data.color = {0.9f, 0.9f, 0.9f};
   //	data.normalMatrix = glm::mat4(1.0f);
-  ////	data.model = glm::scale(data.model, {0.1, 0.1, 0.1});
-  //	data.model = glm::rotate(data.model, glm::radians(180.0f), {1,0,0});
-  //	id = _ftScene->addModelFromObj("models/mountain.obj", data);
+  ////	data.model = glm::scale(data.model,
+  ///{0.1, 0.1, 0.1});
+  //	data.model = glm::rotate(data.model,
+  // glm::radians(180.0f), {1,0,0}); 	id =
+  //_ftScene->addModelFromObj("models/mountain.obj",
+  // data);
   //
-  //    m = _ftTexturePool->createTexture("textures/mountain.jpg",
-  //    _ftRenderer->getSampler(), _ftTexturedRdrSys->getDescriptorPool(),
+  //    m =
+  //    _ftTexturePool->createTexture("textures/mountain.jpg",
+  //    _ftRenderer->getSampler(),
+  //    _ftTexturedRdrSys->getDescriptorPool(),
   //    _ftTexturedRdrSys->getDescriptorSetLayout());
   //    _ftScene->addTextureToObject(id, m);
 
-  //	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f),
-  // glm::vec3(0.0f, 0.0f, 1.0f)); 	data.model = glm::translate(data.model,
-  // glm::vec3{1.0f, -2.0f, 0.0f}); 	data.color = {0.5f, 0.95f, 0.2f};
-  // id = _ftScene->addObjectCopyToTheScene(id, data);
+  //	data.model =
+  // glm::rotate(glm::mat4(1.0f),
+  // glm::radians(0.0f),
+  // glm::vec3(0.0f, 0.0f, 1.0f)); 	data.model =
+  // glm::translate(data.model, glm::vec3{1.0f,
+  // -2.0f, 0.0f}); 	data.color = {0.5f,
+  // 0.95f, 0.2f}; id =
+  // _ftScene->addObjectCopyToTheScene(id, data);
 
   //
-  //	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f),
-  // glm::vec3(0.0f, 0.0f, 1.0f)); 	data.model = glm::translate(data.model,
-  // glm::vec3{0.0f, 3.0f, 0.0f}); 	data.color = {0.7f, 0.2f, 0.4f};
-  // id = _ftScene->addObjectCopyToTheScene(id, data);
+  //	data.model =
+  // glm::rotate(glm::mat4(1.0f),
+  // glm::radians(0.0f),
+  // glm::vec3(0.0f, 0.0f, 1.0f)); 	data.model =
+  // glm::translate(data.model,
+  // glm::vec3{0.0f, 3.0f, 0.0f}); 	data.color =
+  // {0.7f, 0.2f, 0.4f}; id =
+  // _ftScene->addObjectCopyToTheScene(id, data);
   //
-  //	id = _ftScene->addModelFromObj("models/smooth_vase.obj", {
-  //			glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
-  // glm::vec3(0.0f, 0.0f, 1.0f)), 			glm::mat4(1.0f),
-  // {0.95f, 0.2f, 0.0f}
+  //	id =
+  //_ftScene->addModelFromObj("models/smooth_vase.obj",
+  //{
+  // glm::rotate(glm::mat4(1.0f),
+  // glm::radians(90.0f),
+  // glm::vec3(0.0f, 0.0f, 1.0f)),
+  // glm::mat4(1.0f), {0.95f, 0.2f, 0.0f}
   //	});
 
   //	data.model = glm::mat4(1.0f);
   //	data.color = {0.95f, 0.2f, 0.0f};
   //	data.normalMatrix = glm::mat4(1.0f);
-  //	id = _ftScene->addModelFromObj("models/sphere.mtl.obj", data);
+  //	id =
+  //_ftScene->addModelFromObj("models/sphere.mtl.obj",
+  // data);
   //
-  //	data.model = glm::rotate(glm::mat4(1.0f), glm::radians(0.0f),
-  // glm::vec3(0.0f, 0.0f, 1.0f)); 	data.model = glm::translate(data.model,
-  // glm::vec3{1.0f, -2.0f, 0.0f}); 	data.color = {0.5f, 0.95f, 0.2f};
-  // id = _ftScene->addObjectCopyToTheScene(id, data);
+  //	data.model =
+  // glm::rotate(glm::mat4(1.0f),
+  // glm::radians(0.0f),
+  // glm::vec3(0.0f, 0.0f, 1.0f)); 	data.model =
+  // glm::translate(data.model, glm::vec3{1.0f,
+  // -2.0f, 0.0f}); 	data.color = {0.5f,
+  // 0.95f, 0.2f}; id =
+  // _ftScene->addObjectCopyToTheScene(id, data);
 
   (void)id;
 }
@@ -361,10 +522,6 @@ void ft::Application::drawFrame() {
 
   _ftScene->drawSkyBox(commandBuffer, _ftSkyBoxRdrSys->getGraphicsPipeline(),
                        _ftSkyBoxRdrSys, _currentFrame);
-
-  _ftScene->drawOulines(commandBuffer, _ftSimpleRdrSys, _ftOutlineRdrSys,
-                        _currentFrame);
-
   _ftScene->drawSimpleObjs(commandBuffer,
                            _ftSimpleRdrSys->getGraphicsPipeline(),
                            _ftSimpleRdrSys, _currentFrame);
@@ -385,6 +542,12 @@ void ft::Application::drawFrame() {
 
   _ftScene->drawNormals(commandBuffer, _ftSimpleRdrSys, _ftNormDebugRdrSys,
                         _currentFrame);
+
+  // _ftScene->drawSimpleObjsWithOutline(commandBuffer, _ftSimpleRdrSys,
+  //                                     _ftOutlineRdrSys, _currentFrame);
+
+  // _ftScene->drawOulines(commandBuffer, _ftSimpleRdrSys, _ftOutlineRdrSys,
+  //                       _currentFrame);
 
   // gui
   _ftGui->render(commandBuffer);
@@ -453,6 +616,7 @@ void ft::Application::updateScene(int key) {
     std::cout << "info: \n";
     std::cout << "sizeof pushconst: " << sizeof(PushConstantObject)
               << std::endl;
+    _ftScene->showSelectedInfo();
   }
   _ftScene->updateCameraUBO();
   _ftMousePicker->notifyUpdatedView();

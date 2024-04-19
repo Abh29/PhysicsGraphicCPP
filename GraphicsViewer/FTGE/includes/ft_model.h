@@ -4,11 +4,15 @@
 #include "ft_buffer.h"
 #include "ft_command.h"
 #include "ft_defines.h"
+#include "ft_device.h"
 #include "ft_headers.h"
 #include "ft_pipeline.h"
 #include "ft_texture.h"
 #include "ft_vertex.h"
 #include <cstdint>
+#include <glm/detail/qualifier.hpp>
+#include <glm/fwd.hpp>
+#include <utility>
 #include <vector>
 #include <vulkan/vulkan_core.h>
 
@@ -54,6 +58,13 @@ public:
     }
   };
 
+  struct AABB {
+    glm::vec3 min;
+    glm::vec3 max;
+    glm::vec3 oldMin;
+    glm::vec3 oldMax;
+  };
+
   using pointer = std::shared_ptr<Model>;
   using wpointer = std::weak_ptr<Model>;
   using raw_ptr = Model *;
@@ -83,11 +94,11 @@ public:
   [[nodiscard]] bool findID(uint32_t id) const;
   [[nodiscard]] uint32_t getID() const;
   [[nodiscard]] std::vector<Node *> getAllNodes() const;
-  void setState(const InstanceData &data);
+  glm::mat4 getModelMatrix() const;
   void addMaterial(const Material::pointer &material);
   glm::mat4 &getRootModelMatrix();
 
-  // state manager
+  // flag manager
   [[nodiscard]] bool isSelected() const;
   [[nodiscard]] bool empty() const;
   bool select(uint32_t id);
@@ -104,6 +115,17 @@ public:
   [[nodiscard]] bool isUpdated() const;
   inline std::vector<Vertex> &getVertices() { return _vertices; };
   inline std::vector<uint32_t> &getIndices() { return _indices; };
+  glm::vec3 getCentroid() const;
+  std::pair<glm::vec3, glm::vec3> getAABB() const;
+  std::pair<glm::vec3, glm::vec3> getOldAABB() const;
+
+  // state manager
+  void setState(const ft::ObjectState &data);
+  ft::ObjectState getState() const;
+  ft::ObjectState &getState();
+  Model &scale(const glm::vec3 &v);
+  Model &rotate(const glm::vec3 &v, float a);
+  Model &translate(const glm::vec3 &v);
 
 private:
   Model() = default;
@@ -130,6 +152,114 @@ private:
   std::string _modelPath;
   Node *_node = nullptr;
   std::map<uint32_t, Node *> _allNodes;
+  glm::vec3 _centroid = {}, _oldCentroid = {};
+  ft::ObjectState _objectState;
+  AABB _aabb = {};
+};
+
+class Gizmo {
+
+public:
+  using pointer = std::shared_ptr<Gizmo>;
+  using raw_ptr = Gizmo *;
+
+  enum class Elements {
+    NIL,
+    X_ARROW,
+    Y_ARROW,
+    Z_ARROW,
+    X_RING,
+    Y_RING,
+    Z_RING,
+  };
+
+  Gizmo(Device::pointer device, const std::string &filePath,
+        uint32_t bufferCount);
+  ~Gizmo() = default;
+
+  void bind(const CommandBuffer::pointer &commandBuffer, uint32_t index);
+  void draw(const CommandBuffer::pointer &commandBuffer,
+            const GraphicsPipeline::pointer &pipeline,
+            const VkShaderStageFlags stages = VK_SHADER_STAGE_VERTEX_BIT);
+  Gizmo &aabb(const glm::vec3 &min, const glm::vec3 &max);
+  Gizmo &at(const glm::vec3 &transitionV);
+  Gizmo &rotate(const glm::vec3 &rotationV, float alpha);
+  Gizmo &scale(const glm::vec3 &scaleV);
+  Gizmo &setScale(const glm::mat4 &scale);
+  Gizmo &setRotation(const glm::mat4 &rotation);
+  Gizmo &setTranslation(const glm::mat4 &tranlation);
+  Gizmo &resetTransform();
+  Gizmo &setTransform(ObjectState state);
+
+  bool select(uint32_t id);
+  Elements getSelected() const;
+  void unselect();
+  bool isSelected() const;
+  void printInfo() const;
+
+private:
+  struct Primitive {
+    uint32_t firstIndex;
+    uint32_t indexCount;
+    uint32_t id;
+    uint32_t flags; // this could be eventuatlly used
+    glm::vec3 color, color2;
+    Elements element;
+  };
+
+  void createVertexBuffer();
+  void createIndexBuffer();
+
+  Device::pointer _ftDevice;
+  Buffer::pointer _ftVertexBuffer;
+  Buffer::pointer _ftIndexBuffer;
+  std::vector<Vertex> _vertices;
+  std::vector<uint32_t> _indices;
+  std::vector<Primitive> _mesh;
+  ft::ObjectState _objectState;
+  glm::mat4 _matrix;
+  uint32_t _selectedId, _minId, _maxId;
+  bool _isSelected;
+};
+
+class BoundingBox {
+
+public:
+  using pointer = std::shared_ptr<BoundingBox>;
+
+  BoundingBox(Device::pointer device, const std::string &filePath,
+              uint32_t bufferCount);
+
+  void bind(const CommandBuffer::pointer &commandBuffer, uint32_t index);
+  void draw(const CommandBuffer::pointer &commandBuffer,
+            const GraphicsPipeline::pointer &pipeline,
+            const VkShaderStageFlags stages = VK_SHADER_STAGE_VERTEX_BIT);
+
+  BoundingBox &aabb(const glm::vec3 &min, const glm::vec3 &max);
+  BoundingBox &setScale(const glm::mat4 &scale);
+  BoundingBox &setRotation(const glm::mat4 &rotation);
+  BoundingBox &setTranslation(const glm::mat4 &tranlation);
+  BoundingBox &at(const glm::vec3 &transitionV);
+  BoundingBox &rotate(const glm::vec3 &rotationV, float alpha);
+  BoundingBox &scale(const glm::vec3 &scaleV);
+  BoundingBox &resetTransform();
+  BoundingBox &setTransform(ObjectState state);
+
+  void printInfo() const;
+
+private:
+  void createVertexBuffer();
+  void createIndexBuffer();
+
+  Device::pointer _ftDevice;
+  Buffer::pointer _ftVertexBuffer;
+  Buffer::pointer _ftIndexBuffer;
+  std::vector<Vertex> _vertices;
+  std::vector<uint32_t> _indices;
+  ft::ObjectState _objectState;
+  glm::mat4 _matrix;
+  uint32_t _id;
+  glm::vec3 _color;
 };
 
 } // namespace ft

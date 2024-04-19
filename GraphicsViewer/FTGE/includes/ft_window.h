@@ -8,6 +8,15 @@
 
 namespace ft {
 
+struct CursorInfo {
+  double x;
+  double y;
+  std::chrono::steady_clock::time_point clickTp;
+  bool relevant = false;
+  bool lPress = false;
+  bool rPress = false;
+};
+
 class Instance;
 
 class Window {
@@ -45,6 +54,9 @@ private:
                              double yoffset);
   static void resizeCallback(GLFWwindow *window, int width, int height);
 
+  static void cursorPositionCallback(GLFWwindow *window, double xpos,
+                                     double ypos);
+
   void initKeys();
 
   uint32_t _width;
@@ -56,6 +68,7 @@ private:
   std::unordered_map<KeyboardKeys, int> _keys;
   std::unordered_map<MouseKeys, int> _mouseKeys;
   std::unordered_map<KeyActions, int> _keyActions;
+  ft::CursorInfo _cursorInfo = {};
 };
 } // namespace ft
 
