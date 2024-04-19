@@ -64,9 +64,15 @@ void ft::Scene::drawSimpleObjs(const CommandBuffer::pointer &commandBuffer,
 
   if (_ftGizmo) {
     if (_state.lastSelect) {
+      auto &m = _state.lastSelect;
       _ftGizmo->bind(commandBuffer, index);
-      // _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
-      _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+      if (_state.globalGizbo) {
+        _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+      } else {
+        _ftGizmo->resetTransform()
+            .at(_state.lastSelect->getCentroid())
+            .setRotation(m->getState().rotation);
+      }
       _ftGizmo->draw(commandBuffer, pipeline);
     }
   }
@@ -117,15 +123,16 @@ void ft::Scene::drawSimpleObjsWithOutline(
 
   if (_ftGizmo) {
     _ftGizmo->bind(commandBuffer, index);
-    for (auto &model : _models) {
-      if (!model->hasFlag(ft::MODEL_HIDDEN_BIT) &&
-          model->hasFlag(ft::MODEL_SELECTED_BIT)) {
-        // _ftGizmo->resetTransform().aabb(model->getAABB().first,
-        //                                model->getAABB().second);
-        //  _ftGizmo->resetTransform().at(model->getCentroid());
+    if (_state.lastSelect) {
+      auto &m = _state.lastSelect;
+      if (_state.globalGizbo) {
         _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
-        _ftGizmo->draw(commandBuffer, srs->getGraphicsPipeline());
+      } else {
+        _ftGizmo->resetTransform()
+            .at(_state.lastSelect->getCentroid())
+            .setRotation(m->getState().rotation);
       }
+      _ftGizmo->draw(commandBuffer, srs->getGraphicsPipeline());
     }
   }
 }
@@ -233,13 +240,15 @@ void ft::Scene::drawPickObjs(const ft::CommandBuffer::pointer &commandBuffer,
 
   if (_ftGizmo) {
     if (_state.lastSelect) {
+      auto &m = _state.lastSelect;
       _ftGizmo->bind(commandBuffer, index);
-      // _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
-      // _ftGizmo->resetTransform()
-      //     .aabb(_state.lastSelect->getOldAABB().first,
-      //           _state.lastSelect->getOldAABB().second)
-      //     .at(_state.lastSelect->getCentroid());
-      _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+      if (_state.globalGizbo) {
+        _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+      } else {
+        _ftGizmo->resetTransform()
+            .at(_state.lastSelect->getCentroid())
+            .setRotation(m->getState().rotation);
+      }
       _ftGizmo->draw(commandBuffer, pipeline);
     }
   }
@@ -316,15 +325,10 @@ void ft::Scene::drawLinesTopology(
     model->draw(commandBuffer, lrdr->getGraphicsPipeline());
   }
 
-  if (_ftBoundingBox) {
-    if (_state.lastSelect) {
-      _ftBoundingBox->bind(commandBuffer, index);
-      auto &m = _state.lastSelect;
-      _ftBoundingBox->resetTransform()
-          .setTranslation(m->getState().translation)
-          .setRotation(m->getState().rotation);
-      _ftBoundingBox->draw(commandBuffer, lrdr->getGraphicsPipeline());
-    }
+  if (_state.lastSelect) {
+    auto &m = _state.lastSelect;
+    m->bind(commandBuffer, index);
+    m->drawAABB(commandBuffer, lrdr->getGraphicsPipeline());
   }
 }
 
@@ -614,15 +618,7 @@ ft::Gizmo::pointer ft::Scene::loadGizmo(const std::string &gltfPath) {
 
 ft::Gizmo::pointer ft::Scene::getGizmo() const { return _ftGizmo; }
 
-// bounding box
-
-ft::BoundingBox::pointer
-ft::Scene::loadBoundingBox(const std::string &gltfModel) {
-  _ftBoundingBox = std::make_shared<BoundingBox>(_ftDevice, gltfModel,
-                                                 _ftUniformBuffers.size());
-  _ftBoundingBox->resetTransform();
-  return _ftBoundingBox;
-}
+bool ft::Scene::hasGizmo() const { return _ftGizmo != nullptr; }
 
 // set
 
@@ -709,11 +705,6 @@ void ft::Scene::unselectAll() {
 }
 
 void ft::Scene::hideSelected() {
-  // for (auto &m : _models)
-  // if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
-  //   m->setFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
-  //   m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
-  // }
   if (_state.lastSelect) {
     _state.lastSelect->setFlags(_state.lastSelect->getID(),
                                 ft::MODEL_HIDDEN_BIT);
@@ -783,7 +774,7 @@ void ft::Scene::toggleNormalDebug() {
 
 void ft::Scene::showSelectedInfo() const {
   _ftGizmo->printInfo();
-  _ftBoundingBox->printInfo();
+  std::cout << "\t" << (_state.globalGizbo ? "global" : "local") << "\n";
   if (_state.lastSelect) {
     auto &m = _state.lastSelect;
     std::cout << "model" << m->getID() << ": "
@@ -805,6 +796,10 @@ void ft::Scene::showSelectedInfo() const {
     std::cout << "model: " << glm::to_string(m->getRootModelMatrix()) << "\n";
   }
 }
+
+void ft::Scene::toggleGizmo() { _state.globalGizbo = !_state.globalGizbo; }
+
+bool ft::Scene::isGlobalGizmo() const { return _state.globalGizbo; }
 
 ft::Model::raw_ptr ft::Scene::getSelectedModel() const {
   return _state.lastSelect;

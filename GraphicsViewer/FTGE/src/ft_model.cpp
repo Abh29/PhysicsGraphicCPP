@@ -13,7 +13,7 @@
 #include <vulkan/vulkan_core.h>
 
 ft::Model::Model(Device::pointer device, std::string filePath,
-                 uint32_t bufferCount)
+                 uint32_t bufferCount, uint32_t options)
     : _ftDevice(device), _modelPath(filePath) {
 
   _aabb.min = {std::numeric_limits<float>::max(),
@@ -22,10 +22,10 @@ ft::Model::Model(Device::pointer device, std::string filePath,
   _aabb.max = {std::numeric_limits<float>::min(),
                std::numeric_limits<float>::min(),
                std::numeric_limits<float>::min()};
-  loadModel();
-  _aabb.oldMin = _aabb.min;
-  _aabb.oldMax = _aabb.max;
+  loadModel(options);
   _oldCentroid = _centroid;
+  if ((options & ft::LOAD_OPTION_NO_AABB) == 0)
+    createAABB();
 
   createVertexBuffer();
   createIndexBuffer();
@@ -48,7 +48,8 @@ ft::Model::Model(Device::pointer device, std::string filePath,
 }
 
 ft::Model::Model(Device::pointer device, const tinygltf::Model &gltfInput,
-                 const tinygltf::Node &inputNode, uint32_t bufferCount)
+                 const tinygltf::Node &inputNode, uint32_t bufferCount,
+                 uint32_t options)
     : _ftDevice(std::move(device)) {
 
   _aabb.min = {std::numeric_limits<float>::max(),
@@ -58,9 +59,11 @@ ft::Model::Model(Device::pointer device, const tinygltf::Model &gltfInput,
                std::numeric_limits<float>::min(),
                std::numeric_limits<float>::min()};
   loadNode(inputNode, gltfInput, nullptr);
-  _aabb.oldMin = _aabb.min;
-  _aabb.oldMax = _aabb.max;
   _oldCentroid = _centroid;
+
+  if ((options & ft::LOAD_OPTION_NO_AABB) == 0)
+    createAABB();
+
   if (_vertices.empty()) {
     _node->state.flags |= ft::MODEL_IS_EMPTY_BIT;
   } else {
@@ -134,6 +137,22 @@ void ft::Model::draw(const ft::CommandBuffer::pointer &commandBuffer,
   //    }
 }
 
+void ft::Model::drawAABB(const ft::CommandBuffer::pointer &commandBuffer,
+                         const GraphicsPipeline::pointer &pipeline,
+                         const VkShaderStageFlags stages) {
+  if (_aabb.flags & ft::MODEL_HIDDEN_BIT)
+    return;
+
+  // push constants
+  PushConstantObject push{_node->state.modelMatrix, _aabb.color, 0u};
+  vkCmdPushConstants(commandBuffer->getVKCommandBuffer(),
+                     pipeline->getVKPipelineLayout(), stages, 0,
+                     sizeof(PushConstantObject), &push);
+
+  vkCmdDrawIndexed(commandBuffer->getVKCommandBuffer(), _aabb.indexCount, 1,
+                   _aabb.firstIndex, 0, 0);
+}
+
 void ft::Model::draw_extended(const CommandBuffer::pointer &commandBuffer,
                               const GraphicsPipeline::pointer &pipeline,
                               const std::function<void(const Primitive &)> &fun,
@@ -199,11 +218,13 @@ void ft::Model::reshade() {
   std::cout << "normals calculated " << count << std::endl;
 }
 
-void ft::Model::loadModel() {
+void ft::Model::loadModel(uint32_t options) {
   tinyobj::attrib_t attrib;
   std::vector<tinyobj::shape_t> shapes;
   std::vector<tinyobj::material_t> materials;
   std::string warn, err;
+
+  (void)options;
 
   if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
                         _modelPath.c_str())) {
@@ -327,7 +348,8 @@ void ft::Model::createIndexBuffer() {
 }
 
 void ft::Model::loadNode(const tinygltf::Node &inputNode,
-                         const tinygltf::Model &input, Node *parent) {
+                         const tinygltf::Model &input, Node *parent,
+                         uint32_t options) {
   auto *node = new Node();
   node->state.name = inputNode.name;
   node->parent = parent;
@@ -355,7 +377,7 @@ void ft::Model::loadNode(const tinygltf::Node &inputNode,
   // load children nodes
   if (inputNode.children.size() > 0) {
     for (size_t i = 0; i < inputNode.children.size(); ++i) {
-      loadNode(input.nodes[inputNode.children[i]], input, node);
+      loadNode(input.nodes[inputNode.children[i]], input, node, options);
     }
   }
 
@@ -486,6 +508,54 @@ void ft::Model::loadNode(const tinygltf::Node &inputNode,
   _allNodes.insert(std::make_pair(node->state.id, node));
 }
 
+void ft::Model::createAABB() {
+
+  auto &min = _aabb.min;
+  auto &max = _aabb.max;
+  std::vector<glm::vec3> vertices = {
+      {min.x, min.y, min.z}, // 0
+      {max.x, min.y, min.z}, // 1
+      {max.x, max.y, min.z}, // 2
+      {min.x, max.y, min.z}, // 3
+      {min.x, min.y, max.z}, // 4
+      {max.x, min.y, max.z}, // 5
+      {max.x, max.y, max.z}, // 6
+      {min.x, max.y, max.z}  // 7
+  };
+
+  _aabb.firstIndex = _indices.size();
+  std::vector<uint32_t> is = {
+      // Bottom face
+      0, 1, 1, 5, 5, 4, 4, 0, 0, 5, 1, 4, // Diagonals of the bottom face
+      // Top face
+      3, 2, 2, 6, 6, 7, 7, 3, 3, 6, 2, 7, // Diagonals of the top face
+      // Right face
+      1, 2, 2, 6, 6, 5, 5, 1, 1, 6, 2, 5, // Diagonals of the right face
+      // Left face
+      0, 3, 3, 7, 7, 4, 4, 0, 0, 7, 3, 4, // Diagonals of the left face
+      // Front face
+      0, 1, 1, 2, 2, 3, 3, 0, 0, 2, 1, 3, // Diagonals of the front face
+      // Back face
+      4, 5, 5, 6, 6, 7, 7, 4, 4, 6, 5, 7 // Diagonals of the back face
+  };
+  _aabb.indexCount = is.size();
+
+  std::for_each(is.begin(), is.end(),
+                [&](uint32_t &i) { i += _vertices.size(); });
+
+  _indices.insert(_indices.end(), is.begin(), is.end());
+
+  for (auto p : vertices) {
+    Vertex v = {};
+    v.pos = p;
+    _vertices.push_back(v);
+  }
+
+  _aabb.color = {0.0f, 1.0f, 0.1f};
+  createVertexBuffer();
+  createIndexBuffer();
+}
+
 // flag manager
 
 uint32_t ft::Model::ID() {
@@ -607,43 +677,57 @@ void ft::Model::setState(const ft::ObjectState &data) {
   _node->state.modelMatrix = data.translation * data.rotation * data.scaling;
   _node->state.baseColor = data.color;
   _centroid = _node->state.modelMatrix * glm::vec4(_oldCentroid, 1.0f);
-  _aabb.min = _node->state.modelMatrix * glm::vec4(_aabb.oldMin, 1.0f);
-  _aabb.max = _node->state.modelMatrix * glm::vec4(_aabb.oldMax, 1.0f);
 }
 
 ft::ObjectState ft::Model::getState() const { return _objectState; }
+
 ft::ObjectState &ft::Model::getState() { return _objectState; }
-ft::Model &ft::Model::scale(const glm::vec3 &v) {
+
+ft::Model &ft::Model::scale(const glm::vec3 &v, bool global) {
+  (void)global;
   auto m = glm::scale(glm::mat4(1.0f), v);
   _objectState.scaling *= m;
   _node->state.modelMatrix =
       _objectState.translation * _objectState.rotation * _objectState.scaling;
   _centroid = m * glm::vec4(_oldCentroid, 1.0f);
-  _aabb.min = m * glm::vec4(_aabb.oldMin, 1.0f);
-  _aabb.max = m * glm::vec4(_aabb.oldMax, 1.0f);
   _node->state.updated = true;
   return *this;
 }
-ft::Model &ft::Model::rotate(const glm::vec3 &v, float a) {
-  _node->state.modelMatrix =
-      glm::rotate(_node->state.modelMatrix, glm::radians(a), v);
-  //  _node->state.modelMatrix = m * _node->state.modelMatrix;
-  //    _objectState.translation * _objectState.rotation * _objectState.scaling;
+
+ft::Model &ft::Model::rotate(const glm::vec3 &v, float a, bool global) {
+  //    glm::rotate(_node->state.modelMatrix, glm::radians(a), v);
+  if (global) {
+    auto m = glm::rotate(glm::mat4(1.0f), glm::radians(a), v);
+    _objectState.rotation = _objectState.rotation * m;
+    _node->state.modelMatrix =
+        _objectState.translation * _objectState.rotation * _objectState.scaling;
+
+  } else {
+    auto m = glm::rotate(glm::mat4(1.0f), glm::radians(a), v);
+    _objectState.rotation = _objectState.rotation * m;
+    _node->state.modelMatrix =
+        _objectState.translation * _objectState.rotation * _objectState.scaling;
+  }
   _centroid = _node->state.modelMatrix * glm::vec4(_oldCentroid, 1.0f);
-  _aabb.min = _node->state.modelMatrix * glm::vec4(_aabb.oldMin, 1.0f);
-  _aabb.max = _node->state.modelMatrix * glm::vec4(_aabb.oldMax, 1.0f);
   _node->state.updated = true;
   return *this;
 }
-ft::Model &ft::Model::translate(const glm::vec3 &v) {
-  // _node->state.modelMatrix = glm::translate(_node->state.modelMatrix, v);
+
+ft::Model &ft::Model::translate(const glm::vec3 &v, bool global) {
+
+  if (global) {
+    auto m = glm::translate(glm::mat4(1.0f), v);
+    _objectState.translation = m * _objectState.translation;
+
+  } else {
+    glm::vec3 t = _objectState.rotation * glm::vec4(v, 0.0f);
+    auto m = glm::translate(glm::mat4(1.0f), t);
+    _objectState.translation = m * _objectState.translation;
+  }
+
   _node->state.modelMatrix =
-      glm::translate(glm::mat4(1.0f), v) * _node->state.modelMatrix;
+      _objectState.translation * _objectState.rotation * _objectState.scaling;
   _centroid = _node->state.modelMatrix * glm::vec4(_oldCentroid, 1.0f);
-  _aabb.min = _objectState.scaling * glm::vec4(_aabb.oldMin, 1.0f);
-  _aabb.max = _objectState.scaling * glm::vec4(_aabb.oldMax, 1.0f);
-  // _aabb.min = _node->state.modelMatrix * glm::vec4(_aabb.oldMin, 1.0f);
-  // _aabb.max = _node->state.modelMatrix * glm::vec4(_aabb.oldMax, 1.0f);
   _node->state.updated = true;
   return *this;
 }
@@ -727,10 +811,6 @@ std::pair<glm::vec3, glm::vec3> ft::Model::getAABB() const {
   return {_aabb.min, _aabb.max};
 }
 
-std::pair<glm::vec3, glm::vec3> ft::Model::getOldAABB() const {
-  return {_aabb.oldMin, _aabb.oldMax};
-}
-
 /****************************************Gizmo*************************************/
 
 ft::Gizmo::Gizmo(ft::Device::pointer device, const std::string &filePath,
@@ -750,8 +830,8 @@ ft::Gizmo::Gizmo(ft::Device::pointer device, const std::string &filePath,
   std::vector<Model::pointer> models;
   for (int i : scene.nodes) {
     const tinygltf::Node node = gltfInput.nodes[i];
-    auto model =
-        std::make_shared<Model>(_ftDevice, gltfInput, node, bufferCount);
+    auto model = std::make_shared<Model>(_ftDevice, gltfInput, node,
+                                         bufferCount, ft::LOAD_OPTION_NO_AABB);
     if (model->empty())
       continue;
     models.push_back(model);

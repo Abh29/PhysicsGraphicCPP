@@ -61,17 +61,20 @@ public:
   struct AABB {
     glm::vec3 min;
     glm::vec3 max;
-    glm::vec3 oldMin;
-    glm::vec3 oldMax;
+    uint32_t firstIndex;
+    uint32_t indexCount;
+    uint32_t flags;
+    glm::vec3 color;
   };
 
   using pointer = std::shared_ptr<Model>;
   using wpointer = std::weak_ptr<Model>;
   using raw_ptr = Model *;
-  Model(Device::pointer device, std::string filePath, uint32_t bufferCount);
+  Model(Device::pointer device, std::string filePath, uint32_t bufferCount,
+        uint32_t options = 0);
 
   Model(Device::pointer device, const tinygltf::Model &gltfInput,
-        const tinygltf::Node &node, uint32_t bufferCount);
+        const tinygltf::Node &node, uint32_t bufferCount, uint32_t options = 0);
 
   ~Model();
 
@@ -83,6 +86,9 @@ public:
   void draw(const CommandBuffer::pointer &commandBuffer,
             const GraphicsPipeline::pointer &pipeline,
             const VkShaderStageFlags stages = VK_SHADER_STAGE_VERTEX_BIT);
+  void drawAABB(const CommandBuffer::pointer &commandBuffer,
+                const GraphicsPipeline::pointer &pipeline,
+                const VkShaderStageFlags stages = VK_SHADER_STAGE_VERTEX_BIT);
   void
   draw_extended(const CommandBuffer::pointer &,
                 const GraphicsPipeline::pointer &,
@@ -117,24 +123,24 @@ public:
   inline std::vector<uint32_t> &getIndices() { return _indices; };
   glm::vec3 getCentroid() const;
   std::pair<glm::vec3, glm::vec3> getAABB() const;
-  std::pair<glm::vec3, glm::vec3> getOldAABB() const;
 
   // state manager
   void setState(const ft::ObjectState &data);
   ft::ObjectState getState() const;
   ft::ObjectState &getState();
-  Model &scale(const glm::vec3 &v);
-  Model &rotate(const glm::vec3 &v, float a);
-  Model &translate(const glm::vec3 &v);
+  Model &scale(const glm::vec3 &v, bool global = false);
+  Model &rotate(const glm::vec3 &v, float a, bool global = false);
+  Model &translate(const glm::vec3 &v, bool global = false);
 
 private:
   Model() = default;
-  void loadModel();
+  void loadModel(uint32_t options = 0);
+  void createAABB();
   void writePerInstanceData(uint32_t index);
   void createVertexBuffer();
   void createIndexBuffer();
   void loadNode(const tinygltf::Node &inputNode, const tinygltf::Model &input,
-                Node *parent);
+                Node *parent, uint32_t options = 0);
   void drawNode(const CommandBuffer::pointer &, Node *node,
                 const GraphicsPipeline::pointer &,
                 const std::function<void(const Primitive &)> &,

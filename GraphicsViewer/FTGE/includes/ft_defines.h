@@ -204,6 +204,7 @@ enum class MouseKeys {
   MOUSE_BUTTON_MIDDLE,
 };
 
+// model render flags
 constexpr uint32_t MODEL_HIDDEN_BIT = 1u;
 constexpr uint32_t MODEL_SELECTABLE_BIT = 1u << 1;
 constexpr uint32_t MODEL_SELECTED_BIT = 1u << 2;
@@ -219,6 +220,9 @@ constexpr uint32_t MODEL_TRIANGLE_BIT = 1u << 11;
 constexpr uint32_t MODEL_LINE_BIT = 1u << 12;
 constexpr uint32_t MODEL_POINT_BIT = 1u << 13;
 constexpr uint32_t MODEL_HAS_NORMAL_DEBUG_BIT = 1u << 14;
+
+// model load options
+constexpr uint32_t LOAD_OPTION_NO_AABB = 1u << 1;
 
 #define real_t float
 #define real_pow std::powf;

@@ -85,8 +85,8 @@ public:
                             const ft::ObjectState data);
 
   ft::Gizmo::pointer loadGizmo(const std::string &gltfModel);
-  ft::BoundingBox::pointer loadBoundingBox(const std::string &gltfModel);
   ft::Gizmo::pointer getGizmo() const;
+  bool hasGizmo() const;
 
   // set properties of the scene
   void addMaterialToObj(uint32_t id, Material::pointer texture);
@@ -110,6 +110,8 @@ public:
   void toggleNormalDebug();
   void showSelectedInfo() const;
   ft::Model::raw_ptr getSelectedModel() const;
+  void toggleGizmo();
+  bool isGlobalGizmo() const;
 
   // testing features
   void calculateNormals();
@@ -117,6 +119,7 @@ public:
 private:
   struct State {
     Model::raw_ptr lastSelect;
+    bool globalGizbo = false;
   };
 
   Device::pointer _ftDevice;
@@ -128,7 +131,6 @@ private:
   std::map<uint32_t, std::vector<Model::pointer>> _materialToModel;
   Texture::pointer _ftCubeTexture;
   Gizmo::pointer _ftGizmo;
-  BoundingBox::pointer _ftBoundingBox;
   State _state;
 };
 

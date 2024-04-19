@@ -10,7 +10,7 @@
 #define SHOW_HELMET 0
 #define SHOW_SPONZA 0
 #define SHOW_VENUS 1
-#define SHOW_VIKINGS 1
+#define SHOW_VIKINGS 0
 #define SHOW_SKYBOX 0
 #define SHOW_CAR 1
 #define SHOW_TERRAIN 0
@@ -78,8 +78,10 @@ void ft::Application::initEventListener() {
         if (id && _ftScene->select(id)) {
           _ftMousePicker->notifyUpdatedView();
         }
-        _ftScene->getGizmo()->unselect();
-        _ftScene->getGizmo()->select(id);
+        if (_ftScene->hasGizmo()) {
+          _ftScene->getGizmo()->unselect();
+          _ftScene->getGizmo()->select(id);
+        }
       });
 
   _ftEventListener->addCallbackForEventType(
@@ -88,34 +90,33 @@ void ft::Application::initEventListener() {
         auto data = sev.getData();
         auto yOff = std::any_cast<double>(data[1]);
 
-        if (_ftScene->getGizmo()->isSelected()) {
+        if (_ftScene->hasGizmo() && _ftScene->getGizmo()->isSelected()) {
           auto e = _ftScene->getGizmo()->getSelected();
           auto m = _ftScene->getSelectedModel();
           if (m == nullptr)
             return;
           switch (e) {
           case ft::Gizmo::Elements::X_ARROW:
-            m->translate(glm::vec3(0.0f, 0.0f, -0.1f * yOff));
+            m->translate(glm::vec3(0.0f, 0.0f, -0.1f * yOff),
+                         _ftScene->isGlobalGizmo());
             break;
           case ft::Gizmo::Elements::Y_ARROW:
-            m->translate({0.1f * yOff, 0.0f, 0.00f});
-            std::cout << "scalling through y" << std::endl;
+            m->translate({0.1f * yOff, 0.0f, 0.00f}, _ftScene->isGlobalGizmo());
             break;
           case ft::Gizmo::Elements::Z_ARROW:
-            m->translate({0.0f, 0.1f * yOff, 0.0f});
-            std::cout << "scalling through z" << std::endl;
+            m->translate({0.0f, 0.1f * yOff, 0.0f}, _ftScene->isGlobalGizmo());
             break;
           case ft::Gizmo::Elements::X_RING:
-            m->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 10.0f * yOff);
-            std::cout << "rotating through x" << std::endl;
+            m->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 10.0f * yOff,
+                      _ftScene->isGlobalGizmo());
             break;
           case ft::Gizmo::Elements::Y_RING:
-            m->rotate(glm::vec3(0.0f, 0.0f, 1.0f), 10.0f * yOff);
-            std::cout << "rotating through y" << std::endl;
+            m->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 10.0f * yOff,
+                      _ftScene->isGlobalGizmo());
             break;
           case ft::Gizmo::Elements::Z_RING:
-            m->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 10.0f * yOff);
-            std::cout << "rotating through z" << std::endl;
+            m->rotate(glm::vec3(0.0f, 0.0f, 1.0f), 10.0f * yOff,
+                      _ftScene->isGlobalGizmo());
             break;
           default:
             break;
@@ -146,11 +147,11 @@ void ft::Application::initEventListener() {
         auto data = srev.getData();
         auto x = std::any_cast<double>(data[1]);
         auto y = std::any_cast<double>(data[2]);
+
         if (y <= 30 || x >= (_ftRenderer->getSwapChain()->getWidth() - 200))
           return;
-        // std::cout << "drag " << x << " " << y << " "
-        //           << _ftScene->getGizmo()->isSelected() << std::endl;
-        if (_ftScene->getGizmo()->isSelected()) {
+
+        if (_ftScene->hasGizmo() && _ftScene->getGizmo()->isSelected()) {
           auto e = _ftScene->getGizmo()->getSelected();
           auto m = _ftScene->getSelectedModel();
           if (m == nullptr)
@@ -161,23 +162,18 @@ void ft::Application::initEventListener() {
             break;
           case ft::Gizmo::Elements::Y_ARROW:
             m->translate({0.2f, 0.0f, 0.00f});
-            std::cout << "scalling through y" << std::endl;
             break;
           case ft::Gizmo::Elements::Z_ARROW:
             m->translate({0.0f, -0.05f, 0.0f});
-            std::cout << "scalling through z" << std::endl;
             break;
           case ft::Gizmo::Elements::X_RING:
             m->rotate(glm::vec3(1.0f, 0.0f, 0.0f), 10.0f);
-            std::cout << "rotating through x" << std::endl;
             break;
           case ft::Gizmo::Elements::Y_RING:
             m->rotate(glm::vec3(0.0f, 0.0f, 1.0f), 10.0f);
-            std::cout << "rotating through y" << std::endl;
             break;
           case ft::Gizmo::Elements::Z_RING:
             m->rotate(glm::vec3(0.0f, 1.0f, 0.0f), 10.0f);
-            std::cout << "rotating through z" << std::endl;
             break;
           default:
             break;
@@ -190,7 +186,8 @@ void ft::Application::initEventListener() {
   _ftEventListener->addCallbackForEventType(
       Event::EventType::MOUSE_BUTTON_DRAG_RELEASE, [&](ft::Event &ev) {
         (void)ev;
-        _ftScene->getGizmo()->unselect();
+        if (_ftScene->hasGizmo())
+          _ftScene->getGizmo()->unselect();
       });
 }
 
@@ -260,7 +257,6 @@ void ft::Application::createScene() {
                           .build());
   _ftScene->setGeneralLight({1.0f, 1.0f, 1.0f}, {0.0, 2.5f, 0.0f}, 0.2f);
   auto gizmo = _ftScene->loadGizmo("models/gizmo.gltf");
-  auto box = _ftScene->loadBoundingBox("models/unit_box.gltf");
   ft::ObjectState data{};
   (void)data;
   uint32_t id;
@@ -403,9 +399,11 @@ void ft::Application::createScene() {
 
 #endif
 #if SHOW_GIZMO
+  data = {};
   data.color = {0.9f, 0.1f, 0.2f};
-  auto h = _ftScene->addModelFromObj("models/helmet.obj", data);
-  h->setFlags(h->getID(), ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
+  auto h = _ftScene->addModelFromGltf("models/gizmo.gltf", data);
+  h[0]->setFlags(h[0]->getID(),
+                 ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
 #endif
 
   //    m =
@@ -612,6 +610,8 @@ void ft::Application::updateScene(int key) {
     _ftScene->calculateNormals();
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_N)) {
     _ftScene->toggleNormalDebug();
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_B)) {
+    _ftScene->toggleGizmo();
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_I)) {
     std::cout << "info: \n";
     std::cout << "sizeof pushconst: " << sizeof(PushConstantObject)
