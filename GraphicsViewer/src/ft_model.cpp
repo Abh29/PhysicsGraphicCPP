@@ -691,6 +691,8 @@ ft::Model &ft::Model::scale(const glm::vec3 &v, bool global) {
       _objectState.translation * _objectState.rotation * _objectState.scaling;
   _centroid = m * glm::vec4(_oldCentroid, 1.0f);
   _node->state.updated = true;
+  for (auto &n : _allNodes)
+    n.second->state.updated = true;
   return *this;
 }
 
@@ -701,7 +703,6 @@ ft::Model &ft::Model::rotate(const glm::vec3 &v, float a, bool global) {
     _objectState.rotation = _objectState.rotation * m;
     _node->state.modelMatrix =
         _objectState.translation * _objectState.rotation * _objectState.scaling;
-
   } else {
     auto m = glm::rotate(glm::mat4(1.0f), glm::radians(a), v);
     _objectState.rotation = _objectState.rotation * m;
@@ -710,6 +711,8 @@ ft::Model &ft::Model::rotate(const glm::vec3 &v, float a, bool global) {
   }
   _centroid = _node->state.modelMatrix * glm::vec4(_oldCentroid, 1.0f);
   _node->state.updated = true;
+  for (auto &n : _allNodes)
+    n.second->state.updated = true;
   return *this;
 }
 
@@ -729,6 +732,8 @@ ft::Model &ft::Model::translate(const glm::vec3 &v, bool global) {
       _objectState.translation * _objectState.rotation * _objectState.scaling;
   _centroid = _node->state.modelMatrix * glm::vec4(_oldCentroid, 1.0f);
   _node->state.updated = true;
+  for (auto &n : _allNodes)
+    n.second->state.updated = true;
   return *this;
 }
 

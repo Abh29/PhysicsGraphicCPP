@@ -7,15 +7,15 @@
 
 #define SHOW_AXIS 1
 #define SHOW_PLANE 0
-#define SHOW_HELMET 0
-#define SHOW_SPONZA 0
+#define SHOW_HELMET 1
+#define SHOW_SPONZA 1
 #define SHOW_VENUS 1
-#define SHOW_VIKINGS 0
-#define SHOW_SKYBOX 0
+#define SHOW_VIKINGS 1
+#define SHOW_SKYBOX 1
 #define SHOW_CAR 1
 #define SHOW_TERRAIN 0
 #define SHOW_ARROW 1
-#define SHOW_UNIT_BOX 0
+#define SHOW_UNIT_BOX 1
 #define SHOW_GIZMO 0
 
 ft::Application::Application()
@@ -256,7 +256,7 @@ void ft::Application::createScene() {
                           .setAspect(_ftRenderer->getSwapChain()->getAspect())
                           .build());
   _ftScene->setGeneralLight({1.0f, 1.0f, 1.0f}, {0.0, 2.5f, 0.0f}, 0.2f);
-  auto gizmo = _ftScene->loadGizmo("models/gizmo.gltf");
+  auto gizmo = _ftScene->loadGizmo("assets/models/gizmo.gltf");
   ft::ObjectState data{};
   (void)data;
   uint32_t id;
@@ -267,21 +267,21 @@ void ft::Application::createScene() {
   // Z
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.f, 0.0f, 0.9f};
-  _ftScene->addModelFromObj("models/axis.obj", data);
+  _ftScene->addModelFromObj("assets/models/axis.obj", data);
 
   // Y
   data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
                               glm::vec3(1.0f, 0.0f, 0.0f));
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.0f, 0.9f, 0.0f};
-  _ftScene->addModelFromObj("models/axis.obj", data);
+  _ftScene->addModelFromObj("assets/models/axis.obj", data);
 
   // X
   data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
                               glm::vec3(0.0f, 0.0f, 1.0f));
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.9f, 0.0f, 0.0f};
-  _ftScene->addModelFromObj("models/axis.obj", data);
+  _ftScene->addModelFromObj("assets/models/axis.obj", data);
 
 #endif
 #if SHOW_PLANE
@@ -290,7 +290,7 @@ void ft::Application::createScene() {
   data.scaling = glm::scale(glm::mat4(1.0f), {300, 3, 300});
   data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
                               glm::vec3(0.0f, 1.0f, 0.0f));
-  auto plane = _ftScene->addModelFromObj("models/plane.mtl.obj", data);
+  auto plane = _ftScene->addModelFromObj("assets/models/plane.mtl.obj", data);
 #endif
 #if SHOW_SKYBOX
 
@@ -338,12 +338,12 @@ void ft::Application::createScene() {
   // data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), {1, 0,
   // 0}); data.translation = glm::translate(glm::mat4(1.0f), {10.0f, 0.0f,
   // 0.0f});
-  auto room = _ftScene->addModelFromObj("models/viking_room.obj", data);
+  auto room = _ftScene->addModelFromObj("assets/models/viking_room.obj", data);
   room->setFlags(room->getID(),
                  ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
 
   auto t = _ftMaterialPool->createTexture(
-      "textures/viking_room.png", ft::Texture::FileType::FT_TEXTURE_PNG);
+      "assets/textures/viking_room.png", ft::Texture::FileType::FT_TEXTURE_PNG);
   auto material = std::make_shared<Material>(_ftDevice);
   material->addTexture(t);
   material->createDescriptors(_ftTexturedRdrSys->getDescriptorPool(),
@@ -374,7 +374,7 @@ void ft::Application::createScene() {
   data.translation = glm::translate(glm::mat4(1.0f), {0, 0, 3});
   data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(180.0f), {1, 0, 0});
   data.scaling = glm::scale(glm::mat4(1.0f), {0.005, 0.005, 0.005});
-  auto car = _ftScene->addModelFromObj("models/car.obj", data);
+  auto car = _ftScene->addModelFromObj("assets/models/car.obj", data);
   car->setFlags(car->getID(), ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
 
 #endif
@@ -384,7 +384,7 @@ void ft::Application::createScene() {
   // data.model = glm::translate(data.model, {0, 0,
   // 3}); data.model = glm::rotate(data.model,
   // glm::radians(180.0f), {1, 0, 0});
-  auto arrow = _ftScene->addModelFromObj("models/arrow.obj", data);
+  auto arrow = _ftScene->addModelFromObj("assets/models/arrow.obj", data);
   arrow->setFlags(arrow->getID(),
                   ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
 
@@ -393,7 +393,8 @@ void ft::Application::createScene() {
   data = {};
   data.color = {0.5f, 0.3f, 0.2f};
   //  auto unit_box = _ftScene->addModelFromObj("models/unit_box.obj", data);
-  auto unit_box = _ftScene->addModelFromGltf("models/unit_box.gltf", data);
+  auto unit_box =
+      _ftScene->addModelFromGltf("assets/models/unit_box.gltf", data);
   unit_box[0]->setFlags(unit_box[0]->getID(),
                         ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
 
@@ -401,7 +402,7 @@ void ft::Application::createScene() {
 #if SHOW_GIZMO
   data = {};
   data.color = {0.9f, 0.1f, 0.2f};
-  auto h = _ftScene->addModelFromGltf("models/gizmo.gltf", data);
+  auto h = _ftScene->addModelFromGltf("assets/models/gizmo.gltf", data);
   h[0]->setFlags(h[0]->getID(),
                  ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
 #endif

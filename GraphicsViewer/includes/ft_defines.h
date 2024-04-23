@@ -223,10 +223,6 @@ constexpr uint32_t MODEL_HAS_NORMAL_DEBUG_BIT = 1u << 14;
 
 // model load options
 constexpr uint32_t LOAD_OPTION_NO_AABB = 1u << 1;
-
-#define real_t float
-#define real_pow std::powf;
-
 } // namespace ft
 
 #endif // FTGRAPHICS_FT_DEFINES_H

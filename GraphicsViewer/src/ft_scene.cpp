@@ -592,7 +592,8 @@ ft::Model::pointer ft::Scene::addCubeBox(
   for (int i : scene.nodes) {
     const tinygltf::Node node = gltfInput.nodes[i];
     model = std::make_shared<Model>(_ftDevice, gltfInput, node,
-                                    _ftUniformBuffers.size());
+                                    _ftUniformBuffers.size(),
+                                    ft::LOAD_OPTION_NO_AABB);
     if (model->empty())
       continue;
     auto rootNode = model->getAllNodes()[0];
@@ -603,6 +604,8 @@ ft::Model::pointer ft::Scene::addCubeBox(
     _models.push_back(model);
     break;
   }
+
+  std::cout << "skybox loaded" << std::endl;
 
   return model;
 }

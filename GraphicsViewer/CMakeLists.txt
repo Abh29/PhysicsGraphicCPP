@@ -52,13 +52,12 @@ endforeach(GLSL_F)
 
 add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES})
 
-# copy texture folder to build
-file(COPY textures DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-add_custom_target(Texture)
+# copy texture folder to build file(COPY textures DESTINATION
+# ${CMAKE_CURRENT_BINARY_DIR}) add_custom_target(Texture)
 
 # copy model folder to build
-file(COPY models DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
-add_custom_target(Models)
+file(COPY assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+add_custom_target(Assets)
 
 # include_directories(external/ktx/other_include) set(KTX_DIR
 # ${CMAKE_CURRENT_SOURCE_DIR}/external/ktx) set(KTX_SOURCES
