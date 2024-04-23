@@ -150,4 +150,6 @@ Playground
 Playground/*
 assets/
 external/
-GraphicsViewer/FTGE/tags
+GraphicsViewer/tags
+build/
+out/
