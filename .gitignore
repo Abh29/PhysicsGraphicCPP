@@ -153,3 +153,6 @@ external/
 GraphicsViewer/tags
 build/
 out/
+install/
+.cache/
+
