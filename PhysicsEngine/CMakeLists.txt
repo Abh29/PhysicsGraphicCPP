@@ -1,13 +1,37 @@
-cmake_minimum_required(VERSION 3.24)
-project(ftPhysics)
+cmake_minimum_required(VERSION 3.9)
+
+project(
+  ftPhysics
+  VERSION 1.0.1
+  DESCRIPTION "My cyclon physics engine emplimentation")
 
 set(CMAKE_CXX_STANDARD 17)
-
+include(GNUInstallDirs)
 add_compile_options(-Wall -Werror -Wextra -pg -O3)
-# copy texture folder to build file(COPY textures DESTINATION
-# ${CMAKE_CURRENT_BINARY_DIR}) add_custom_target(Texture)
 
 add_link_options(-lGL -lGLEW -ldl -lpthread -pg -O3)
 
-add_executable(ftPhysics main.cpp src/ft_particle.cpp src/ft_pcontacts.cpp
-                         includes/ft_threads.h)
+cmake_minimum_required(VERSION 3.10)
+project(ftPhysics)
+
+# Create the shared library
+set(PHYSICS_SOURCES src/ft_forceGenerator.cpp src/ft_pcontacts.cpp)
+add_library(ftPhysics SHARED ${PHYSICS_SOURCES})
+
+# Define the export target
+install(
+  TARGETS ftPhysics
+  EXPORT ftPhysicsTargets
+  LIBRARY DESTINATION ../install/lib) # Local installation
+
+# Install the header files
+set(PHYSICS_HEADERS
+    ftPhysics.h includes/ft_particle.h includes/ft_pcontacts.h
+    includes/ft_def.h includes/ft_threads.h includes/ft_forceGenerator.h)
+install(FILES ${PHYSICS_HEADERS} DESTINATION ../install/include/ftPhysics)
+
+# Install the package configuration file
+install(
+  EXPORT ftPhysicsTargets
+  FILE ftPhysicsConfig.cmake
+  DESTINATION ../install/share/cmake/ftPhysics) # Local installation

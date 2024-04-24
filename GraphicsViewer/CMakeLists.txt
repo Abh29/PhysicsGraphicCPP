@@ -77,6 +77,14 @@ add_link_options(
   -lktx
   -pg
   -O3)
+
+# Set the CMAKE_PREFIX_PATH to point to the correct install directory
+set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../install")
+
+# Find the shared library package configuration
+find_package(ftPhysics REQUIRED)
+
+# Create an executable
 add_executable(
   ftGraphics
   main.cpp
@@ -111,5 +119,9 @@ add_executable(
   includes/ft_tools.h
   includes/ft_threads.h)
 
-target_link_libraries(ftGraphics imgui)
-add_dependencies(ftGraphics Shaders)
+target_link_libraries(ftGraphics imgui ftPhysics)
+add_dependencies(ftGraphics Shaders ftPhysics)
+
+# Include headers from ftPhysics for #include statements
+target_include_directories(ftGraphics
+                           PRIVATE "${CMAKE_PREFIX_PATH}/include/ftPhysics")

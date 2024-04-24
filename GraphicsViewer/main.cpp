@@ -7,7 +7,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #endif
 
-#include "include.h"
+#include "ftGraphics.h"
+#include "ft_particle.h"
 
 int main() {
   try {
