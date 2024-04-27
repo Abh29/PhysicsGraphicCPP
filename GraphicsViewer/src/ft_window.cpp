@@ -29,7 +29,7 @@ void ft::Window::initWindow() {
   glfwSetMouseButtonCallback(_window, cursorClickCallback);
   glfwSetScrollCallback(_window, scrollCallback);
   glfwSetWindowSizeCallback(_window, resizeCallback);
-  glfwSetCursorPosCallback(_window, cursorPositionCallback);
+  // glfwSetCursorPosCallback(_window, cursorPositionCallback);
 }
 
 bool ft::Window::shouldClose() { return glfwWindowShouldClose(_window); }

@@ -49,3 +49,8 @@
 #define real_cos std::cosf;
 #define real_sin std::sinf;
 #define real_exp std::exp;
+
+namespace ft {
+
+constexpr real_t SLEEP_EPSILON = 0.1f;
+};

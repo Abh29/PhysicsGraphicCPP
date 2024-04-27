@@ -1,146 +1,159 @@
 #include "../includes/ft_forceGenerator.h"
+#include <glm/fwd.hpp>
+#include <glm/geometric.hpp>
 
-void ft::ParticleForceRegistry::add(Particle::raw_ptr particle,
-                                    ParticleForceGenerator::raw_ptr generator) {
-  _registry.push_back(std::make_pair(particle, generator));
-}
-void ft::ParticleForceRegistry::remove(
-    Particle::raw_ptr particle, ParticleForceGenerator::raw_ptr generator) {
-  _registry.erase(std::remove(_registry.begin(), _registry.end(),
-                              std::make_pair(particle, generator)),
-                  _registry.end());
-}
-void ft::ParticleForceRegistry::clear() { _registry.clear(); }
-void ft::ParticleForceRegistry::updateForces(real_t duration) {
-  for (auto i = _registry.begin(); i != _registry.end(); ++i)
-    i->second->updateForce(i->first, duration);
-};
-
-/*******************************ParticleGravity******************************/
-
-ft::ParticleGravity::ParticleGravity(const glm::vec3 &gravity)
-    : _gravity(gravity){};
-
-void ft::ParticleGravity::updateForce(Particle::raw_ptr p,
-                                      const real_t duration) {
-  (void)duration;
-  if (p->getInverseMass() == 0)
-    return;
-  p->addForce(_gravity * (1 / p->getInverseMass()));
+glm::mat3 _linearInterpolate(const glm::mat3 &m1, const glm::mat3 &m2,
+                             real_t a) {
+  return (1.0f - a) * m1 + a * m2;
 }
 
-/*******************************ParticleDrag******************************/
-
-ft::ParticleDrag::ParticleDrag(const real_t k1, const real_t k2)
-    : _k1(k1), _k2(k2) {}
-
-void ft::ParticleDrag::updateForce(Particle::raw_ptr p, const real_t duration) {
-  auto force = p->getVelocity();
-  real_t coeff = glm::l2Norm(force);
-  coeff = _k1 * coeff + _k2 * coeff * coeff;
-  force = glm::normalize(force);
-  force *= -coeff;
-  p->addForce(force);
-  (void)duration;
-}
-
-/*******************************ParticleSpring******************************/
-
-ft::ParticleSpring::ParticleSpring(const Particle::pointer &other,
-                                   real_t springConst, real_t restLength)
-    : _other(other), _springConst(springConst), _restLength(restLength) {}
-
-void ft::ParticleSpring::updateForce(Particle::raw_ptr p,
-                                     const real_t duration) {
-  (void)duration;
-  glm::vec3 v = p->getPosition() - _other->getPosition();
-  real_t l = std::fabs(glm::length(v) - _restLength) * _springConst;
-  v = glm::normalize(v) * -l;
-  p->addForce(v);
-}
-
-/*******************************ParticleAnchoredSpring******************************/
-
-ft::ParticleAnchoredSpring::ParticleAnchoredSpring(const glm::vec3 &anchor,
-                                                   real_t springConst,
-                                                   real_t restLength)
-    : _anchor(anchor), _springConst(springConst), _restLength(restLength) {}
-
-void ft::ParticleAnchoredSpring::updateForce(Particle::raw_ptr p,
-                                             const real_t duration) {
-  (void)duration;
-  glm::vec3 v = p->getPosition() - _anchor;
-  real_t l = (glm::length(v) - _restLength) * _springConst;
-  v = glm::normalize(v) * l;
-  p->addForce(v);
-}
-
-/*******************************ParticleBungee******************************/
-
-ft::ParticleBungee::ParticleBungee(const Particle::pointer &other,
-                                   real_t springConst, real_t restLenght)
-    : _other(other), _springConst(springConst), _restLength(restLenght) {}
-
-void ft::ParticleBungee::updateForce(Particle::raw_ptr p,
-                                     const real_t duration) {
-  (void)duration;
-  glm::vec3 v = p->getPosition() - _other->getPosition();
-  real_t l = glm::length(v);
-  if (l <= _restLength)
-    return;
-  l = (l - _restLength) * _springConst;
-
-  v = glm::normalize(v) * l;
-  p->addForce(v);
-}
-
-/*******************************ParticleBuoyancy******************************/
-
-ft::ParticleBuoyancy::ParticleBuoyancy(real_t maxDepth, real_t volume,
-                                       real_t waterHeight, real_t liquidDensity)
-    : _maxDepth(maxDepth), _volume(volume), _waterHeight(waterHeight),
-      _liquidDensity(liquidDensity) {}
-
-void ft::ParticleBuoyancy::updateForce(Particle::raw_ptr p,
-                                       const real_t duration) {
-  (void)duration;
-  real_t depth = p->getPosition().y; // this could be z !
-  if (depth >= _waterHeight + _maxDepth)
-    return;
-
-  glm::vec3 f(0.0f);
-  if (depth <= _waterHeight - _maxDepth) {
-    f.y = _liquidDensity * _volume;
-  } else {
-    f.y = _liquidDensity * _volume * (depth - _maxDepth - _waterHeight) / 2 *
-          _maxDepth;
+void ft::ForceRegistry::updateForces(real_t duration) {
+  Registry::iterator i = registrations.begin();
+  for (; i != registrations.end(); i++) {
+    i->fg->updateForce(i->body, duration);
   }
-  p->addForce(f);
 }
 
-/*******************************ParticleFakeSpring******************************/
+void ft::ForceRegistry::add(RigidBody *body, ForceGenerator *fg) {
+  ft::ForceRegistry::ForceRegistration registration;
+  registration.body = body;
+  registration.fg = fg;
+  registrations.push_back(registration);
+}
 
-ft::ParticleFakeSpring::ParticleFakeSpring(const glm::vec3 &anchor,
-                                           real_t springConst, real_t damping)
-    : _anchor(anchor), _springConst(springConst), _damping(damping) {}
+ft::Buoyancy::Buoyancy(const glm::vec3 &cOfB, real_t maxDepth, real_t volume,
+                       real_t waterHeight,
+                       real_t liquidDensity /* = 1000.0f */) {
+  centreOfBuoyancy = cOfB;
+  ft::Buoyancy::liquidDensity = liquidDensity;
+  ft::Buoyancy::maxDepth = maxDepth;
+  ft::Buoyancy::volume = volume;
+  ft::Buoyancy::waterHeight = waterHeight;
+}
 
-void ft::ParticleFakeSpring::updateForce(Particle::raw_ptr p, real_t duration) {
-  if (p->getInverseMass() < std::numeric_limits<real_t>::epsilon())
+void ft::Buoyancy::updateForce(RigidBody *body, real_t duration) {
+  (void)duration;
+  // Calculate the submersion depth
+  glm::vec3 pointInWorld = body->getPointInWorldSpace(centreOfBuoyancy);
+  real_t depth = pointInWorld.y;
+
+  // Check if we're out of the water
+  if (depth >= waterHeight + maxDepth)
     return;
-  glm::vec3 v = p->getPosition() - _anchor;
-  real_t g = 4 * _springConst - _damping * _damping;
-  if (g < std::numeric_limits<real_t>::epsilon())
+  glm::vec3 force(0, 0, 0);
+
+  // Check if we're at maximum depth
+  if (depth <= waterHeight - maxDepth) {
+    force.y = liquidDensity * volume;
+    body->addForceAtBodyPoint(force, centreOfBuoyancy);
     return;
-  g = 0.5f * std::sqrt(g);
+  }
 
-  glm::vec3 c = v * (_damping / (2.0f * g)) + p->getVelocity() * (1.0f / g);
+  // Otherwise we are partly submerged
+  force.y =
+      liquidDensity * volume * (depth - maxDepth - waterHeight) / 2 * maxDepth;
+  body->addForceAtBodyPoint(force, centreOfBuoyancy);
+}
 
-  // Calculate the target position.
-  glm::vec3 target = v * std::cos(g * duration) + c * std::sin(g * duration);
-  target *= std::exp(-0.5f * duration * _damping);
+ft::Gravity::Gravity(const glm::vec3 &gravity) : gravity(gravity) {}
 
-  // Calculate the resulting acceleration, and therefore the force.
-  glm::vec3 accel =
-      (target - v) * (1.0f / duration * duration) - p->getVelocity() * duration;
-  p->addForce(accel * (1 / p->getInverseMass()));
+void ft::Gravity::updateForce(RigidBody *body, real_t duration) {
+  (void)duration;
+  // Check that we do not have infinite mass
+  if (!body->hasFiniteMass())
+    return;
+
+  // Apply the mass-scaled force to the body
+  body->addForce(gravity * body->getMass());
+}
+
+ft::Spring::Spring(const glm::vec3 &localConnectionPt, RigidBody *other,
+                   const glm::vec3 &otherConnectionPt, real_t springConstant,
+                   real_t restLength)
+    : connectionPoint(localConnectionPt),
+      otherConnectionPoint(otherConnectionPt), other(other),
+      springConstant(springConstant), restLength(restLength) {}
+
+void ft::Spring::updateForce(RigidBody *body, real_t duration) {
+  (void)duration;
+  // Calculate the two ends in world space
+  glm::vec3 lws = body->getPointInWorldSpace(connectionPoint);
+  glm::vec3 ows = other->getPointInWorldSpace(otherConnectionPoint);
+
+  // Calculate the vector of the spring
+  glm::vec3 force = lws - ows;
+
+  // Calculate the magnitude of the force
+  real_t magnitude = glm::length(force);
+  magnitude = std::abs(magnitude - restLength);
+  magnitude *= springConstant;
+
+  // Calculate the final force and apply it
+  force = glm::normalize(force);
+  force *= -magnitude;
+  body->addForceAtPoint(force, lws);
+}
+
+ft::Aero::Aero(const glm::mat3 &tensor, const glm::vec3 &position,
+               const glm::vec3 *windspeed) {
+  ft::Aero::tensor = tensor;
+  ft::Aero::position = position;
+  ft::Aero::windspeed = windspeed;
+}
+
+void ft::Aero::updateForce(RigidBody *body, real_t duration) {
+  ft::Aero::updateForceFromTensor(body, duration, tensor);
+}
+
+void ft::Aero::updateForceFromTensor(RigidBody *body, real_t duration,
+                                     const glm::mat3 &tensor) {
+  (void)duration;
+  // Calculate total velocity (windspeed and body's velocity).
+  glm::vec3 velocity = body->getVelocity();
+  velocity += *windspeed;
+
+  // Calculate the velocity in body coordinates
+  glm::vec3 bodyVel = body->getTransform() * glm::vec4(velocity, 0.0f);
+
+  // Calculate the force in body coordinates
+  glm::vec3 bodyForce = tensor * bodyVel;
+
+  glm::vec3 force = body->getTransform() * glm::vec4(bodyForce, 0.0f);
+
+  // Apply the force
+  body->addForceAtBodyPoint(force, position);
+}
+
+ft::AeroControl::AeroControl(const glm::mat3 &base, const glm::mat3 &min,
+                             const glm::mat3 &max, const glm::vec3 &position,
+                             const glm::vec3 *windspeed)
+    : Aero(base, position, windspeed) {
+  ft::AeroControl::minTensor = min;
+  ft::AeroControl::maxTensor = max;
+  controlSetting = 0.0f;
+}
+
+glm::mat3 ft::AeroControl::getTensor() {
+  if (controlSetting <= -1.0f)
+    return minTensor;
+  else if (controlSetting >= 1.0f)
+    return maxTensor;
+  else if (controlSetting < 0) {
+    return _linearInterpolate(minTensor, tensor, controlSetting + 1.0f);
+  } else if (controlSetting > 0) {
+    return _linearInterpolate(tensor, maxTensor, controlSetting);
+  } else
+    return tensor;
+}
+
+void ft::AeroControl::setControl(real_t value) { controlSetting = value; }
+
+void ft::AeroControl::updateForce(RigidBody *body, real_t duration) {
+  glm::mat3 tensor = getTensor();
+  ft::Aero::updateForceFromTensor(body, duration, tensor);
+}
+
+void ft::Explosion::updateForce(RigidBody *body, real_t duration) {
+  (void)body;
+  (void)duration;
 }
