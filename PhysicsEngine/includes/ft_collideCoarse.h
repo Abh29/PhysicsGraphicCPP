@@ -11,7 +11,6 @@
 #include "ft_contacts.h"
 #include <cmath>
 #include <cstddef>
-#include <vector>
 
 namespace ft {
 
