@@ -31,18 +31,14 @@ void ft::ParticleCable::setMaxLength(real_t l) { _maxLength = l; }
 uint32_t ft::ParticleCable::addContact(ParticleContact::raw_ptr contact,
                                        uint32_t limit) const {
   (void)limit;
-  // Find the length of the cable
   real_t length = currentLength();
 
-  // Check if we're over-extended
   if (length < _maxLength) {
     return 0;
   }
 
-  // Otherwise return the contact
   contact->setParticles(_particles[0], _particles[1]);
 
-  // Calculate the normal
   glm::vec3 normal =
       _particles[1]->getPosition() - _particles[0]->getPosition();
   normal = glm::normalize(normal);
@@ -58,22 +54,18 @@ uint32_t ft::ParticleCable::addContact(ParticleContact::raw_ptr contact,
 uint32_t ft::ParticleRod::addContact(ParticleContact *contact,
                                      uint32_t limit) const {
   (void)limit;
-  // Find the length of the rod
+
   real_t currentLen = currentLength();
 
-  // Check if we're over-extended
   if (currentLen == _length) {
     return 0;
   }
 
-  // Otherwise return the contact
   contact->setParticles(_particles[0], _particles[1]);
 
-  // Calculate the normal
   glm::vec3 normal = glm::normalize(_particles[1]->getPosition() -
                                     _particles[0]->getPosition());
 
-  // The contact normal depends on whether we're extending or compressing
   if (currentLen > _length) {
     contact->setContactNormal(normal);
     contact->setPenetration(currentLen - _length);
@@ -82,7 +74,6 @@ uint32_t ft::ParticleRod::addContact(ParticleContact *contact,
     contact->setPenetration(_length - currentLen);
   }
 
-  // Always use zero restitution (no bounciness)
   contact->setRestitution(0.0f);
 
   return 1;
@@ -120,18 +111,14 @@ real_t ft::ParticleCableConstraint::getRestitution() const {
 uint32_t ft::ParticleCableConstraint::addContact(ParticleContact *contact,
                                                  uint32_t limit) const {
   (void)limit;
-  // Find the length of the cable
+
   real_t length = currentLength();
 
-  // Check if we're over-extended
   if (length < _maxLength) {
     return 0;
   }
 
-  // Otherwise return the contact
   contact->setParticles(_particle, nullptr);
-
-  // Calculate the normal
 
   glm::vec3 normal = glm::normalize(_anchor - _particle->getPosition());
   contact->setContactNormal(normal);
@@ -146,21 +133,17 @@ uint32_t ft::ParticleCableConstraint::addContact(ParticleContact *contact,
 uint32_t ft::ParticleRodConstraint::addContact(ParticleContact *contact,
                                                uint32_t limit) const {
   (void)limit;
-  // Find the length of the rod
+
   real_t currentLen = currentLength();
 
-  // Check if we're over-extended
   if (currentLen == _length) {
     return 0;
   }
 
-  // Otherwise return the contact
   contact->setParticles(_particle, nullptr);
 
-  // Calculate the normal
   glm::vec3 normal = glm::normalize(_anchor - _particle->getPosition());
 
-  // The contact normal depends on whether we're extending or compressing
   if (currentLen > _length) {
     contact->setContactNormal(normal);
     contact->setPenetration(currentLen - _length);
@@ -169,7 +152,6 @@ uint32_t ft::ParticleRodConstraint::addContact(ParticleContact *contact,
     contact->setPenetration(_length - currentLen);
   }
 
-  // Always use zero restitution (no bounciness)
   contact->setRestitution(0.0f);
 
   return 1;

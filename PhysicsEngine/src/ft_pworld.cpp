@@ -8,7 +8,7 @@ ft::ParticleWorld::ParticleWorld(unsigned maxContacts, unsigned iterations)
 }
 
 void ft::ParticleWorld::startFrame() {
-  // Remove all forces from the accumulator
+
   for (auto &p : _particles)
     p->clearAccumulator();
 }
@@ -22,35 +22,28 @@ unsigned ft::ParticleWorld::generateContacts() {
     limit -= used;
     nextContact += used;
 
-    // We've run out of contacts to fill. This means we're missing
-    // contacts.
     if (limit <= 0)
       break;
   }
 
-  // Return the number of contacts used.
   return _maxContacts - limit;
 }
 
 void ft::ParticleWorld::integrate(real_t duration) {
 
   for (auto &p : _particles) {
-    // Remove all forces from the accumulator
     p->integrate(duration);
   }
 }
 
 void ft::ParticleWorld::runPhysics(real_t duration) {
-  // First apply the force generators
+
   _registry.updateForces(duration);
 
-  // Then integrate the objects
   integrate(duration);
 
-  // Generate contacts
   unsigned usedContacts = generateContacts();
 
-  // And process them
   if (usedContacts) {
     if (_calculateIterations)
       _resolver.setIterations(usedContacts * 2);

@@ -88,7 +88,7 @@ protected:
    * @see inverseMass
    */
   // Matrix3 inverseInertiaTensor;
-  glm::mat3 _inverseInertiaTensor;
+  glm::mat3 _inverseInertiaTensor = glm::mat3(1.0f);
 
   /**
    * Holds the amount of damping applied to linear
@@ -115,8 +115,10 @@ protected:
    * world space.
    */
   // Quaternion orientation;
+private:
   glm::quat _orientation;
 
+protected:
   /**
    * Holds the linear velocity of the rigid body in
    * world space.
@@ -177,7 +179,7 @@ protected:
    * @see getPointInWorldSpace
    * @see getTransform
    */
-  glm::mat4 _transformMatrix;
+  glm::mat4 _transformMatrix = glm::mat4(1.0f);
 
   /*@}*/
 
@@ -221,6 +223,47 @@ protected:
   /*@}*/
 
 public:
+  static void printMat3(const glm::mat3 &m) {
+    for (int i = 0; i < 3; ++i)
+      for (int j = 0; j < 3; ++j)
+        std::cout << m[j][i] << ", ";
+    std::cout << "\n";
+  }
+
+  static void printQuat(const glm::quat &q) {
+    std::cout << q.w << ", " << q.x << ", " << q.y << ", " << q.z << "\n";
+  }
+
+  static void printMat4(const glm::mat4 &m) {
+    for (int i = 0; i < 4; ++i)
+      for (int j = 0; j < 4; ++j)
+        std::cout << m[j][i] << ", ";
+    std::cout << "\n";
+  }
+
+  void printInfo() const {
+    //  glm::mat4 _transformMatrix;
+
+    std::cout << "inverseMass: " << _inverseMass << "\n";
+    std::cout << "linearDamping: " << _linearDamping << "\n";
+    std::cout << "angularDamping: " << _angularDamping << "\n";
+    std::cout << "motion: " << _motion << "\n";
+    std::cout << "isAwake: " << _isAwake << "\n";
+    std::cout << "canSleep: " << _canSleep << "\n";
+    std::cout << "position: " << glm::to_string(_position) << "\n";
+    std::cout << "velocity: " << glm::to_string(_velocity) << "\n";
+    std::cout << "rotation: " << glm::to_string(_rotation) << "\n"; // !
+    std::cout << "inverseInertiaTensor: ";
+    printMat3(_inverseInertiaTensor);
+    std::cout << "inverseInertiaTensorWorld: ";
+    printMat3(_inverseInertiaTensorWorld);
+    std::cout << "orientation: ";
+    printQuat(_orientation);
+    std::cout << "transformation: ";
+    printMat4(_transformMatrix);
+    std::cout << std::endl;
+  }
+
   /**
    * @name Constructor and Destructor
    *

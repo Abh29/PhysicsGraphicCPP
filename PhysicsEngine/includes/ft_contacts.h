@@ -15,6 +15,7 @@
 #define FT_CONTACTS_H
 
 #include "ft_body.h"
+#include "ft_def.h"
 
 namespace ft {
 

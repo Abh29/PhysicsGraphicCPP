@@ -4,17 +4,14 @@
 
 unsigned ft::Joint::addContact(Contact::raw_ptr contact, unsigned limit) const {
   (void)limit;
-  // Calculate the position of each connection point in world coordinates
   glm::vec3 a_pos_world = _body[0]->getPointInWorldSpace(_position[0]);
   glm::vec3 b_pos_world = _body[1]->getPointInWorldSpace(_position[1]);
 
-  // Calculate the length of the joint
   glm::vec3 a_to_b = b_pos_world - a_pos_world;
   glm::vec3 normal = glm::normalize(a_to_b);
 
   real_t length = glm::length(a_to_b);
 
-  // Check if it is violated
   if (std::abs(length) > error) {
     contact->_body[0] = _body[0];
     contact->_body[1] = _body[1];

@@ -45,17 +45,12 @@ void ft::ParticleContact::resolveVelocity(real_t duration) {
   if (!_particles[0])
     return;
 
-  // Find the velocity in the direction of the contact.
   real_t separatingVelocity = calculateSeparatingVelocity();
-  // Check if it needs to be resolved.
   if (separatingVelocity > 0) {
-    // The contact is either separating, or stationary; there’s
-    // no impulse required.
     return;
   }
-  // Calculate the new separating velocity.
+
   real_t newSepVelocity = -separatingVelocity * _restitution;
-  // Check the velocity buildup due to acceleration only.
   glm::vec3 accCausedVelocity = _particles[0]->getAcceleration();
   if (_particles[1])
     accCausedVelocity -= _particles[1]->getAcceleration();
@@ -63,35 +58,27 @@ void ft::ParticleContact::resolveVelocity(real_t duration) {
   real_t accCausedSepVelocity =
       glm::dot(accCausedVelocity, _contactNormal) * duration;
 
-  // If we’ve got a closing velocity due to aceleration buildup,
-  // remove it from the new separating velocity.
   if (accCausedSepVelocity < 0) {
     newSepVelocity += _restitution * accCausedSepVelocity;
-    // Make sure we haven’t removed more than was
-    // there to remove.
+
     if (newSepVelocity < 0)
       newSepVelocity = 0;
   }
+
   real_t deltaVelocity = newSepVelocity - separatingVelocity;
-  // We apply the change in velocity to each object in proportion to
-  // their inverse mass (i.e., those with lower inverse mass [higher
-  // actual mass] get less change in velocity).
   real_t totalInverseMass = _particles[0]->getInverseMass();
   if (_particles[1])
     totalInverseMass += _particles[1]->getInverseMass();
-  // If all particles have infinite mass, then impulses have no effect.
+
   if (totalInverseMass <= 0)
     return;
-  // Calculate the impulse to apply.
+
   real_t impulse = deltaVelocity / totalInverseMass;
-  // Find the amount of impulse per unit of inverse mass.
   glm::vec3 impulsePerIMass = impulse * _contactNormal;
-  // Apply impulses: they are applied in the direction of the contact,
-  // and are proportional to the inverse mass.
   _particles[0]->setVelocity(_particles[0]->getVelocity() +
                              impulsePerIMass * _particles[0]->getInverseMass());
+
   if (_particles[1]) {
-    // Particle 1 goes in the opposite direction.
     _particles[1]->setVelocity(_particles[1]->getVelocity() -
                                impulsePerIMass *
                                    _particles[1]->getInverseMass());
@@ -102,14 +89,19 @@ void ft::ParticleContact::resolveInterpenetration(real_t duration) {
   (void)duration;
   if (_penetration < std::numeric_limits<real_t>::epsilon() || !_particles[0])
     return;
+
   real_t totalInverse = _particles[0]->getInverseMass();
+
   if (_particles[1])
     totalInverse += _particles[1]->getInverseMass();
+
   if (totalInverse < std::numeric_limits<real_t>::epsilon())
     return;
+
   glm::vec3 movePerIMass = _contactNormal * (_penetration / totalInverse);
 
   _particleMovement[0] = movePerIMass * _particles[0]->getInverseMass();
+
   if (_particles[1]) {
     _particleMovement[1] = -movePerIMass * _particles[1]->getInverseMass();
   } else {
@@ -141,7 +133,6 @@ void ft::ParticleContactResolver::resolveContacts(
 
   _iterationsUsed = 0;
   while (_iterationsUsed < _iterations) {
-    // Find the contact with the largest closing velocity;
     real_t max = std::numeric_limits<real_t>::max();
     unsigned maxIndex = numContacts;
     for (i = 0; i < numContacts; i++) {
@@ -152,14 +143,11 @@ void ft::ParticleContactResolver::resolveContacts(
       }
     }
 
-    // Do we have anything worth resolving?
     if (maxIndex == numContacts)
       break;
 
-    // Resolve this contact
     contactArray[maxIndex].resolve(duration);
 
-    // Update the interpenetrations for all particles
     glm::vec3 *move = contactArray[maxIndex]._particleMovement;
 
     for (i = 0; i < numContacts; i++) {

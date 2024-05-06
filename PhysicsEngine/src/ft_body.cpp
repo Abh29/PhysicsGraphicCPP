@@ -8,70 +8,63 @@
 #include <glm/matrix.hpp>
 #include <limits>
 
-static inline void _checkInverseInertiaTensor(const glm::mat3 &iitWorld) {
-  (void)iitWorld;
-  // TODO: Perform a validity check in an assert.
-}
-
 static inline void _quanterionAddVector(glm::quat &q, const glm::vec3 &v,
                                         const float duration) {
-  // Convert angular velocity to a rotation quaternion
-  float angle = glm::length(v) * duration; // Total rotation angle in radians
-  glm::vec3 axis = glm::normalize(v);      // Axis of rotation
+  glm::quat t = {0.0f, v * duration};
+  t *= q;
 
-  glm::quat rotation =
-      glm::angleAxis(angle, axis); // Quaternion representing the rotation
-
-  // Update the original orientation by applying the rotation
-  q = glm::normalize(rotation * q); // Apply rotation and normalize
+  q.w += t.w * 0.5f;
+  q.x += t.x * 0.5f;
+  q.y += t.y * 0.5f;
+  q.z += t.z * 0.5f;
 }
-
-/**
- * Internal function to do an intertia tensor transform by a quaternion.
- * Note that the implementation of this function was created by an
- * automated code-generator and optimizer.
- */
 
 static inline void _transformInertiaTensor(glm::mat3 &iitWorld,
                                            const glm::quat &q,
                                            const glm::mat3 &iitBody,
                                            const glm::mat4 &rotmat) {
-
   (void)q;
-  glm::vec3 col0(rotmat[0][0], rotmat[1][0], rotmat[2][0]);
-  glm::vec3 col1(rotmat[0][1], rotmat[1][1], rotmat[2][1]);
-  glm::vec3 col2(rotmat[0][2], rotmat[1][2], rotmat[2][2]);
+  real_t t4 = rotmat[0][0] * iitBody[0][0] + rotmat[1][0] * iitBody[0][1] +
+              rotmat[2][0] * iitBody[0][2];
 
-  glm::vec3 row0(iitBody[0][0], iitBody[0][1], iitBody[0][2]);
-  glm::vec3 row1(iitBody[1][0], iitBody[1][1], iitBody[1][2]);
-  glm::vec3 row2(iitBody[2][0], iitBody[2][1], iitBody[2][2]);
+  real_t t9 = rotmat[0][0] * iitBody[1][0] + rotmat[1][0] * iitBody[1][1] +
+              rotmat[2][0] * iitBody[1][2];
 
-  glm::vec3 t4 = glm::vec3(glm::dot(col0, row0), glm::dot(col0, row1),
-                           glm::dot(col0, row2));
+  real_t t14 = rotmat[0][0] * iitBody[2][0] + rotmat[1][0] * iitBody[2][1] +
+               rotmat[2][0] * iitBody[2][2];
 
-  glm::vec3 t9 = glm::vec3(glm::dot(col1, row0), glm::dot(col1, row1),
-                           glm::dot(col1, row2));
+  real_t t28 = rotmat[0][1] * iitBody[0][0] + rotmat[1][1] * iitBody[0][1] +
+               rotmat[2][1] * iitBody[0][2];
 
-  glm::vec3 t14 = glm::vec3(glm::dot(col2, row0), glm::dot(col2, row1),
-                            glm::dot(col2, row2));
+  real_t t33 = rotmat[0][1] * iitBody[1][0] + rotmat[1][1] * iitBody[1][1] +
+               rotmat[2][1] * iitBody[1][2];
 
-  // Update the world inertia tensor with transformed data
-  iitWorld[0] = t4.x * col0 + t9.x * col1 + t14.x * col2;
-  iitWorld[1] = t4.y * col0 + t9.y * col1 + t14.y * col2;
-  iitWorld[2] = t4.z * col0 + t9.z * col1 + t14.z * col2;
+  real_t t38 = rotmat[0][1] * iitBody[2][0] + rotmat[1][1] * iitBody[2][1] +
+               rotmat[2][1] * iitBody[2][2];
+
+  real_t t52 = rotmat[0][2] * iitBody[0][0] + rotmat[1][2] * iitBody[0][1] +
+               rotmat[2][2] * iitBody[0][2];
+
+  real_t t57 = rotmat[0][2] * iitBody[1][0] + rotmat[1][2] * iitBody[1][1] +
+               rotmat[2][2] * iitBody[1][2];
+
+  real_t t62 = rotmat[0][2] * iitBody[2][0] + rotmat[1][2] * iitBody[2][1] +
+               rotmat[2][2] * iitBody[2][2];
+
+  iitWorld[0][0] = t4 * rotmat[0][0] + t9 * rotmat[1][0] + t14 * rotmat[2][0];
+  iitWorld[1][0] = t4 * rotmat[0][1] + t9 * rotmat[1][1] + t14 * rotmat[2][1];
+  iitWorld[2][0] = t4 * rotmat[0][2] + t9 * rotmat[1][2] + t14 * rotmat[2][2];
+  iitWorld[0][1] = t28 * rotmat[0][0] + t33 * rotmat[1][0] + t38 * rotmat[2][0];
+  iitWorld[1][1] = t28 * rotmat[0][1] + t33 * rotmat[1][1] + t38 * rotmat[2][1];
+  iitWorld[2][1] = t28 * rotmat[0][2] + t33 * rotmat[1][2] + t38 * rotmat[2][2];
+  iitWorld[0][2] = t52 * rotmat[0][0] + t57 * rotmat[1][0] + t62 * rotmat[2][0];
+  iitWorld[1][2] = t52 * rotmat[0][1] + t57 * rotmat[1][1] + t62 * rotmat[2][1];
+  iitWorld[2][2] = t52 * rotmat[0][2] + t57 * rotmat[1][2] + t62 * rotmat[2][2];
 }
 
-// /**
-//  * Inline function that creates a transform matrix from a
-//  * position and orientation.
-//  */
 static inline void _calculateTransformMatrix(glm::mat4 &transformMatrix,
                                              const glm::vec3 &position,
                                              const glm::quat &orientation) {
-  (void)transformMatrix;
-  (void)position;
-  (void)orientation;
-
   transformMatrix =
       glm::translate(glm::mat4(1.0f), position) * glm::mat4_cast(orientation);
 }
@@ -80,10 +73,8 @@ void ft::RigidBody::calculateDerivedData() {
 
   _orientation = glm::normalize(_orientation);
 
-  // Calculate the transform matrix for the body.
   _calculateTransformMatrix(_transformMatrix, _position, _orientation);
 
-  // Calculate the inertiaTensor in world space.
   _transformInertiaTensor(_inverseInertiaTensorWorld, _orientation,
                           _inverseInertiaTensor, _transformMatrix);
 }
@@ -92,41 +83,26 @@ void ft::RigidBody::integrate(real_t duration) {
   if (!_isAwake)
     return;
 
-  // Calculate linear acceleration from force inputs.
   _lastFrameAcceleration = _acceleration;
   _lastFrameAcceleration += (_inverseMass * _forceAccum);
 
-  // Calculate angular acceleration from torque inputs.
   glm::vec3 angularAcceleration = _inverseInertiaTensorWorld * _torqueAccum;
 
-  // Adjust velocities
-  // Update linear velocity from both acceleration and impulse.
   _velocity += (duration * _lastFrameAcceleration);
 
-  // Update angular velocity from both acceleration and impulse.
   _rotation += (duration * angularAcceleration);
 
-  // Impose drag.
   _velocity *= std::pow(_linearDamping, duration);
   _rotation *= std::pow(_angularDamping, duration);
 
-  // Adjust positions
-  // Update linear position.
   _position += (duration * _velocity);
 
-  // Update angular position.
-  // _orientation.addScaledVector(_rotation, duration);
   _quanterionAddVector(_orientation, _rotation, duration);
 
-  // Normalise the orientation, and update the matrices with the new
-  // position and orientation
   calculateDerivedData();
 
-  // Clear accumulators.
   clearAccumulators();
 
-  // Update the kinetic energy store, and possibly put the body to
-  // sleep.
   if (_canSleep) {
     real_t currentMotion =
         glm::dot(_velocity, _velocity) + glm::dot(_rotation, _rotation);
@@ -166,17 +142,10 @@ void ft::RigidBody::setInertiaTensor(const glm::mat3 &inertiaTensor) {
   (void)inertiaTensor;
 
   _inverseInertiaTensor = glm::inverse(inertiaTensor);
-
-  // TODO: implement this
-  // _inverseInertiaTensor.setInverse(inertiaTensor);
-  // _checkInverseInertiaTensor(_inverseInertiaTensor);
 }
 
 void ft::RigidBody::getInertiaTensor(glm::mat3 *inertiaTensor) const {
-  (void)inertiaTensor;
-  // TODO: implement this
   *inertiaTensor = glm::inverse(_inverseInertiaTensor);
-  // inertiaTensor->setInverse(_inverseInertiaTensor);
 }
 
 glm::mat3 ft::RigidBody::getInertiaTensor() const {
@@ -188,9 +157,6 @@ glm::mat3 ft::RigidBody::getInertiaTensor() const {
 void ft::RigidBody::getInertiaTensorWorld(glm::mat3 *inertiaTensor) const {
 
   *inertiaTensor = glm::inverse(_inverseInertiaTensorWorld);
-
-  // TODO: implement this
-  // inertiaTensor->setInverse(inverseInertiaTensorWorld);
 }
 
 glm::mat3 ft::RigidBody::getInertiaTensorWorld() const {
@@ -199,7 +165,6 @@ glm::mat3 ft::RigidBody::getInertiaTensorWorld() const {
 
 void ft::RigidBody::setInverseInertiaTensor(
     const glm::mat3 &inverseInertiaTensor) {
-  _checkInverseInertiaTensor(inverseInertiaTensor);
   RigidBody::_inverseInertiaTensor = inverseInertiaTensor;
 }
 
@@ -288,7 +253,6 @@ glm::mat4 ft::RigidBody::getTransform() const { return _transformMatrix; }
 glm::vec3 ft::RigidBody::getPointInLocalSpace(const glm::vec3 &point) const {
   (void)point;
   return glm::vec3(glm::inverse(_transformMatrix) * glm::vec4(point, 1.0f));
-  // return transformMatrix.transformInverse(point);
 }
 
 glm::vec3 ft::RigidBody::getPointInWorldSpace(const glm::vec3 &point) const {
@@ -299,7 +263,6 @@ glm::vec3
 ft::RigidBody::getDirectionInLocalSpace(const glm::vec3 &direction) const {
   (void)direction;
   return glm::vec3(glm::inverse(_transformMatrix) * glm::vec4(direction, 0.0f));
-  // return transformMatrix.transformInverseDirection(direction);
 }
 
 glm::vec3
@@ -353,7 +316,6 @@ void ft::RigidBody::setAwake(const bool awake) {
   if (awake) {
     _isAwake = true;
 
-    // Add a bit of motion to avoid it falling asleep immediately.
     _motion = ft::SLEEP_EPSILON * 2.0f;
   } else {
     _isAwake = false;
@@ -389,14 +351,12 @@ void ft::RigidBody::addForce(const glm::vec3 &force) {
 
 void ft::RigidBody::addForceAtBodyPoint(const glm::vec3 &force,
                                         const glm::vec3 &point) {
-  // Convert to coordinates relative to center of mass.
   glm::vec3 pt = getPointInWorldSpace(point);
   addForceAtPoint(force, pt);
 }
 
 void ft::RigidBody::addForceAtPoint(const glm::vec3 &force,
                                     const glm::vec3 &point) {
-  // Convert to coordinates relative to center of mass.
   glm::vec3 pt = point;
   pt -= _position;
 

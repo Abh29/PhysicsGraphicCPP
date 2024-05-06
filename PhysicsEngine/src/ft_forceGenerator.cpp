@@ -33,23 +33,20 @@ ft::Buoyancy::Buoyancy(const glm::vec3 &cOfB, real_t maxDepth, real_t volume,
 
 void ft::Buoyancy::updateForce(RigidBody *body, real_t duration) {
   (void)duration;
-  // Calculate the submersion depth
+
   glm::vec3 pointInWorld = body->getPointInWorldSpace(centreOfBuoyancy);
   real_t depth = pointInWorld.y;
 
-  // Check if we're out of the water
   if (depth >= waterHeight + maxDepth)
     return;
   glm::vec3 force(0, 0, 0);
 
-  // Check if we're at maximum depth
   if (depth <= waterHeight - maxDepth) {
     force.y = liquidDensity * volume;
     body->addForceAtBodyPoint(force, centreOfBuoyancy);
     return;
   }
 
-  // Otherwise we are partly submerged
   force.y =
       liquidDensity * volume * (depth - maxDepth - waterHeight) / 2 * maxDepth;
   body->addForceAtBodyPoint(force, centreOfBuoyancy);
@@ -59,11 +56,9 @@ ft::Gravity::Gravity(const glm::vec3 &gravity) : gravity(gravity) {}
 
 void ft::Gravity::updateForce(RigidBody *body, real_t duration) {
   (void)duration;
-  // Check that we do not have infinite mass
   if (!body->hasFiniteMass())
     return;
 
-  // Apply the mass-scaled force to the body
   body->addForce(gravity * body->getMass());
 }
 
@@ -76,19 +71,15 @@ ft::Spring::Spring(const glm::vec3 &localConnectionPt, RigidBody *other,
 
 void ft::Spring::updateForce(RigidBody *body, real_t duration) {
   (void)duration;
-  // Calculate the two ends in world space
   glm::vec3 lws = body->getPointInWorldSpace(connectionPoint);
   glm::vec3 ows = other->getPointInWorldSpace(otherConnectionPoint);
 
-  // Calculate the vector of the spring
   glm::vec3 force = lws - ows;
 
-  // Calculate the magnitude of the force
   real_t magnitude = glm::length(force);
   magnitude = std::abs(magnitude - restLength);
   magnitude *= springConstant;
 
-  // Calculate the final force and apply it
   force = glm::normalize(force);
   force *= -magnitude;
   body->addForceAtPoint(force, lws);
@@ -108,19 +99,16 @@ void ft::Aero::updateForce(RigidBody *body, real_t duration) {
 void ft::Aero::updateForceFromTensor(RigidBody *body, real_t duration,
                                      const glm::mat3 &tensor) {
   (void)duration;
-  // Calculate total velocity (windspeed and body's velocity).
+
   glm::vec3 velocity = body->getVelocity();
   velocity += *windspeed;
 
-  // Calculate the velocity in body coordinates
   glm::vec3 bodyVel = body->getTransform() * glm::vec4(velocity, 0.0f);
 
-  // Calculate the force in body coordinates
   glm::vec3 bodyForce = tensor * bodyVel;
 
   glm::vec3 force = body->getTransform() * glm::vec4(bodyForce, 0.0f);
 
-  // Apply the force
   body->addForceAtBodyPoint(force, position);
 }
 

@@ -1,15 +1,3 @@
-/**
- * @file
- *
- * This file contains the fine grained collision detection system.
- * It is used to return contacts between pairs of primitives.
- *
- * There are two groups of tests in this file. Intersection tests
- * use the fastest separating axis method to check if two objects
- * intersect, and the collision tests generate the contacts. The
- * collision tests typically use the intersection tests as an early
- * out.
- */
 #ifndef FT_COLLISION_FINE_H
 #define FT_COLLISION_FINE_H
 
@@ -27,11 +15,6 @@ class CollisionDetector;
  */
 class CollisionPrimitive {
 public:
-  /**
-   * This class exists to help the collision detector
-   * and intersection routines, so they should have
-   * access to its data.
-   */
   friend class IntersectionTests;
   friend class CollisionDetector;
 
@@ -56,24 +39,13 @@ public:
    */
   glm::vec3 getAxis(unsigned index) const {
     assert(index < 4);
-    return glm::vec3(transform[index]);
+    return transform[index];
   }
 
-  /**
-   * Returns the resultant transform of the primitive, calculated from
-   * the combined offset of the primitive and the transform
-   * (orientation + position) of the rigid body to which it is
-   * attached.
-   */
   const glm::mat4 &getTransform() const { return transform; }
 
 protected:
-  /**
-   * The resultant transform of the primitive. This is
-   * calculated by combining the offset of the primitive
-   * with the transform of the rigid body.
-   */
-  glm::mat4 transform;
+  glm::mat4 transform = glm::mat4(1.0f);
 };
 
 /**
@@ -133,18 +105,6 @@ public:
 
   static bool boxAndBox(const CollisionBox &one, const CollisionBox &two);
 
-  /**
-   * Does an intersection test on an arbitrarily aligned box and a
-   * half-space.
-   *
-   * The box is given as a transform matrix, including
-   * position, and a vector of half-sizes for the extend of the
-   * box along each local axis.
-   *
-   * The half-space is given as a direction (i.e. unit) vector and the
-   * offset of the limiting plane from the origin, along the given
-   * direction.
-   */
   static bool boxAndHalfSpace(const CollisionBox &box,
                               const CollisionPlane &plane);
 };
@@ -154,12 +114,6 @@ public:
  * in building its contact data.
  */
 struct CollisionData {
-  /**
-   * Holds the base of the collision data: the first contact
-   * in the array. This is used so that the contact pointer (below)
-   * can be incremented each time a contact is detected, while
-   * this pointer points to the first contact found.
-   */
   Contact *contactArray;
 
   /** Holds the contact array to write into. */
@@ -212,14 +166,6 @@ struct CollisionData {
   }
 };
 
-/**
- * A wrapper class that holds the fine grained collision detection
- * routines.
- *
- * Each of the functions has the same format: it takes the details
- * of two objects, and a pointer to a contact array to fill. It
- * returns the number of contacts it wrote into the array.
- */
 class CollisionDetector {
 public:
   static unsigned sphereAndHalfSpace(const CollisionSphere &sphere,
@@ -234,11 +180,6 @@ public:
                                   const CollisionSphere &two,
                                   CollisionData *data);
 
-  /**
-   * Does a collision test on a collision box and a plane representing
-   * a half-space (i.e. the normal of the plane
-   * points out of the half-space).
-   */
   static unsigned boxAndHalfSpace(const CollisionBox &box,
                                   const CollisionPlane &plane,
                                   CollisionData *data);

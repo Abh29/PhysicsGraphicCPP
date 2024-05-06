@@ -52,5 +52,5 @@
 
 namespace ft {
 
-constexpr real_t SLEEP_EPSILON = 0.1f;
+constexpr real_t SLEEP_EPSILON = 0.5f;
 };

@@ -135,11 +135,9 @@ void ft::ParticleFakeSpring::updateForce(Particle::raw_ptr p, real_t duration) {
 
   glm::vec3 c = v * (_damping / (2.0f * g)) + p->getVelocity() * (1.0f / g);
 
-  // Calculate the target position.
   glm::vec3 target = v * std::cos(g * duration) + c * std::sin(g * duration);
   target *= std::exp(-0.5f * duration * _damping);
 
-  // Calculate the resulting acceleration, and therefore the force.
   glm::vec3 accel =
       (target - v) * (1.0f / duration * duration) - p->getVelocity() * duration;
   p->addForce(accel * (1 / p->getInverseMass()));
