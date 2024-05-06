@@ -16,6 +16,41 @@ ft::Random::Random()
 
 ft::Random::Random(unsigned seed) { Random::seed(seed); }
 
+void ft::Random::seed(unsigned s) {
+  if (s == 0) {
+    s = (unsigned)clock();
+  }
+
+  for (unsigned i = 0; i < 17; i++) {
+    s = s * 2891336453 + 1;
+    buffer[i] = s;
+  }
+
+  p1 = 0;
+  p2 = 10;
+}
+
+unsigned ft::Random::rotl(unsigned n, unsigned r) {
+  return (n << r) | (n >> (32 - r));
+}
+
+unsigned ft::Random::rotr(unsigned n, unsigned r) {
+  return (n >> r) | (n << (32 - r));
+}
+
+unsigned ft::Random::randomBits() {
+  unsigned result;
+
+  result = buffer[p1] = rotl(buffer[p2], 13) + rotl(buffer[p1], 9);
+
+  if (--p1 < 0)
+    p1 = 16;
+  if (--p2 < 0)
+    p2 = 16;
+
+  return result;
+}
+
 real_t ft::Random::randomReal() { return _randomDist(_randomGenerator); }
 
 real_t ft::Random::randomReal(real_t min, real_t max) {
