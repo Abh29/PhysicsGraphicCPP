@@ -155,4 +155,5 @@ build/
 out/
 install/
 .cache/
-
+calc.sh
+demos/

@@ -2,10 +2,9 @@
 #define FT_PWORLD_H
 
 #include "ft_def.h"
-#include "ft_forceGenerator.h"
+#include "ft_pForceGenerator.h"
 #include "ft_particle.h"
 #include "ft_pcontacts.h"
-#include <cstdint>
 
 namespace ft {
 
@@ -17,6 +16,7 @@ class ParticleWorld {
 public:
   using pointer = std::shared_ptr<ParticleWorld>;
   using raw_ptr = ParticleWorld *;
+  using Partilces = std::vector<Particle::raw_ptr>;
 
   /**
    * Creates a new particle simulator that can handle up to the

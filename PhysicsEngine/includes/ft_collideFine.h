@@ -43,7 +43,7 @@ public:
   /**
    * The offset of this primitive from the given rigid body.
    */
-  glm::mat4 offset;
+  glm::mat4 offset = glm::mat4(1.0f);
 
   /**
    * Calculates the internals for the primitive.
