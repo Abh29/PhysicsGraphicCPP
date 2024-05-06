@@ -37,4 +37,5 @@
 #include "unordered_map"
 #include "vector"
 #include <GLFW/glfw3.h>
+#include <fstream>
 #include <glm/gtx/hash.hpp>

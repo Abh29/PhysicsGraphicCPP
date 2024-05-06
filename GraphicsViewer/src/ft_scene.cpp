@@ -616,6 +616,7 @@ ft::Gizmo::pointer ft::Scene::loadGizmo(const std::string &gltfPath) {
   _ftGizmo = std::make_shared<ft::Gizmo>(_ftDevice, gltfPath,
                                          _ftUniformBuffers.size());
   _ftGizmo->resetTransform();
+  _ftGizmo->unselect();
   return _ftGizmo;
 }
 

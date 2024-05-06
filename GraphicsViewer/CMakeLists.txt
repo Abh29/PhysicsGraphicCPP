@@ -78,6 +78,8 @@ add_link_options(
   -pg
   -O3)
 
+find_package(nlohmann_json REQUIRED)
+
 # Set the CMAKE_PREFIX_PATH to point to the correct install directory
 set(CMAKE_PREFIX_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../install")
 
@@ -116,10 +118,11 @@ add_executable(
   src/ft_sampler.cpp
   src/ft_texture.cpp
   src/ft_picker.cpp
+  src/ft_parser.cpp
   includes/ft_tools.h
   includes/ft_threads.h)
 
-target_link_libraries(ftGraphics imgui ftPhysics)
+target_link_libraries(ftGraphics imgui ftPhysics nlohmann_json::nlohmann_json)
 add_dependencies(ftGraphics Shaders ftPhysics)
 
 # Include headers from ftPhysics for #include statements

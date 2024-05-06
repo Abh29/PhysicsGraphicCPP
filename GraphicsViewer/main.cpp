@@ -13,6 +13,7 @@
 int main() {
   try {
     ft::Application firstApp{};
+    firstApp.setScenePath("assets/ft_scene.json");
     firstApp.run();
   } catch (const std::exception &e) {
     std::cerr << e.what() << std::endl;

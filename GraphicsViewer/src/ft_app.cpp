@@ -7,15 +7,15 @@
 
 #define SHOW_AXIS 1
 #define SHOW_PLANE 0
-#define SHOW_HELMET 1
-#define SHOW_SPONZA 1
-#define SHOW_VENUS 1
-#define SHOW_VIKINGS 1
-#define SHOW_SKYBOX 1
-#define SHOW_CAR 1
+#define SHOW_HELMET 0
+#define SHOW_SPONZA 0
+#define SHOW_VENUS 0
+#define SHOW_VIKINGS 0
+#define SHOW_SKYBOX 0
+#define SHOW_CAR 0
 #define SHOW_TERRAIN 0
-#define SHOW_ARROW 1
-#define SHOW_UNIT_BOX 1
+#define SHOW_ARROW 0
+#define SHOW_UNIT_BOX 0
 #define SHOW_GIZMO 0
 
 ft::Application::Application()
@@ -238,24 +238,27 @@ void ft::Application::initApplication() {
                                                      _ftDescriptorPool);
   _ftNormDebugRdrSys = std::make_shared<ft::NormDebugRdrSys>(
       _ftDevice, _ftRenderer, _ftDescriptorPool);
+  _ftJsonParser = std::make_shared<ft::JsonParser>(
+      _ftDevice, _ftMaterialPool, _ftThreadPool, _ftTexturedRdrSys,
+      _ft2TexturedRdrSys, _ftSkyBoxRdrSys);
 }
 
 // TODO: replace this with a scene manager, read scene from disk
 void ft::Application::createScene() {
-  CameraBuilder cameraBuilder;
+  // CameraBuilder cameraBuilder;
   Texture::pointer m;
 
   _ftScene =
       std::make_shared<Scene>(_ftDevice, _ftRenderer->getUniformBuffers());
   _ftScene->setMaterialPool(_ftMaterialPool);
-  _ftScene->setCamera(cameraBuilder.setEyePosition({5, -1, 0})
-                          .setTarget({1, -1, 0})
-                          .setUpDirection({0, 1, 0})
-                          .setFOV(120)
-                          .setZNearFar(0.5f, 1000.0f)
-                          .setAspect(_ftRenderer->getSwapChain()->getAspect())
-                          .build());
-  _ftScene->setGeneralLight({1.0f, 1.0f, 1.0f}, {0.0, 2.5f, 0.0f}, 0.2f);
+  // _ftScene->setCamera(cameraBuilder.setEyePosition({5, -1, 0})
+  //                         .setTarget({1, -1, 0})
+  //                         .setUpDirection({0, 1, 0})
+  //                         .setFOV(120)
+  //                         .setZNearFar(0.5f, 1000.0f)
+  //                         .setAspect(_ftRenderer->getSwapChain()->getAspect())
+  //                         .build());
+  // _ftScene->setGeneralLight({1.0f, 1.0f, 1.0f}, {0.0, 2.5f, 0.0f}, 0.2f);
   auto gizmo = _ftScene->loadGizmo("assets/models/gizmo.gltf");
   ft::ObjectState data{};
   (void)data;
@@ -621,4 +624,15 @@ void ft::Application::updateScene(int key) {
   }
   _ftScene->updateCameraUBO();
   _ftMousePicker->notifyUpdatedView();
+}
+
+void ft::Application::setScenePath(const std::string &path) {
+  _scenePath = path;
+
+  if (!_scenePath.empty()) {
+    _ftJsonParser->parseSceneFile(_ftScene, _scenePath,
+                                  _ftRenderer->getSwapChain()->getAspect());
+  } else {
+    std::cout << "scene file empty!" << std::endl;
+  }
 }

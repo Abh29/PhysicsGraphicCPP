@@ -8,6 +8,7 @@
 #include "ft_event.h"
 #include "ft_gui.h"
 #include "ft_instance.h"
+#include "ft_parser.h"
 #include "ft_physicalDevice.h"
 #include "ft_picker.h"
 #include "ft_renderer.h"
@@ -29,6 +30,7 @@ public:
   ~Application();
 
   void run();
+  void setScenePath(const std::string &path);
 
 private:
   void initEventListener();
@@ -60,12 +62,14 @@ private:
   NormDebugRdrSys::pointer _ftNormDebugRdrSys;
   MousePicker::pointer _ftMousePicker;
   ThreadPool::pointer _ftThreadPool;
+  ft::JsonParser::pointer _ftJsonParser;
 
   DescriptorPool::pointer _ftDescriptorPool;
   std::vector<DescriptorSet::pointer> _ftDescriptorSets;
   TexturePool::pointer _ftMaterialPool;
   int _topology = 0;
   uint32_t _currentFrame = 0;
+  std::string _scenePath;
 };
 
 } // namespace ft
