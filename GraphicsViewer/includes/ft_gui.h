@@ -2,6 +2,7 @@
 #define FTGRAPHICS_FT_GUI_H
 
 #include "ft_command.h"
+#include "ft_defines.h"
 #include "ft_device.h"
 #include "ft_headers.h"
 #include "ft_instance.h"
@@ -20,19 +21,27 @@ public:
 
   Gui(Instance::pointer instance, PhysicalDevice::pointer physicalDevice,
       Device::pointer device, Window::pointer window,
-      RenderPass::pointer renderPass, uint32_t imageCount);
+      RenderPass::pointer renderPass, uint32_t imageCount,
+      GlobalState &globalState);
+
   ~Gui();
 
   void newFrame();
   void showDemo();
   void showGUI(uint32_t flags = 0, bool *p_open = nullptr);
   void render(CommandBuffer::pointer commandBuffer);
+  bool isGuiHovered() const;
+  bool isMouseCaptured() const;
+  bool isKeyCaptured() const;
 
-private:
+protected:
   void showMetrics(bool *p_open);
   void showMainMenue();
   void showTitleBar();
   void showExampleMenuFile();
+  void showInsertMenueFile();
+  void showToolsMenueFile();
+  void showEditMenueFile();
 
   Instance::pointer _ftInstance;
   PhysicalDevice::pointer _ftPhysicalDevice;
@@ -40,6 +49,7 @@ private:
   Window::pointer _ftWindow;
   RenderPass::pointer _ftRenderPass;
   VkDescriptorPool _descriptorPool;
+  GlobalState &_ftGlobalState;
 
   // flags
   bool show_app_metrics = false;

@@ -359,19 +359,26 @@ void ft::Scene::drawNormals(const ft::CommandBuffer::pointer &commandBuffer,
 // load
 
 ft::Model::pointer ft::Scene::addModelFromObj(const std::string &objectPath,
-                                              ft::ObjectState data) {
-  Model::pointer model =
-      std::make_shared<Model>(_ftDevice, objectPath, _ftUniformBuffers.size());
+                                              const ft::ObjectState &data) {
+  Model::pointer model = std::make_shared<Model>(
+      _ftDevice, objectPath, _ftUniformBuffers.size(), data.loadOptions);
   model->setState(data);
   model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
   _models.push_back(model);
+  SceneNode n;
+  n._inputFile = objectPath;
+  n._models.push_back(model);
+  n._type = SceneNodeType::OBJ_SIMPLE;
+  if ((data.loadOptions & ft::LOAD_OPTION_NO_SAVE) == 0)
+    _sceneGraph.push_back(n);
   return model;
 }
 
 // load from gltf
 
 std::vector<ft::Model::pointer>
-ft::Scene::addModelFromGltf(const std::string &gltfPath, ft::ObjectState data) {
+ft::Scene::addModelFromGltf(const std::string &gltfPath,
+                            const ft::ObjectState &data) {
 
   tinygltf::Model gltfInput;
   tinygltf::TinyGLTF gltfContext;
@@ -384,23 +391,28 @@ ft::Scene::addModelFromGltf(const std::string &gltfPath, ft::ObjectState data) {
   // load gltf scene
   tinygltf::Scene &scene = gltfInput.scenes[0];
   std::vector<Model::pointer> out;
+  SceneNode n;
+  n._inputFile = gltfPath;
+  n._type = SceneNodeType::GLTF_SIMPLE;
   for (int i : scene.nodes) {
     const tinygltf::Node node = gltfInput.nodes[i];
-    auto model = std::make_shared<Model>(_ftDevice, gltfInput, node,
-                                         _ftUniformBuffers.size());
+    auto model = std::make_shared<Model>(
+        _ftDevice, gltfInput, node, _ftUniformBuffers.size(), data.loadOptions);
     if (model->empty())
       continue;
     model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
     _models.push_back(model);
     model->setState(data);
     out.push_back(model);
+    n._models.push_back(model);
   }
+  _sceneGraph.push_back(n);
   return out;
 }
 
 std::vector<ft::Model::pointer> ft::Scene::addDoubleTexturedFromGltf(
     const std::string &gltfPath, const DescriptorPool::pointer &pool,
-    const DescriptorSetLayout::pointer &layout) {
+    const DescriptorSetLayout::pointer &layout, const ft::ObjectState &data) {
 
   tinygltf::Model gltfInput;
   tinygltf::TinyGLTF gltfContext;
@@ -461,10 +473,13 @@ std::vector<ft::Model::pointer> ft::Scene::addDoubleTexturedFromGltf(
   // load gltf scene
   tinygltf::Scene &scene = gltfInput.scenes[0];
   std::vector<ft::Model::pointer> out;
+  SceneNode n;
+  n._inputFile = gltfPath;
+  n._type = SceneNodeType::GLTF_DOUBLE_TEX;
   for (int i : scene.nodes) {
     const tinygltf::Node node = gltfInput.nodes[i];
-    Model::pointer model = std::make_shared<Model>(_ftDevice, gltfInput, node,
-                                                   _ftUniformBuffers.size());
+    Model::pointer model = std::make_shared<Model>(
+        _ftDevice, gltfInput, node, _ftUniformBuffers.size(), data.loadOptions);
     if (model->empty())
       continue;
     auto allNodes = model->getAllNodes();
@@ -477,15 +492,17 @@ std::vector<ft::Model::pointer> ft::Scene::addDoubleTexturedFromGltf(
     }
     model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
     out.push_back(model);
+    n._models.push_back(model);
     _models.push_back(model);
   }
 
+  _sceneGraph.push_back(n);
   return out;
 }
 
 std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
     const std::string &gltfPath, const DescriptorPool::pointer &pool,
-    const DescriptorSetLayout::pointer &layout) {
+    const DescriptorSetLayout::pointer &layout, const ft::ObjectState &data) {
 
   tinygltf::Model gltfInput;
   tinygltf::TinyGLTF gltfContext;
@@ -536,10 +553,13 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
   // load gltf scene
   tinygltf::Scene &scene = gltfInput.scenes[0];
   std::vector<ft::Model::pointer> out;
+  SceneNode n;
+  n._inputFile = gltfPath;
+  n._type = SceneNodeType::GLTF_SINGLE_TEX;
   for (auto i : scene.nodes) {
     const tinygltf::Node node = gltfInput.nodes[i];
-    Model::pointer model = std::make_shared<Model>(_ftDevice, gltfInput, node,
-                                                   _ftUniformBuffers.size());
+    Model::pointer model = std::make_shared<Model>(
+        _ftDevice, gltfInput, node, _ftUniformBuffers.size(), data.loadOptions);
     if (model->empty())
       continue;
     auto allNodes = model->getAllNodes();
@@ -552,13 +572,15 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
     model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
     out.push_back(model);
     _models.push_back(model);
+    n._models.push_back(model);
   }
 
+  _sceneGraph.push_back(n);
   return out;
 }
 
 ft::Model::pointer ft::Scene::addCubeBox(
-    const std::string &gltfModel, const std::string &ktxTexture,
+    const std::string &gltfModel, const std::string &ktxTexturePath,
     const DescriptorPool::pointer &pool,
     const DescriptorSetLayout::pointer &layout, const ft::ObjectState data) {
 
@@ -568,7 +590,7 @@ ft::Model::pointer ft::Scene::addCubeBox(
 
   // load a texture
   _ftCubeTexture = std::make_shared<ft::Texture>(
-      _ftDevice, ktxTexture, ft::Texture::FileType::FT_TEXTURE_KTX_CUBE);
+      _ftDevice, ktxTexturePath, ft::Texture::FileType::FT_TEXTURE_KTX_CUBE);
   _ftCubeTexture->createDescriptorSets(layout, pool);
 
   // create a material
@@ -589,11 +611,15 @@ ft::Model::pointer ft::Scene::addCubeBox(
   // load gltf scene
   tinygltf::Scene &scene = gltfInput.scenes[0];
   Model::pointer model;
+  SceneNode n;
+  n._type = SceneNodeType::SKY_BOX;
+  n._inputFile = gltfModel;
+  n._texturePath = ktxTexturePath;
   for (int i : scene.nodes) {
     const tinygltf::Node node = gltfInput.nodes[i];
     model = std::make_shared<Model>(_ftDevice, gltfInput, node,
                                     _ftUniformBuffers.size(),
-                                    ft::LOAD_OPTION_NO_AABB);
+                                    ft::LOAD_OPTION_NO_AABB | data.loadOptions);
     if (model->empty())
       continue;
     auto rootNode = model->getAllNodes()[0];
@@ -602,11 +628,13 @@ ft::Model::pointer ft::Scene::addCubeBox(
     model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
     model->setState(data);
     _models.push_back(model);
+    n._models.push_back(model);
     break;
   }
 
   std::cout << "skybox loaded" << std::endl;
-
+  _sceneGraph.push_back(n);
+  _state.hasSkyBox = true;
   return model;
 }
 
@@ -655,6 +683,8 @@ void ft::Scene::setGeneralLight(glm::vec3 color, glm::vec3 direction,
   _ubo.lightDirection = direction;
   _ubo.ambient = ambient;
 }
+
+ft::UniformBufferObject &ft::Scene::getUBO() { return _ubo; }
 
 void ft::Scene::updateCameraUBO() {
   _ubo.view = _camera->getViewMatrix();
@@ -765,15 +795,20 @@ void ft::Scene::calculateNormals() {
 }
 
 void ft::Scene::toggleNormalDebug() {
-  for (auto &m : _models)
-    if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
-      m->toggleFlags(m->getID(), ft::MODEL_HAS_NORMAL_DEBUG_BIT);
-      m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
-      std::cout << "normals "
-                << (m->hasFlag(ft::MODEL_HAS_NORMAL_DEBUG_BIT) ? "on" : "off")
-                << std::endl;
-      return;
-    }
+  // for (auto &m : _models)
+  //   if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
+  //     m->toggleFlags(m->getID(), ft::MODEL_HAS_NORMAL_DEBUG_BIT);
+  //     m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
+  //     std::cout << "normals "
+  //               << (m->hasFlag(ft::MODEL_HAS_NORMAL_DEBUG_BIT) ? "on" :
+  //               "off")
+  //               << std::endl;
+  //     return;
+  //   }
+  if (_state.lastSelect) {
+    _state.lastSelect->toggleFlags(_state.lastSelect->getID(),
+                                   ft::MODEL_HAS_NORMAL_DEBUG_BIT);
+  }
 }
 
 void ft::Scene::showSelectedInfo() const {
@@ -787,15 +822,32 @@ void ft::Scene::showSelectedInfo() const {
               << "\n";
     std::cout << "\tindices: " << _state.lastSelect->getIndices().size()
               << "\n";
+
+    std::cout << "\tnodes: " << m->getAllNodes().size() << std::endl;
+
     std::cout << "\taabb: \n"
               << "\t\tmin: " << glm::to_string(m->getAABB().first) << "\n"
               << "\t\tmax: " << glm::to_string(m->getAABB().second)
               << std::endl;
-    std::cout << "scale:\n" << glm::to_string(m->getState().scaling) << "\n";
-    std::cout << "rotation:\n"
-              << glm::to_string(m->getState().rotation) << "\n";
-    std::cout << "transition:\n"
-              << glm::to_string(m->getState().translation) << "\n";
+
+    std::cout << "\ttransform:" << "\n";
+    std::cout << "\t\tscale:\n";
+    for (uint32_t i = 0; i < 4; ++i)
+      std::cout << "\t\t " << glm::to_string(m->getState().scaling[i]) << "\n";
+
+    std::cout << "\t\trotation:\n";
+    for (uint32_t i = 0; i < 4; ++i)
+      std::cout << "\t\t " << glm::to_string(m->getState().rotation[i]) << "\n";
+
+    std::cout << "\t\ttransition:\n";
+    for (uint32_t i = 0; i < 4; ++i)
+      std::cout << "\t\t " << glm::to_string(m->getState().translation[i])
+                << "\n";
+
+    std::cout << "\tstate:\n";
+    std::cout << "\t\tbasicColor: " << glm::to_string(m->getState().color)
+              << "\n";
+    std::cout << "\t\tloadOptions: " << m->getState().loadOptions << "\n";
 
     std::cout << "model: " << glm::to_string(m->getRootModelMatrix()) << "\n";
   }
@@ -807,4 +859,10 @@ bool ft::Scene::isGlobalGizmo() const { return _state.globalGizbo; }
 
 ft::Model::raw_ptr ft::Scene::getSelectedModel() const {
   return _state.lastSelect;
+}
+
+bool ft::Scene::hasSkyBox() const { return _state.hasSkyBox; }
+
+std::vector<ft::Scene::SceneNode> &ft::Scene::getSceneGraph() {
+  return _sceneGraph;
 }

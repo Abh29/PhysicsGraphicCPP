@@ -14,7 +14,7 @@
 
 ft::Model::Model(Device::pointer device, std::string filePath,
                  uint32_t bufferCount, uint32_t options)
-    : _ftDevice(device), _modelPath(filePath) {
+    : _ftDevice(device), _modelPath(filePath), _centroid(), _oldCentroid() {
 
   _aabb.min = {std::numeric_limits<float>::max(),
                std::numeric_limits<float>::max(),
@@ -22,8 +22,11 @@ ft::Model::Model(Device::pointer device, std::string filePath,
   _aabb.max = {std::numeric_limits<float>::min(),
                std::numeric_limits<float>::min(),
                std::numeric_limits<float>::min()};
+
+  _objectState.loadOptions = options;
   loadModel(options);
   _oldCentroid = _centroid;
+
   if ((options & ft::LOAD_OPTION_NO_AABB) == 0)
     createAABB();
 
@@ -32,6 +35,7 @@ ft::Model::Model(Device::pointer device, std::string filePath,
 
   _node->state.flags |= ft::MODEL_SIMPLE_BIT;
   BufferBuilder bufferBuilder;
+
   for (uint32_t i = 0; i < bufferCount; ++i) {
     _ftInstanceBuffers.push_back(
         bufferBuilder
@@ -50,7 +54,7 @@ ft::Model::Model(Device::pointer device, std::string filePath,
 ft::Model::Model(Device::pointer device, const tinygltf::Model &gltfInput,
                  const tinygltf::Node &inputNode, uint32_t bufferCount,
                  uint32_t options)
-    : _ftDevice(std::move(device)) {
+    : _ftDevice(std::move(device)), _centroid(), _oldCentroid() {
 
   _aabb.min = {std::numeric_limits<float>::max(),
                std::numeric_limits<float>::max(),
@@ -58,7 +62,9 @@ ft::Model::Model(Device::pointer device, const tinygltf::Model &gltfInput,
   _aabb.max = {std::numeric_limits<float>::min(),
                std::numeric_limits<float>::min(),
                std::numeric_limits<float>::min()};
-  loadNode(inputNode, gltfInput, nullptr);
+
+  _objectState.loadOptions = options;
+  loadNode(inputNode, gltfInput, nullptr, options);
   _oldCentroid = _centroid;
 
   if ((options & ft::LOAD_OPTION_NO_AABB) == 0)
@@ -224,12 +230,16 @@ void ft::Model::loadModel(uint32_t options) {
   std::vector<tinyobj::material_t> materials;
   std::string warn, err;
 
-  (void)options;
-
   if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err,
                         _modelPath.c_str())) {
     throw std::runtime_error("tinyobj: " + warn + err);
   }
+
+  glm::vec3 sign = {
+      (options & ft::LOAD_OPTION_INVERSE_X) ? -1.0 : 1.0,
+      (options & ft::LOAD_OPTION_INVERSE_Y) ? -1.0 : 1.0,
+      (options & ft::LOAD_OPTION_INVERSE_Z) ? -1.0 : 1.0,
+  };
 
   std::unordered_map<Vertex, uint32_t> uniqueVertices{};
 
@@ -242,6 +252,8 @@ void ft::Model::loadModel(uint32_t options) {
           attrib.vertices[3 * index.vertex_index + 1],
           attrib.vertices[3 * index.vertex_index + 2],
       };
+
+      vertex.pos *= sign;
 
       if (index.normal_index >= 0)
         vertex.normal = {
@@ -355,21 +367,32 @@ void ft::Model::loadNode(const tinygltf::Node &inputNode,
   node->parent = parent;
   node->state.id = Model::ID();
 
+  glm::vec3 sign = {
+      (options & ft::LOAD_OPTION_INVERSE_X) ? -1.0 : 1.0,
+      (options & ft::LOAD_OPTION_INVERSE_Y) ? -1.0 : 1.0,
+      (options & ft::LOAD_OPTION_INVERSE_Z) ? -1.0 : 1.0,
+  };
+
   node->state.modelMatrix = glm::mat4(1.0f);
+  // add this in another manner
+
   if (inputNode.translation.size() == 3) {
     node->state.modelMatrix =
         glm::translate(node->state.modelMatrix,
                        glm::vec3(glm::make_vec3(inputNode.translation.data())));
   }
+
   if (inputNode.rotation.size() == 4) {
     glm::quat q = glm::make_quat(inputNode.rotation.data());
     node->state.modelMatrix *= glm::mat4(q);
   }
+
   if (inputNode.scale.size() == 3) {
     node->state.modelMatrix =
         glm::scale(node->state.modelMatrix,
                    glm::vec3(glm::make_vec3(inputNode.scale.data())));
   }
+
   if (inputNode.matrix.size() == 16) {
     node->state.modelMatrix = glm::make_mat4x4(inputNode.matrix.data());
   }
@@ -437,6 +460,7 @@ void ft::Model::loadNode(const tinygltf::Node &inputNode,
       for (size_t j = 0; j < vertexCount; ++j) {
         Vertex v{};
         v.pos = glm::make_vec3(&positionBuffer[j * 3]);
+        v.pos *= sign;
         if (normalsBuffer)
           v.normal = glm::make_vec3(&normalsBuffer[j * 3]);
         if (texCoordsBuffer)
@@ -444,7 +468,9 @@ void ft::Model::loadNode(const tinygltf::Node &inputNode,
         if (tangentsBuffer)
           v.tangent = glm::make_vec4(&tangentsBuffer[j * 4]);
         v.color = glm::vec3(1.0f);
+
         _vertices.push_back(v);
+
         _centroid = _centroid + (1.0f / _vertices.size()) * (v.pos - _centroid);
         _aabb.min.x = std::min(_aabb.min.x, v.pos.x);
         _aabb.min.y = std::min(_aabb.min.y, v.pos.y);
@@ -673,10 +699,13 @@ bool ft::Model::isUpdated() const { return _node->state.updated = true; }
 // state manager
 
 void ft::Model::setState(const ft::ObjectState &data) {
+  uint32_t t = _objectState.loadOptions;
   _objectState = data;
+  _objectState.loadOptions = t;
   _node->state.modelMatrix = data.translation * data.rotation * data.scaling;
-  _node->state.baseColor = data.color;
   _centroid = _node->state.modelMatrix * glm::vec4(_oldCentroid, 1.0f);
+  for (auto &n : _allNodes)
+    n.second->state.baseColor = data.color;
 }
 
 ft::ObjectState ft::Model::getState() const { return _objectState; }
@@ -697,7 +726,7 @@ ft::Model &ft::Model::scale(const glm::vec3 &v, bool global) {
 }
 
 ft::Model &ft::Model::rotate(const glm::vec3 &v, float a, bool global) {
-  //    glm::rotate(_node->state.modelMatrix, glm::radians(a), v);
+
   if (global) {
     auto m = glm::rotate(glm::mat4(1.0f), glm::radians(a), v);
     _objectState.rotation = _objectState.rotation * m;
@@ -759,6 +788,7 @@ void ft::Model::drawNode(const CommandBuffer::pointer &commandBuffer,
   // push constants
   PushConstantObject push{node->state.updatedMatrix, node->state.baseColor,
                           node->state.id};
+
   vkCmdPushConstants(commandBuffer->getVKCommandBuffer(),
                      pipeline->getVKPipelineLayout(), stages, 0,
                      sizeof(PushConstantObject), &push);
@@ -1311,3 +1341,6 @@ void ft::BoundingBox::printInfo() const {
     std::cout << v << " ";
   std::cout << "\n";
 }
+
+std::string ft::Model::getPath() const { return _modelPath; }
+void ft::Model::setPath(const std::string &path) { _modelPath = path; }

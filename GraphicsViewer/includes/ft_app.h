@@ -3,6 +3,7 @@
 
 #include "ft_attachment.h"
 #include "ft_buffer.h"
+#include "ft_defines.h"
 #include "ft_descriptor.h"
 #include "ft_device.h"
 #include "ft_event.h"
@@ -39,6 +40,8 @@ private:
   static void printFPS();
   void updateScene(int key);
   void drawFrame();
+  void checkEventQueue();
+  void handleEven(Event::uniq_ptr e);
 
   EventListener::pointer _ftEventListener;
   Window::pointer _ftWindow;
@@ -70,6 +73,7 @@ private:
   int _topology = 0;
   uint32_t _currentFrame = 0;
   std::string _scenePath;
+  ft::GlobalState _ftGlobalState = {};
 };
 
 } // namespace ft

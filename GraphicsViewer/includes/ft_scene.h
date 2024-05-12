@@ -24,6 +24,22 @@ class Scene {
 public:
   using pointer = std::shared_ptr<Scene>;
 
+  // this is used to keep truck of the input files for saving
+  enum class SceneNodeType {
+    OBJ_SIMPLE,
+    GLTF_SIMPLE,
+    GLTF_SINGLE_TEX,
+    GLTF_DOUBLE_TEX,
+    SKY_BOX,
+  };
+
+  struct SceneNode {
+    std::string _inputFile;
+    std::vector<Model::pointer> _models;
+    SceneNodeType _type;
+    std::string _texturePath;
+  };
+
   Scene(Device::pointer device, std::vector<Buffer::pointer> ubos);
   ~Scene() = default;
 
@@ -65,17 +81,19 @@ public:
 
   // add objects to the scene
   Model::pointer addModelFromObj(const std::string &objectPath,
-                                 ft::ObjectState data);
-  std::vector<Model::pointer>
-  addDoubleTexturedFromGltf(const std::string &,
-                            const DescriptorPool::pointer &,
-                            const DescriptorSetLayout::pointer &);
-  std::vector<Model::pointer>
-  addSingleTexturedFromGltf(const std::string &,
-                            const DescriptorPool::pointer &,
-                            const DescriptorSetLayout::pointer &);
+                                 const ft::ObjectState &data);
+
+  std::vector<Model::pointer> addDoubleTexturedFromGltf(
+      const std::string &, const DescriptorPool::pointer &,
+      const DescriptorSetLayout::pointer &, const ft::ObjectState &);
+
+  std::vector<Model::pointer> addSingleTexturedFromGltf(
+      const std::string &, const DescriptorPool::pointer &,
+      const DescriptorSetLayout::pointer &, const ft::ObjectState &);
+
   std::vector<Model::pointer> addModelFromGltf(const std::string &,
-                                               const ft::ObjectState data);
+                                               const ft::ObjectState &data);
+
   uint32_t addObjectCopyToTheScene(uint32_t id, InstanceData data);
 
   Model::pointer addCubeBox(const std::string &gltfModel,
@@ -112,14 +130,18 @@ public:
   ft::Model::raw_ptr getSelectedModel() const;
   void toggleGizmo();
   bool isGlobalGizmo() const;
+  bool hasSkyBox() const;
+  UniformBufferObject &getUBO();
 
   // testing features
+  std::vector<SceneNode> &getSceneGraph();
   void calculateNormals();
 
 private:
   struct State {
-    Model::raw_ptr lastSelect;
+    Model::raw_ptr lastSelect = nullptr;
     bool globalGizbo = false;
+    bool hasSkyBox = false;
   };
 
   Device::pointer _ftDevice;
@@ -132,6 +154,7 @@ private:
   Texture::pointer _ftCubeTexture;
   Gizmo::pointer _ftGizmo;
   State _state;
+  std::vector<SceneNode> _sceneGraph;
 };
 
 } // namespace ft

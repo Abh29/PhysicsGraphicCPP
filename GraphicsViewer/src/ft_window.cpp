@@ -73,7 +73,7 @@ void ft::Window::keyCallback(GLFWwindow *window, int key, int scancode,
     glfwSetWindowShouldClose(window, true);
   } else {
     ft::KeyboardEvent kev(key, scancode, action, mods);
-    ftw->getEventListener()->fireEvent(kev);
+    ftw->getEventListener()->fireInstante(kev);
   }
 }
 
@@ -98,10 +98,10 @@ void ft::Window::cursorClickCallback(GLFWwindow *window, int button, int action,
       const std::chrono::duration<double> diff = now - then;
       if (diff.count() < 0.3) {
         ft::CursorEvent cev(button, action, mods, x, y);
-        ftw->getEventListener()->fireEvent(cev);
+        ftw->getEventListener()->fireInstante(cev);
       } else {
         ft::CursorDragReleaseEvent cdrev(button, x, y);
-        ftw->getEventListener()->fireEvent(cdrev);
+        ftw->getEventListener()->fireInstante(cdrev);
       }
     }
   }
@@ -113,13 +113,13 @@ void ft::Window::scrollCallback(GLFWwindow *window, double xoffset,
   double x, y;
   glfwGetCursorPos(window, &x, &y);
   ft::ScrollEvent sev(xoffset, yoffset, x, y);
-  ftw->getEventListener()->fireEvent(sev);
+  ftw->getEventListener()->fireInstante(sev);
 }
 
 void ft::Window::resizeCallback(GLFWwindow *window, int width, int height) {
   auto *ftw = reinterpret_cast<ft::Window *>(glfwGetWindowUserPointer(window));
   ft::ScreenResizeEvent srev(width, height);
-  ftw->getEventListener()->fireEvent(srev);
+  ftw->getEventListener()->fireInstante(srev);
 }
 
 void ft::Window::cursorPositionCallback(GLFWwindow *window, double xpos,
@@ -131,7 +131,7 @@ void ft::Window::cursorPositionCallback(GLFWwindow *window, double xpos,
     return;
 
   ft::CursorDragEvent cdev(GLFW_MOUSE_BUTTON_LEFT, xpos, ypos, info.x, info.y);
-  ftw->getEventListener()->fireEvent(cdev);
+  ftw->getEventListener()->fireInstante(cdev);
 }
 
 ft::EventListener::pointer &ft::Window::getEventListener() {

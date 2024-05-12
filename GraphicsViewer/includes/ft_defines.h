@@ -58,6 +58,11 @@ struct ObjectState {
   glm::mat4 rotation = glm::mat4(1.0f);
   glm::mat4 translation = glm::mat4(1.0f);
   glm::vec3 color = glm::vec3(1.0f);
+  uint32_t loadOptions = 0u;
+};
+
+struct GlobalState {
+  bool guiClicked = false;
 };
 
 enum class KeyActions {
@@ -220,9 +225,15 @@ constexpr uint32_t MODEL_TRIANGLE_BIT = 1u << 11;
 constexpr uint32_t MODEL_LINE_BIT = 1u << 12;
 constexpr uint32_t MODEL_POINT_BIT = 1u << 13;
 constexpr uint32_t MODEL_HAS_NORMAL_DEBUG_BIT = 1u << 14;
+constexpr uint32_t MODEL_HAS_DELETE_BIT = 1u << 15;
 
 // model load options
 constexpr uint32_t LOAD_OPTION_NO_AABB = 1u << 1;
+constexpr uint32_t LOAD_OPTION_NO_SAVE = 1u << 2;
+constexpr uint32_t LOAD_OPTION_INVERSE_X = 1u << 3;
+constexpr uint32_t LOAD_OPTION_INVERSE_Y = 1u << 4;
+constexpr uint32_t LOAD_OPTION_INVERSE_Z = 1u << 5;
+
 } // namespace ft
 
 #endif // FTGRAPHICS_FT_DEFINES_H

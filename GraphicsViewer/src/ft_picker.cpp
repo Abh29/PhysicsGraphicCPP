@@ -18,6 +18,7 @@ ft::MousePicker::~MousePicker() {
 
 uint32_t ft::MousePicker::pick(const ft::Scene::pointer &scene, uint32_t x,
                                uint32_t y) {
+  std::cout << std::boolalpha << _viewUpdated << std::endl;
   if (_viewUpdated) {
     drawIDs(scene);
     _viewUpdated = false;

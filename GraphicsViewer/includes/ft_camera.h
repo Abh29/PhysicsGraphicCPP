@@ -3,6 +3,7 @@
 
 #include "ft_defines.h"
 #include "ft_headers.h"
+#include <glm/fwd.hpp>
 
 namespace ft {
 
@@ -19,6 +20,16 @@ public:
   [[nodiscard]] const glm::mat4 &getProjMatrix() const;
   glm::mat4 &getProjMatrix();
   glm::vec3 &getEyePosition();
+  glm::vec3 &getTargetPosition();
+  glm::vec3 &getUpDirection();
+  glm::vec3 &getFrontVec();
+  glm::vec3 &getRightVec();
+  glm::vec3 &getCameraUp();
+  float getFov() const;
+  float getNearZ() const;
+  float getFarZ() const;
+  float getAspect() const;
+
   void hardSet(glm::vec3 eye, glm::vec3 target, glm::vec3 up);
   void updateAspect(float aspect);
 

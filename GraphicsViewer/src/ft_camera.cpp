@@ -23,6 +23,16 @@ const glm::mat4 &ft::Camera::getProjMatrix() const { return _projMatrix; }
 
 glm::vec3 &ft::Camera::getEyePosition() { return _eyePosition; }
 
+glm::vec3 &ft::Camera::getTargetPosition() { return _targetPosition; }
+glm::vec3 &ft::Camera::getUpDirection() { return _upDirection; }
+glm::vec3 &ft::Camera::getFrontVec() { return _frontVec; }
+glm::vec3 &ft::Camera::getRightVec() { return _rightVec; }
+glm::vec3 &ft::Camera::getCameraUp() { return _cameraUp; }
+float ft::Camera::getFov() const { return _fov; }
+float ft::Camera::getNearZ() const { return _nearZ; }
+float ft::Camera::getFarZ() const { return _farZ; }
+float ft::Camera::getAspect() const { return _aspect; }
+
 void ft::Camera::vRotate(float deg) {
   auto m = glm::rotate(glm::mat4(1.0f), glm::radians(deg), _rightVec);
   _frontVec = glm::vec3(m * glm::vec4(_frontVec, 1.0f));

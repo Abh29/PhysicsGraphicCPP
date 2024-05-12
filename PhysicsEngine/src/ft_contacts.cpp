@@ -9,7 +9,6 @@
 #include <glm/matrix.hpp>
 #include <limits>
 #include <memory.h>
-#include <ostream>
 
 static glm::mat3 _skewMatrix(const glm::vec3 &v) {
   return glm::mat3(0.0f, -v.z, v.y, v.z, 0.0f, -v.x, -v.y, v.x, 0.0f);

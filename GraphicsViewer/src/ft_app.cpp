@@ -1,8 +1,13 @@
 #include "../includes/ft_app.h"
+#include <chrono>
+#include <exception>
+#include <functional>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <ios>
 #include <memory>
+#include <thread>
 #include <vulkan/vulkan_core.h>
 
 #define SHOW_AXIS 1
@@ -44,8 +49,9 @@ void ft::Application::run() {
     _ftWindow->pollEvents();
     _ftGui->newFrame();
     _ftGui->showGUI();
-    //		_ftGui->showDemo();
+    //  _ftGui->showDemo();
     drawFrame();
+    checkEventQueue();
 #ifdef SHOW_FRAME_RATE
     printFPS();
 #endif
@@ -56,6 +62,9 @@ void ft::Application::run() {
 void ft::Application::initEventListener() {
   _ftEventListener->addCallbackForEventType(
       Event::EventType::KEYBOARD_EVENT, [&](ft::Event &ev) {
+        if (_ftGui->isKeyCaptured())
+          return;
+
         auto &kev = dynamic_cast<KeyboardEvent &>(ev);
         auto data = kev.getData();
         if (std::any_cast<int>(data[2]) ==
@@ -67,6 +76,9 @@ void ft::Application::initEventListener() {
 
   _ftEventListener->addCallbackForEventType(
       Event::EventType::MOUSE_BUTTON, [&](ft::Event &ev) {
+        if (_ftGui->isMouseCaptured())
+          return;
+
         auto &cev = dynamic_cast<CursorEvent &>(ev);
         auto data = cev.getData();
         auto x = std::any_cast<double>(data[3]);
@@ -86,6 +98,9 @@ void ft::Application::initEventListener() {
 
   _ftEventListener->addCallbackForEventType(
       Event::EventType::MOUSE_SCROLL, [&](ft::Event &ev) {
+        if (_ftGui->isGuiHovered())
+          return;
+
         auto &sev = dynamic_cast<ScrollEvent &>(ev);
         auto data = sev.getData();
         auto yOff = std::any_cast<double>(data[1]);
@@ -143,6 +158,9 @@ void ft::Application::initEventListener() {
 
   _ftEventListener->addCallbackForEventType(
       Event::EventType::MOUSE_BUTTON_DRAG, [&](ft::Event &ev) {
+        if (_ftGui->isMouseCaptured())
+          return;
+
         auto &srev = dynamic_cast<CursorDragEvent &>(ev);
         auto data = srev.getData();
         auto x = std::any_cast<double>(data[1]);
@@ -189,6 +207,126 @@ void ft::Application::initEventListener() {
         if (_ftScene->hasGizmo())
           _ftScene->getGizmo()->unselect();
       });
+
+  // gui menue events
+  // file
+  _ftEventListener->addCallbackForEventType(Event::EventType::Menue_File_NEW,
+                                            [&](ft::Event &ev) { (void)ev; });
+
+  _ftEventListener->addCallbackForEventType(Event::EventType::Menue_File_OPEN,
+                                            [&](ft::Event &ev) { (void)ev; });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_File_SAVE, [&](ft::Event &ev) {
+        (void)ev;
+        _ftJsonParser->saveSceneToFile(_ftScene, "assets/ft_scene.json");
+      });
+
+  _ftEventListener->addCallbackForEventType(Event::EventType::Menue_File_RELOAD,
+                                            [&](ft::Event &ev) { (void)ev; });
+
+  _ftEventListener->addCallbackForEventType(Event::EventType::Menue_File_SAVEAS,
+                                            [&](ft::Event &ev) { (void)ev; });
+
+  _ftEventListener->addCallbackForEventType(Event::EventType::Menue_File_QUIT,
+                                            [&](ft::Event &ev) { (void)ev; });
+
+  // insert
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Insert_MODEL, [&](ft::Event &ev) { (void)ev; });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Insert_SKYBOX, [&](ft::Event &ev) { (void)ev; });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Insert_UBOX, [&](ft::Event &ev) {
+        (void)ev;
+        ft::ObjectState data{};
+        try {
+
+          auto unit_box =
+              _ftScene->addModelFromObj("assets/models/cube.mtl.obj", data);
+          unit_box->setFlags(unit_box->getID(),
+                             ft::MODEL_SELECTABLE_BIT | ft::MODEL_SIMPLE_BIT);
+        } catch (std::exception &e) {
+          std::cerr
+              << "cant load model, make sure it exists in the assets folder !"
+              << std::endl;
+        }
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Insert_USPHERE, [&](ft::Event &ev) {
+        (void)ev;
+
+        ft::ObjectState data{};
+        try {
+
+          auto unit_sphere =
+              _ftScene->addModelFromObj("assets/models/sphere.mtl.obj", data);
+          unit_sphere->setFlags(unit_sphere->getID(),
+                                ft::MODEL_SIMPLE_BIT |
+                                    ft::MODEL_SELECTABLE_BIT);
+        } catch (std::exception &e) {
+          std::cerr
+              << "cant load model, make sure it exists in the assets folder !"
+              << std::endl;
+        }
+      });
+
+  // edit
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Edit_UNSELECTALL, [&](ft::Event &ev) {
+        (void)ev;
+        _ftScene->unselectAll();
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Edit_UNHIDEALL, [&](ft::Event &ev) {
+        (void)ev;
+        _ftScene->unhideAll();
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Edit_DEFAULTTOPO, [&](ft::Event &ev) {
+        (void)ev;
+        auto s = _ftScene->getSelectedModel();
+        if (s) {
+          s->unsetFlags(s->getID(), ft::MODEL_LINE_BIT | ft::MODEL_POINT_BIT);
+        }
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Edit_LINETOPO, [&](ft::Event &ev) {
+        (void)ev;
+        auto s = _ftScene->getSelectedModel();
+        if (s) {
+          s->unsetFlags(s->getID(), ft::MODEL_POINT_BIT);
+          s->setFlags(s->getID(), ft::MODEL_LINE_BIT);
+        }
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Edit_POINTTOP, [&](ft::Event &ev) {
+        (void)ev;
+        auto s = _ftScene->getSelectedModel();
+        if (s) {
+          s->unsetFlags(s->getID(), ft::MODEL_LINE_BIT);
+          s->setFlags(s->getID(), ft::MODEL_POINT_BIT);
+        }
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Edit_RECALCNORM, [&](ft::Event &ev) {
+        (void)ev;
+        _ftScene->calculateNormals();
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Edit_SHOWNORM, [&](ft::Event &ev) {
+        (void)ev;
+        _ftScene->toggleNormalDebug();
+      });
 }
 
 void ft::Application::initApplication() {
@@ -211,7 +349,7 @@ void ft::Application::initApplication() {
                                                _ftPhysicalDevice, _ftDevice);
   _ftGui = std::make_shared<Gui>(_ftInstance, _ftPhysicalDevice, _ftDevice,
                                  _ftWindow, _ftRenderer->getRenderPass(),
-                                 MAX_FRAMES_IN_FLIGHT);
+                                 MAX_FRAMES_IN_FLIGHT, _ftGlobalState);
   _ftMaterialPool = std::make_shared<ft::TexturePool>(_ftDevice);
   _ftDescriptorPool = std::make_shared<ft::DescriptorPool>(_ftDevice);
   _ftSimpleRdrSys = std::make_shared<ft::SimpleRdrSys>(_ftDevice, _ftRenderer,
@@ -270,6 +408,7 @@ void ft::Application::createScene() {
   // Z
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.f, 0.0f, 0.9f};
+  data.loadOptions = LOAD_OPTION_NO_SAVE;
   _ftScene->addModelFromObj("assets/models/axis.obj", data);
 
   // Y
@@ -285,7 +424,7 @@ void ft::Application::createScene() {
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.9f, 0.0f, 0.0f};
   _ftScene->addModelFromObj("assets/models/axis.obj", data);
-
+  data.loadOptions = 0;
 #endif
 #if SHOW_PLANE
   // plane
@@ -409,91 +548,6 @@ void ft::Application::createScene() {
   h[0]->setFlags(h[0]->getID(),
                  ft::MODEL_SIMPLE_BIT | ft::MODEL_SELECTABLE_BIT);
 #endif
-
-  //    m =
-  //    _ftTexturePool->createTexture("textures/car.png",
-  //    _ftRenderer->getSampler(),
-  //                                       _ftTexturedRdrSys->getDescriptorPool(),
-  //                                       _ftTexturedRdrSys->getDescriptorSetLayout(),
-  //                                       Texture::FileType::FT_TEXTURE_UNDEFINED);
-  //    _ftScene->addTextureToObject(id, m);
-
-  //    data.model = glm::mat4(1.0f);
-  //	data.color = {0.9f, 0.9f, 0.9f};
-  //	data.normalMatrix = glm::mat4(1.0f);
-  //	data.model = glm::scale(data.model, {2,
-  // 2, 2}); 	data.model =
-  // glm::rotate(data.model, glm::radians(180.0f),
-  // {1,0,0}); 	id =
-  //_ftScene->addModelFromObj("models/big_terrain.obj",
-  // data);
-  //
-  //    auto m =
-  //    _ftTexturePool->createTexture("textures/terrain.png",
-  //    _ftRenderer->getSampler());
-  //    _ftScene->addTextureToObject(id, m);
-
-  //	data.model = glm::mat4(1.0f);
-  //	data.color = {0.9f, 0.9f, 0.9f};
-  //	data.normalMatrix = glm::mat4(1.0f);
-  ////	data.model = glm::scale(data.model,
-  ///{0.1, 0.1, 0.1});
-  //	data.model = glm::rotate(data.model,
-  // glm::radians(180.0f), {1,0,0}); 	id =
-  //_ftScene->addModelFromObj("models/mountain.obj",
-  // data);
-  //
-  //    m =
-  //    _ftTexturePool->createTexture("textures/mountain.jpg",
-  //    _ftRenderer->getSampler(),
-  //    _ftTexturedRdrSys->getDescriptorPool(),
-  //    _ftTexturedRdrSys->getDescriptorSetLayout());
-  //    _ftScene->addTextureToObject(id, m);
-
-  //	data.model =
-  // glm::rotate(glm::mat4(1.0f),
-  // glm::radians(0.0f),
-  // glm::vec3(0.0f, 0.0f, 1.0f)); 	data.model =
-  // glm::translate(data.model, glm::vec3{1.0f,
-  // -2.0f, 0.0f}); 	data.color = {0.5f,
-  // 0.95f, 0.2f}; id =
-  // _ftScene->addObjectCopyToTheScene(id, data);
-
-  //
-  //	data.model =
-  // glm::rotate(glm::mat4(1.0f),
-  // glm::radians(0.0f),
-  // glm::vec3(0.0f, 0.0f, 1.0f)); 	data.model =
-  // glm::translate(data.model,
-  // glm::vec3{0.0f, 3.0f, 0.0f}); 	data.color =
-  // {0.7f, 0.2f, 0.4f}; id =
-  // _ftScene->addObjectCopyToTheScene(id, data);
-  //
-  //	id =
-  //_ftScene->addModelFromObj("models/smooth_vase.obj",
-  //{
-  // glm::rotate(glm::mat4(1.0f),
-  // glm::radians(90.0f),
-  // glm::vec3(0.0f, 0.0f, 1.0f)),
-  // glm::mat4(1.0f), {0.95f, 0.2f, 0.0f}
-  //	});
-
-  //	data.model = glm::mat4(1.0f);
-  //	data.color = {0.95f, 0.2f, 0.0f};
-  //	data.normalMatrix = glm::mat4(1.0f);
-  //	id =
-  //_ftScene->addModelFromObj("models/sphere.mtl.obj",
-  // data);
-  //
-  //	data.model =
-  // glm::rotate(glm::mat4(1.0f),
-  // glm::radians(0.0f),
-  // glm::vec3(0.0f, 0.0f, 1.0f)); 	data.model =
-  // glm::translate(data.model, glm::vec3{1.0f,
-  // -2.0f, 0.0f}); 	data.color = {0.5f,
-  // 0.95f, 0.2f}; id =
-  // _ftScene->addObjectCopyToTheScene(id, data);
-
   (void)id;
 }
 
@@ -634,5 +688,16 @@ void ft::Application::setScenePath(const std::string &path) {
                                   _ftRenderer->getSwapChain()->getAspect());
   } else {
     std::cout << "scene file empty!" << std::endl;
+  }
+}
+
+// todo! reimplement for multi-threading
+void ft::Application::checkEventQueue() {
+  while (!_ftEventListener->isQueueEmpty()) {
+    auto ev = _ftEventListener->popEvent();
+    _ftThreadPool->addTask([&, e = ev.release()]() mutable {
+      _ftEventListener->fireInstante(*e);
+      delete e;
+    });
   }
 }

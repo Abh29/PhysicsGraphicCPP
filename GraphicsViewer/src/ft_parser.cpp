@@ -1,8 +1,13 @@
 #include "../includes/ft_parser.h"
 #include <cstdint>
+#include <fstream>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
+#include <glm/trigonometric.hpp>
+#include <nlohmann/json_fwd.hpp>
+#include <ostream>
 #include <stdexcept>
+#include <tinygltf/json.hpp>
 
 ft::Parser::Parser(const Device::pointer &device,
                    const TexturePool::pointer &mPool,
@@ -36,6 +41,8 @@ void ft::JsonParser::parseSceneFile(const ft::Scene::pointer &scene,
   file >> jsonData;
   file.close();
 
+  _loadedFile = filePath;
+
   if (jsonData.contains("camera"))
     loadCamera(scene, jsonData, aspect);
 
@@ -53,7 +60,160 @@ void ft::JsonParser::saveSceneToFile(const ft::Scene::pointer &scene,
                                      const std::string &filePath) {
   (void)scene;
   (void)filePath;
-  // TODO: implement this
+
+  if (!ft::tools::fileExists(filePath))
+    throw std::runtime_error("Could not open " + filePath +
+                             ", make sure the file exists and is writable!");
+
+  std::ofstream file(filePath);
+  if (!file) {
+    throw std::runtime_error(
+        "Could not open " + filePath +
+        " for reading, make sure the file exists and is writable!");
+  }
+
+  nlohmann::json jsonData = _ignored;
+
+  auto cam = scene->getCamera();
+  auto eye = cam->getEyePosition();
+  auto tar = cam->getTargetPosition();
+  auto up = cam->getUpDirection();
+
+  jsonData["camera"]["eyePosition"] = {eye.x, eye.y, eye.z};
+  jsonData["camera"]["target"] = {tar.x, tar.y, tar.z};
+  jsonData["camera"]["upDirection"] = {up.x, up.y, up.z};
+  jsonData["camera"]["fov"] = cam->getFov();
+  jsonData["camera"]["near"] = cam->getNearZ();
+  jsonData["camera"]["far"] = cam->getFarZ();
+
+  auto lc = scene->getUBO().lightColor;
+  auto ld = scene->getUBO().lightDirection;
+
+  jsonData["light"]["color"] = {lc.r, lc.g, lc.b};
+  jsonData["light"]["direction"] = {ld.x, ld.y, ld.z};
+  jsonData["light"]["ambient"] = scene->getUBO().ambient;
+
+  auto &g = scene->getSceneGraph();
+
+  if (scene->hasSkyBox()) {
+    Scene::SceneNode sn;
+    for (auto &n : g) {
+      if (n._type == Scene::SceneNodeType::SKY_BOX) {
+        sn = n;
+        break;
+      }
+    }
+
+    jsonData["skyBox"]["path"] = sn._inputFile;
+    jsonData["skyBox"]["texture"] = sn._texturePath;
+    jsonData["skyBox"]["ignore"] = false;
+    auto &state = sn._models[0]->getState();
+    jsonData["skyBox"]["basicColor"] = {state.color.r, state.color.g,
+                                        state.color.b};
+    auto m = sn._models[0]->getState().scaling;
+    jsonData["skyBox"]["scaling"] = {m[0][0], m[1][1], m[2][2]};
+  }
+
+  nlohmann::json jmodels;
+  if (_ignored.contains("models")) {
+    jsonData["models"] = _ignored["models"];
+  }
+
+  for (auto &n : g) {
+    nlohmann::json model;
+
+    switch (n._type) {
+    case ft::Scene::SceneNodeType::OBJ_SIMPLE:
+      model["type"] = "obj";
+      break;
+    case ft::Scene::SceneNodeType::GLTF_SIMPLE:
+    case ft::Scene::SceneNodeType::GLTF_SINGLE_TEX:
+    case ft::Scene::SceneNodeType::GLTF_DOUBLE_TEX:
+      model["type"] = "gltf";
+      break;
+    default:
+      continue;
+    };
+
+    model["name"] = n._inputFile.substr(n._inputFile.find_last_of('/') + 1);
+    model["path"] = n._inputFile;
+    model["ignore"] = false;
+    auto color = n._models[0]->getState().color;
+    model["basicColor"] = {color.r, color.g, color.b};
+    model["loadOptions"] = n._models[0]->getState().loadOptions;
+
+    auto rot =
+        ft::tools::getAngleAxisFromRotation(n._models[0]->getState().rotation);
+    auto scl = n._models[0]->getState().scaling;
+    auto trs = n._models[0]->getState().translation;
+
+    model["transformation"]["scaling"] = {scl[0][0], scl[1][1], scl[2][2]};
+    model["transformation"]["translation"] = {trs[3][0], trs[3][1], trs[3][2]};
+    model["transformation"]["rotation"] = {
+        glm::degrees(rot.first), rot.second.x, rot.second.y, rot.second.z};
+
+    if (n._type == ft::Scene::SceneNodeType::OBJ_SIMPLE &&
+        n._models[0]->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT)) {
+      model["texturePath"] = n._models[0]
+                                 ->getAllNodes()[0]
+                                 ->mesh[0]
+                                 .material->getTexture(0)
+                                 ->getTexturePath();
+    }
+
+    model["flags"]["selectable"] =
+        n._models[0]->hasFlag(ft::MODEL_SELECTABLE_BIT);
+    model["flags"]["hidden"] = n._models[0]->hasFlag(ft::MODEL_HIDDEN_BIT);
+    model["flags"]["simple"] = n._models[0]->hasFlag(ft::MODEL_SIMPLE_BIT);
+    model["flags"]["hasTexture"] =
+        n._models[0]->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT);
+    model["flags"]["hasNormalTexture"] =
+        n._models[0]->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT);
+    model["flags"]["hasNormalDebug"] =
+        n._models[0]->hasFlag(ft::MODEL_HAS_NORMAL_DEBUG_BIT);
+    model["flags"]["hasLineTopology"] =
+        n._models[0]->hasFlag(ft::MODEL_LINE_BIT);
+    model["flags"]["hasPointTopology"] =
+        n._models[0]->hasFlag(ft::MODEL_POINT_BIT);
+
+    for (uint32_t i = 1; i < n._models.size(); ++i) {
+      nlohmann::json submodel;
+      auto &sm = n._models[i];
+      auto &ms = sm->getState().scaling;
+      auto &mt = sm->getState().translation;
+      auto mr = ft::tools::getAngleAxisFromRotation(sm->getState().rotation);
+
+      submodel["index"] = i;
+      submodel["transformation"]["scaling"] = {ms[0][0], ms[1][1], ms[2][2]};
+      submodel["transformation"]["translation"] = {mt[3][0], mt[3][1],
+                                                   mt[3][2]};
+      submodel["transformation"]["rotation"] = {mr.first, mr.second.x,
+                                                mr.second.y, mr.second.z};
+
+      auto mc = sm->getState().color;
+      submodel["basicColor"] = {mc.r, mc.g, mc.b};
+      submodel["loadOptions"] = sm->getState().loadOptions;
+
+      submodel["flags"]["selectable"] = sm->hasFlag(ft::MODEL_SELECTABLE_BIT);
+      submodel["flags"]["hidden"] = sm->hasFlag(ft::MODEL_HIDDEN_BIT);
+      submodel["flags"]["simple"] = sm->hasFlag(ft::MODEL_SIMPLE_BIT);
+      submodel["flags"]["hasTexture"] =
+          sm->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT);
+      submodel["flags"]["hasNormalTexture"] =
+          sm->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT);
+      submodel["flags"]["hasNormalDebug"] =
+          sm->hasFlag(ft::MODEL_HAS_NORMAL_DEBUG_BIT);
+      submodel["flags"]["hasLineTopology"] = sm->hasFlag(ft::MODEL_LINE_BIT);
+      submodel["flags"]["hasPointTopology"] = sm->hasFlag(ft::MODEL_POINT_BIT);
+
+      model["subModels"].push_back(submodel);
+    }
+
+    jsonData["models"].push_back(model);
+  }
+
+  file << jsonData.dump(4);
+  file.close();
 }
 
 void ft::JsonParser::loadCamera(const Scene::pointer &scene,
@@ -107,10 +267,16 @@ void ft::JsonParser::loadSkyBox(const Scene::pointer &scene,
                                 nlohmann::json &data) {
   (void)scene;
   (void)data;
-  std::cout << "loading skyBox" << std::endl;
 
   auto sky = data["skyBox"];
   ft::ObjectState s{};
+
+  if (sky.contains("ignore") && (bool)sky["ignore"]) {
+    _ignored["skyBox"] = sky;
+    return;
+  }
+
+  std::cout << "loading skyBox" << std::endl;
 
   if (!sky.contains("path") || !sky.contains("texture"))
     throw std::runtime_error("a skybox must have a model path and texture !");
@@ -129,6 +295,69 @@ void ft::JsonParser::loadSkyBox(const Scene::pointer &scene,
                     _ftSkyBoxRdrSys->getDescriptorPool(),
                     _ftSkyBoxRdrSys->getDescriptorSetLayout(), s);
 }
+
+static uint32_t getFlagsFromJsonSnippet(const nlohmann::json &snip) {
+  uint32_t flags = 0;
+
+  if (snip.contains("flags")) {
+    auto fg = snip["flags"];
+
+    if (fg.contains("selectable") && (bool)fg["selectable"])
+      flags |= ft::MODEL_SELECTABLE_BIT;
+
+    if (fg.contains("hidden") && (bool)fg["hidden"])
+      flags |= ft::MODEL_HIDDEN_BIT;
+
+    if (fg.contains("simple") && (bool)fg["simple"])
+      flags |= ft::MODEL_SIMPLE_BIT;
+
+    if (fg.contains("hasTexture") && (bool)fg["hasTexture"])
+      flags |= ft::MODEL_HAS_COLOR_TEXTURE_BIT;
+
+    if (fg.contains("hasNormalTexture") && (bool)fg["hasNormalTexture"])
+      flags |= ft::MODEL_HAS_NORMAL_TEXTURE_BIT;
+
+    if (fg.contains("hasPointTopology") && (bool)fg["hasPointTopology"])
+      flags |= ft::MODEL_POINT_BIT;
+
+    if (fg.contains("hasLineTopology") && (bool)fg["hasLineTopology"])
+      flags |= ft::MODEL_LINE_BIT;
+  }
+
+  return flags;
+}
+
+static void getStateFromJsonSnippet(const nlohmann::json &snip,
+                                    ft::ObjectState &state) {
+
+  if (snip.contains("transformation")) {
+    auto transform = snip["transformation"];
+
+    if (transform.contains("translation")) {
+      auto translation = snip["transformation"]["translation"];
+      state.translation = glm::translate(
+          glm::mat4(1.0f), {translation[0], translation[1], translation[2]});
+    }
+
+    if (transform.contains("rotation")) {
+      auto rotation = snip["transformation"]["rotation"];
+      state.rotation = glm::rotate(
+          glm::mat4(1.0f), glm::radians((float)rotation[0]),
+          {(float)rotation[1], (float)rotation[2], (float)rotation[3]});
+    }
+
+    if (transform.contains("scaling")) {
+      auto scaling = snip["transformation"]["scaling"];
+      state.scaling =
+          glm::scale(glm::mat4(1.0f), {scaling[0], scaling[1], scaling[2]});
+    }
+  }
+
+  if (snip.contains("basicColor"))
+    state.color = {snip["basicColor"][0], snip["basicColor"][1],
+                   snip["basicColor"][1]};
+}
+
 void ft::JsonParser::loadModels(const Scene::pointer &scene,
                                 nlohmann::json &data) {
 
@@ -136,59 +365,21 @@ void ft::JsonParser::loadModels(const Scene::pointer &scene,
     uint32_t flags = 0u;
     ft::ObjectState s{};
 
-    if (model.contains("ignore") && (bool)model["ignore"])
+    if (model.contains("ignore") && (bool)model["ignore"]) {
+      _ignored["models"].push_back(model);
       continue;
+    }
 
     std::string modelName = model["name"];
     std::cout << "loading model: " << modelName << std::endl;
     std::string modelPath = model["path"];
     std::string fileType = model["type"];
 
-    if (model.contains("transformation")) {
-      auto transform = model["transformation"];
+    if (model.contains("loadOptions"))
+      s.loadOptions = static_cast<uint32_t>(model["loadOptions"]);
 
-      if (transform.contains("translation")) {
-        auto translation = model["transformation"]["translation"];
-        s.translation = glm::translate(
-            glm::mat4(1.0f), {translation[0], translation[1], translation[2]});
-      }
-
-      if (transform.contains("rotation")) {
-        auto rotation = model["transformation"]["rotation"];
-        s.rotation =
-            glm::rotate(glm::mat4(1.0f), glm::radians((float)rotation[0]),
-                        {rotation[1], rotation[2], rotation[3]});
-      }
-
-      if (transform.contains("scaling")) {
-        auto scaling = model["transformation"]["scaling"];
-        s.scaling =
-            glm::scale(glm::mat4(1.0f), {scaling[0], scaling[1], scaling[2]});
-      }
-    }
-
-    if (model.contains("basicColor"))
-      s.color = {model["basicColor"][0], model["basicColor"][1],
-                 model["basicColor"][1]};
-
-    if (model.contains("flags")) {
-      auto fg = model["flags"];
-
-      if (fg.contains("selectable") && (bool)fg["selectable"])
-        flags |= ft::MODEL_SELECTABLE_BIT;
-
-      if (fg.contains("hidden") && (bool)fg["hidden"])
-        flags |= ft::MODEL_HIDDEN_BIT;
-
-      if (fg.contains("simple") && (bool)fg["simple"])
-        flags |= ft::MODEL_SIMPLE_BIT;
-
-      if (fg.contains("hasTexture") && (bool)fg["hasTexture"])
-        flags |= ft::MODEL_HAS_COLOR_TEXTURE_BIT;
-
-      if (fg.contains("hasNormalTexture") && (bool)fg["hasNormalTexture"])
-        flags |= ft::MODEL_HAS_NORMAL_TEXTURE_BIT;
-    }
+    getStateFromJsonSnippet(model, s);
+    flags = getFlagsFromJsonSnippet(model);
 
     if (fileType.compare("obj") == 0) {
 
@@ -215,36 +406,56 @@ void ft::JsonParser::loadModels(const Scene::pointer &scene,
       }
     } else if (fileType.compare("gltf") == 0) {
 
+      std::vector<ft::Model::pointer> m;
+
       if (flags & ft::MODEL_SIMPLE_BIT) {
-        auto m = scene->addModelFromGltf(modelPath, s);
-        for (const auto &i : m)
+        m = scene->addModelFromGltf(modelPath, s);
+        for (const auto &i : m) {
+          i->setState(s);
           i->setFlags(i->getID(), flags);
+        }
 
       } else if (flags & ft::MODEL_HAS_COLOR_TEXTURE_BIT &&
                  !(flags & ft::MODEL_HAS_NORMAL_TEXTURE_BIT)) {
-        auto m = scene->addSingleTexturedFromGltf(
+        m = scene->addSingleTexturedFromGltf(
             modelPath, _ftTexturedRdrSys->getDescriptorPool(),
-            _ftTexturedRdrSys->getDescriptorSetLayout());
+            _ftTexturedRdrSys->getDescriptorSetLayout(), s);
 
         for (const auto &i : m) {
-
-          glm::mat4 &mat = i->getRootModelMatrix();
-          mat = s.translation * s.rotation * s.scaling;
+          i->setState(s);
           i->setFlags(i->getID(), flags);
         }
 
       } else if (flags & (ft::MODEL_HAS_COLOR_TEXTURE_BIT |
                           ft::MODEL_HAS_NORMAL_TEXTURE_BIT)) {
 
-        auto m = scene->addDoubleTexturedFromGltf(
+        m = scene->addDoubleTexturedFromGltf(
             modelPath, _ft2TexturedRdrSys->getDescriptorPool(),
-            _ft2TexturedRdrSys->getDescriptorSetLayout());
+            _ft2TexturedRdrSys->getDescriptorSetLayout(), s);
 
         for (const auto &i : m) {
-
-          glm::mat4 &mat = i->getRootModelMatrix();
-          mat = s.translation * s.rotation * s.scaling;
+          i->setState(s);
           i->setFlags(i->getID(), flags);
+        }
+      }
+
+      if (model.contains("subModels")) {
+        for (auto &subM : model["subModels"]) {
+          if (subM.contains("index") &&
+              static_cast<uint32_t>(subM["index"]) < m.size()) {
+
+            uint32_t index = subM["index"];
+
+            if (subM.contains("transformation") ||
+                subM.contains("basicColor")) {
+              getStateFromJsonSnippet(subM, m[index]->getState());
+            }
+
+            if (subM.contains("flags")) {
+              auto subFlags = getFlagsFromJsonSnippet(subM);
+              m[index]->overrideFlags(m[index]->getID(), subFlags);
+            }
+          }
         }
       }
     }

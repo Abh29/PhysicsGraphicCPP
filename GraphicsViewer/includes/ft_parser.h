@@ -57,6 +57,8 @@ private:
   OneTextureRdrSys::pointer _ftTexturedRdrSys;
   TwoTextureRdrSys::pointer _ft2TexturedRdrSys;
   SkyBoxRdrSys::pointer _ftSkyBoxRdrSys;
+  std::string _loadedFile;
+  nlohmann::json _ignored;
 };
 
 } // namespace ft

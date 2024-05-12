@@ -132,6 +132,10 @@ public:
   Model &rotate(const glm::vec3 &v, float a, bool global = false);
   Model &translate(const glm::vec3 &v, bool global = false);
 
+  // getters
+  std::string getPath() const;
+  void setPath(const std::string &path);
+
 private:
   Model() = default;
   void loadModel(uint32_t options = 0);
@@ -158,7 +162,8 @@ private:
   std::string _modelPath;
   Node *_node = nullptr;
   std::map<uint32_t, Node *> _allNodes;
-  glm::vec3 _centroid = {}, _oldCentroid = {};
+  glm::vec3 _centroid;
+  glm::vec3 _oldCentroid;
   ft::ObjectState _objectState;
   AABB _aabb = {};
 };

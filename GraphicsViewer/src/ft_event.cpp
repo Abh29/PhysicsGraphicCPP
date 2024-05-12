@@ -1,4 +1,8 @@
 #include "../includes/ft_event.h"
+#include <algorithm>
+#include <memory>
+#include <mutex>
+#include <utility>
 
 std::vector<std::any> ft::Event::getData() const { return _data; }
 
@@ -33,14 +37,43 @@ ft::Event::EventType ft::KeyboardEvent::getType() const {
 /**********************************EventListener****************************/
 void ft::EventListener::addCallbackForEventType(
     Event::EventType et, std::function<void(Event &)> &&callback) {
-  _callbacks.insert(std::make_pair(et, std::move(callback)));
+  bool found = false;
+  for (auto &p : _callbacks) {
+    if (p.first == et) {
+      found = true;
+      p.second = std::move(callback);
+      break;
+    }
+  }
+  if (!found)
+    _callbacks.push_back(std::make_pair(et, std::move(callback)));
 }
 
-void ft::EventListener::fireEvent(Event &ev) const {
-  auto f = _callbacks.find(ev.getType());
-  if (f == _callbacks.end())
-    return;
-  f->second(ev);
+void ft::EventListener::fireInstante(Event &ev) const {
+  for (auto &p : _callbacks) {
+    if (p.first == ev.getType())
+      p.second(ev);
+  }
+}
+
+void ft::EventListener::pushEvent(Event::uniq_ptr ev) {
+  std::scoped_lock<std::mutex> lock(_mutex);
+  _eventsQueue.push(std::move(ev));
+}
+
+ft::Event::uniq_ptr ft::EventListener::popEvent() {
+  std::scoped_lock<std::mutex> lock(_mutex);
+  if (!_eventsQueue.empty()) {
+    auto out = std::move(_eventsQueue.front());
+    _eventsQueue.pop();
+    return out;
+  }
+  return std::make_unique<EmptyEvent>();
+}
+
+bool ft::EventListener::isQueueEmpty() const {
+  std::scoped_lock<std::mutex> lock(_mutex);
+  return _eventsQueue.empty();
 }
 
 /***********************************ScrollEvent******************************/
