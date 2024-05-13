@@ -1,0 +1,55 @@
+#ifndef INCLUDE_INCLUDES_FT_SCENEOBJECT_H_
+#define INCLUDE_INCLUDES_FT_SCENEOBJECT_H_
+
+#include "ft_component.h"
+#include "ft_headers.h"
+#include "ft_model.h"
+#include <memory>
+#include <utility>
+#include <vector>
+
+namespace ft {
+
+class Scene;
+
+class SceneObject {
+public:
+  using pointer = std::shared_ptr<SceneObject>;
+  using raw_ptr = SceneObject *;
+
+  friend class Scene;
+
+  SceneObject(const ft::Model::pointer &model) : _model(model) {}
+
+  void update(float duration) {
+    for (auto &c : _components)
+      c->update(duration);
+  };
+
+  ft::Model::pointer getModel() const { return _model; };
+
+  template <typename T> T *getComponent() {
+    for (auto &c : _components) {
+      if (typeid(*c) == typeid(T))
+        return dynamic_cast<T *>(c.get());
+    }
+
+    return nullptr;
+  };
+
+  template <typename T, typename... Args> T *addComponent(Args &&...args) {
+    auto c = std::make_shared<T>(std::forward<Args>(args)...);
+    _components.push_back(c);
+    return c.get();
+  };
+
+  std::vector<Component::pointer> &getAllComponents() { return _components; }
+
+protected:
+  ft::Model::pointer _model;
+  std::vector<Component::pointer> _components;
+};
+
+}; // namespace ft
+
+#endif // INCLUDE_INCLUDES_FT_SCENEOBJECT_H_

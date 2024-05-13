@@ -414,3 +414,7 @@ bool ft::Gui::isMouseCaptured() const {
 bool ft::Gui::isKeyCaptured() const {
   return ImGui::GetIO().WantCaptureKeyboard;
 }
+
+float ft::Gui::getFramerate() const {
+  return ImGui::GetCurrentContext()->IO.Framerate;
+}

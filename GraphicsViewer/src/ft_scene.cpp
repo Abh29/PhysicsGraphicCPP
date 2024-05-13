@@ -1,6 +1,8 @@
 #include "../includes/ft_scene.h"
 #include <cstdint>
+#include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <ktx.h>
 #include <memory>
 #include <vulkan/vulkan_core.h>
@@ -795,16 +797,7 @@ void ft::Scene::calculateNormals() {
 }
 
 void ft::Scene::toggleNormalDebug() {
-  // for (auto &m : _models)
-  //   if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
-  //     m->toggleFlags(m->getID(), ft::MODEL_HAS_NORMAL_DEBUG_BIT);
-  //     m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
-  //     std::cout << "normals "
-  //               << (m->hasFlag(ft::MODEL_HAS_NORMAL_DEBUG_BIT) ? "on" :
-  //               "off")
-  //               << std::endl;
-  //     return;
-  //   }
+
   if (_state.lastSelect) {
     _state.lastSelect->toggleFlags(_state.lastSelect->getID(),
                                    ft::MODEL_HAS_NORMAL_DEBUG_BIT);
@@ -866,3 +859,31 @@ bool ft::Scene::hasSkyBox() const { return _state.hasSkyBox; }
 std::vector<ft::Scene::SceneNode> &ft::Scene::getSceneGraph() {
   return _sceneGraph;
 }
+
+//
+// void ft::Scene::addRigidBodyToModel(const Model::pointer &model,
+//                                     const RigidBody::pointer &rigid) {
+//   _scenePhysics.push_back({model, rigid, false});
+//   model->setFlags(model->getID(), ft::MODEL_HAS_RIGID_BODY_BIT);
+// }
+//
+// // todo: this can be made concurent !
+// void ft::Scene::updateSceneObjects() {
+//   for (auto &n : _scenePhysics) {
+//     if (n._sync)
+//       continue;
+//     n.backwardTransform();
+//     // n._sync = true;
+//   }
+// }
+//
+// void ft::Scene::RigidModel::forwardTransform() {
+//   _rigid->setPosition(_model->getCentroid());
+//   _rigid->setOrientation(glm::quat_cast(_model->getState().rotation));
+// }
+//
+// void ft::Scene::RigidModel::backwardTransform() {
+//   _model->getState().translation =
+//       glm::translate(glm::mat4(1.0f), _rigid->getPosition());
+//   _model->getState().rotation = glm::mat4_cast(_rigid->getOrientation());
+// }

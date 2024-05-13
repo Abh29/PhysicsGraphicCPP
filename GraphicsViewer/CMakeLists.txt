@@ -120,7 +120,11 @@ add_executable(
   src/ft_picker.cpp
   src/ft_parser.cpp
   includes/ft_tools.h
-  includes/ft_threads.h)
+  includes/ft_threads.h
+  src/ft_physicsApp.cpp
+  src/ft_rigidObject.cpp
+  includes/ft_sceneObject.h
+  )
 
 target_link_libraries(ftGraphics imgui ftPhysics nlohmann_json::nlohmann_json)
 add_dependencies(ftGraphics Shaders ftPhysics)

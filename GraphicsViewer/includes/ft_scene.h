@@ -1,6 +1,7 @@
 #ifndef FTGRAPHICS_FT_SCENE_H
 #define FTGRAPHICS_FT_SCENE_H
 
+#include "ft_body.h"
 #include "ft_buffer.h"
 #include "ft_camera.h"
 #include "ft_command.h"
@@ -11,11 +12,13 @@
 #include "ft_model.h"
 #include "ft_pipeline.h"
 #include "ft_rendering_systems.h"
+#include "ft_sceneObject.h"
 #include "ft_swapChain.h"
 #include "ft_texture.h"
 #include "ft_tools.h"
 #include "ft_vertex.h"
 #include <cstdint>
+#include <memory>
 
 namespace ft {
 
@@ -47,6 +50,7 @@ public:
   void drawInstancedObjs(const CommandBuffer::pointer &commandBuffer,
                          const GraphicsPipeline::pointer &pipeline,
                          uint32_t index);
+
   void drawSimpleObjs(const CommandBuffer::pointer &,
                       const GraphicsPipeline::pointer &,
                       const SimpleRdrSys::pointer &, uint32_t index);
@@ -58,23 +62,30 @@ public:
   void drawTexturedObjs(const CommandBuffer::pointer &,
                         const GraphicsPipeline::pointer &,
                         const OneTextureRdrSys::pointer &, uint32_t index);
+
   void draw2TexturedObjs(const CommandBuffer::pointer &,
                          const GraphicsPipeline::pointer &,
                          const TwoTextureRdrSys::pointer &, uint32_t index);
+
   void drawSkyBox(const CommandBuffer::pointer &,
                   const GraphicsPipeline::pointer &,
                   const SkyBoxRdrSys::pointer &, uint32_t index);
+
   void drawPickObjs(const CommandBuffer::pointer &,
                     const GraphicsPipeline::pointer &, uint32_t index);
+
   void drawOulines(const CommandBuffer::pointer &,
                    const SimpleRdrSys::pointer &,
                    const OutlineRdrSys::pointer &, uint32_t index);
+
   void drawPointsTopology(const CommandBuffer::pointer &,
                           const SimpleRdrSys::pointer &,
                           const PointRdrSys::pointer &, uint32_t index);
+
   void drawLinesTopology(const CommandBuffer::pointer &,
                          const SimpleRdrSys::pointer &,
                          const LineRdrSys::pointer &, uint32_t index);
+
   void drawNormals(const CommandBuffer::pointer &,
                    const SimpleRdrSys::pointer &,
                    const NormDebugRdrSys::pointer &, uint32_t index);
@@ -105,6 +116,11 @@ public:
   ft::Gizmo::pointer loadGizmo(const std::string &gltfModel);
   ft::Gizmo::pointer getGizmo() const;
   bool hasGizmo() const;
+
+  // scene physics
+  void addRigidBodyToModel(const Model::pointer &model,
+                           const RigidBody::pointer &rigid);
+  void updateSceneObjects();
 
   // set properties of the scene
   void addMaterialToObj(uint32_t id, Material::pointer texture);

@@ -34,6 +34,8 @@ public:
   bool isMouseCaptured() const;
   bool isKeyCaptured() const;
 
+  float getFramerate() const;
+
 protected:
   void showMetrics(bool *p_open);
   void showMainMenue();

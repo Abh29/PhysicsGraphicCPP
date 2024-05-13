@@ -42,7 +42,9 @@
 #include <memory>
 #include <vector>
 
-#define real_t float
+typedef float real_t;
+
+// #define real_t float
 #define real_pow std::powf;
 #define real_sqrt std::sqrt;
 #define real_abs std::fabs;

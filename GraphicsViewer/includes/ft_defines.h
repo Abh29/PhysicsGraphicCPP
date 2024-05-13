@@ -226,6 +226,7 @@ constexpr uint32_t MODEL_LINE_BIT = 1u << 12;
 constexpr uint32_t MODEL_POINT_BIT = 1u << 13;
 constexpr uint32_t MODEL_HAS_NORMAL_DEBUG_BIT = 1u << 14;
 constexpr uint32_t MODEL_HAS_DELETE_BIT = 1u << 15;
+constexpr uint32_t MODEL_HAS_RIGID_BODY_BIT = 1u << 16;
 
 // model load options
 constexpr uint32_t LOAD_OPTION_NO_AABB = 1u << 1;

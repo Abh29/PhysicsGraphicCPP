@@ -11,6 +11,7 @@
 #include "ft_instance.h"
 #include "ft_parser.h"
 #include "ft_physicalDevice.h"
+#include "ft_physicsApp.h"
 #include "ft_picker.h"
 #include "ft_renderer.h"
 #include "ft_rendering_systems.h"
@@ -74,6 +75,8 @@ private:
   uint32_t _currentFrame = 0;
   std::string _scenePath;
   ft::GlobalState _ftGlobalState = {};
+
+  ft::SimpleRigidApplication::pointer _ftPhysicsApplication;
 };
 
 } // namespace ft

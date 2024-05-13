@@ -50,6 +50,7 @@ void ft::Application::run() {
     _ftGui->newFrame();
     _ftGui->showGUI();
     //  _ftGui->showDemo();
+    _ftPhysicsApplication->update(1.0f / _ftGui->getFramerate());
     drawFrame();
     checkEventQueue();
 #ifdef SHOW_FRAME_RATE
@@ -379,6 +380,8 @@ void ft::Application::initApplication() {
   _ftJsonParser = std::make_shared<ft::JsonParser>(
       _ftDevice, _ftMaterialPool, _ftThreadPool, _ftTexturedRdrSys,
       _ft2TexturedRdrSys, _ftSkyBoxRdrSys);
+
+  _ftPhysicsApplication = std::make_shared<ft::SimpleRigidApplication>(512);
 }
 
 // TODO: replace this with a scene manager, read scene from disk
@@ -675,7 +678,12 @@ void ft::Application::updateScene(int key) {
     std::cout << "sizeof pushconst: " << sizeof(PushConstantObject)
               << std::endl;
     _ftScene->showSelectedInfo();
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_U)) {
+    _ftPhysicsApplication->play();
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_O)) {
+    _ftPhysicsApplication->pause();
   }
+
   _ftScene->updateCameraUBO();
   _ftMousePicker->notifyUpdatedView();
 }

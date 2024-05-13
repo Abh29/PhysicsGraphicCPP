@@ -70,6 +70,7 @@ public:
   using pointer = std::shared_ptr<Model>;
   using wpointer = std::weak_ptr<Model>;
   using raw_ptr = Model *;
+
   Model(Device::pointer device, std::string filePath, uint32_t bufferCount,
         uint32_t options = 0);
 
@@ -136,7 +137,7 @@ public:
   std::string getPath() const;
   void setPath(const std::string &path);
 
-private:
+protected:
   Model() = default;
   void loadModel(uint32_t options = 0);
   void createAABB();
