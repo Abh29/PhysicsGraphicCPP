@@ -365,6 +365,11 @@ void ft::Gui::showInsertMenueFile() {
     //   _ftWindow->getEventListener()->pushEvent(std::make_unique<StandardEvent>(
     //     Event::EventType::Menue_Insert_USPHERE));
   }
+
+  if (ImGui::MenuItem("Camera")) {
+    auto e = StandardEvent(Event::EventType::Menue_Insert_Camera);
+    _ftWindow->getEventListener()->fireInstante(e);
+  }
 }
 
 void ft::Gui::showToolsMenueFile() {
@@ -407,6 +412,18 @@ void ft::Gui::showEditMenueFile() {
     _ftWindow->getEventListener()->pushEvent(
         std::make_unique<StandardEvent>(Event::EventType::Menue_Edit_SHOWNORM));
   }
+
+  ImGui::Separator();
+
+  if (ImGui::MenuItem("Next Camera")) {
+    _ftWindow->getEventListener()->pushEvent(std::make_unique<StandardEvent>(
+        Event::EventType::Menue_Edit_NEXTCAMERA));
+  }
+  if (ImGui::MenuItem("Remove Camera")) {
+    _ftWindow->getEventListener()->pushEvent(std::make_unique<StandardEvent>(
+        Event::EventType::Menue_Edit_REMOVECAMERA));
+  }
+
   // if (ImGui::MenuItem("bake transforms")) {
   // }
 }

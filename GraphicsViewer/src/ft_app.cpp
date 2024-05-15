@@ -105,7 +105,7 @@ void ft::Application::initEventListener() {
 
   _ftEventListener->addCallbackForEventType(
       Event::EventType::MOUSE_SCROLL, [&](ft::Event &ev) {
-        if (_ftGui->isGuiHovered())
+        if (_ftGui->isGuiHovered() || !_ftScene->hasCamera())
           return;
 
         auto &sev = dynamic_cast<ScrollEvent &>(ev);
@@ -184,11 +184,12 @@ void ft::Application::initEventListener() {
         auto data = srev.getData();
         auto width = std::any_cast<int>(data[0]);
         auto height = std::any_cast<int>(data[1]);
-        _ftScene->getCamera()->updateAspect((float)width / (float)height);
-        _ftScene->updateCameraUBO();
-        _ftMousePicker->updateResources(
-            _ftRenderer->getSwapChain()->getWidth(),
-            _ftRenderer->getSwapChain()->getHeight());
+
+        if (_ftScene->hasCamera()) {
+          _ftScene->getCamera()->updateAspect((float)width / (float)height);
+          _ftScene->updateCameraUBO();
+        }
+        _ftMousePicker->updateResources(width, height);
       });
 
   _ftEventListener->addCallbackForEventType(
@@ -282,7 +283,7 @@ void ft::Application::initEventListener() {
   _ftEventListener->addCallbackForEventType(
       Event::EventType::Menue_File_SAVE, [&](ft::Event &ev) {
         (void)ev;
-        _ftJsonParser->saveSceneToFile(_ftScene, "assets/ft_scene.json");
+        _ftJsonParser->saveSceneToFile(_ftScene, "misk/ft_scene.json");
       });
 
   _ftEventListener->addCallbackForEventType(
@@ -376,6 +377,28 @@ void ft::Application::initEventListener() {
         }
       });
 
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Insert_Camera, [&](ft::Event &ev) {
+        (void)ev;
+        CameraBuilder cameraBuilder;
+
+        try {
+          _ftScene->addCamera(
+              cameraBuilder.setEyePosition({5, 1, 0})
+                  .setTarget({1, 1, 0})
+                  .setUpDirection({0, -1, 0})
+                  .setFOV(120)
+                  .setZNearFar(0.5f, 1000.0f)
+                  .setAspect(_ftRenderer->getSwapChain()->getAspect())
+                  .build());
+
+        } catch (std::exception &e) {
+          std::cerr
+              << "cant load model, make sure it exists in the assets folder !"
+              << std::endl;
+        }
+      });
+
   // edit
   _ftEventListener->addCallbackForEventType(
       Event::EventType::Menue_Edit_UNSELECTALL, [&](ft::Event &ev) {
@@ -418,6 +441,7 @@ void ft::Application::initEventListener() {
         }
       });
 
+  // normals
   _ftEventListener->addCallbackForEventType(
       Event::EventType::Menue_Edit_RECALCNORM, [&](ft::Event &ev) {
         (void)ev;
@@ -428,6 +452,19 @@ void ft::Application::initEventListener() {
       Event::EventType::Menue_Edit_SHOWNORM, [&](ft::Event &ev) {
         (void)ev;
         _ftScene->toggleNormalDebug();
+      });
+
+  // camera
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Edit_NEXTCAMERA, [&](ft::Event &ev) {
+        (void)ev;
+        _ftScene->nextCamera();
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Edit_REMOVECAMERA, [&](ft::Event &ev) {
+        (void)ev;
+        _ftScene->removeCurrentCamera();
       });
 }
 
@@ -728,7 +765,7 @@ void ft::Application::updateScene(int key) {
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_LEFT)) {
     _ftScene->getCamera()->hRotate(-10.0f);
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_R)) {
-    _ftScene->getCamera()->hardSet({5, -1, 0}, {1, -1, 0}, {0, 1, 0});
+    _ftScene->getCamera()->hardSet({5, 1, 0}, {1, 1, 0}, {0, -1, 0});
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_W)) {
     _ftScene->getCamera()->forward(0.5f);
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_Q)) {
@@ -772,8 +809,12 @@ void ft::Application::updateScene(int key) {
     _ftScene->calculateNormals();
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_N)) {
     _ftScene->toggleNormalDebug();
-  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_B)) {
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_G)) {
     _ftScene->toggleGizmo();
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_V)) {
+    _ftScene->nextCamera();
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_B)) {
+    _ftScene->removeCurrentCamera();
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_I)) {
     std::cout << "info: \n";
     std::cout << "sizeof pushconst: " << sizeof(PushConstantObject)

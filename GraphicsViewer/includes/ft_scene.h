@@ -114,21 +114,26 @@ public:
                                   const DescriptorSetLayout::pointer &layout,
                                   const ft::ObjectState data);
 
+  // camera
+  void addCamera(Camera::pointer camera);
+  [[nodiscard]] Camera::pointer getCamera() const;
+  void removeCurrentCamera();
+  void nextCamera();
+  std::vector<Camera::pointer> &getAllCameras();
+  bool hasCamera() const;
+
   ft::Gizmo::pointer loadGizmo(const std::string &gltfModel);
   ft::Gizmo::pointer getGizmo() const;
   bool hasGizmo() const;
 
   // scene update
-  // todo: use concurency here!
   void updateSceneObjects(float duration, ft::ThreadPool::pointer &pool);
+  void updateCameraUBO();
 
   // set properties of the scene
   void addMaterialToObj(uint32_t id, Material::pointer texture);
   void addPointLightToTheScene(PointLightObject &pl);
-  [[nodiscard]] Camera::pointer getCamera() const;
-  void setCamera(Camera::pointer camera);
   void setGeneralLight(glm::vec3 color, glm::vec3 direction, float ambient);
-  void updateCameraUBO();
   PointLightObject *getLights();
   [[nodiscard]] std::vector<SceneObject::pointer> &getObjects();
   void setMaterialPool(TexturePool::pointer pool);
@@ -163,7 +168,8 @@ private:
   Device::pointer _ftDevice;
   std::vector<SceneObject::pointer> _objects;
   std::vector<Buffer::pointer> _ftUniformBuffers;
-  Camera::pointer _camera;
+  std::vector<Camera::pointer> _cameras;
+  uint32_t _currentCamera = -1u;
   UniformBufferObject _ubo;
   TexturePool::pointer _ftTexturePool;
   std::map<uint32_t, std::vector<Model::pointer>> _materialToModel;

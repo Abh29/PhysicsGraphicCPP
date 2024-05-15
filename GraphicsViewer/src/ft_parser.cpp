@@ -43,7 +43,7 @@ void ft::JsonParser::parseSceneFile(const ft::Scene::pointer &scene,
 
   _loadedFile = filePath;
 
-  if (jsonData.contains("camera"))
+  if (jsonData.contains("cameras"))
     loadCamera(scene, jsonData, aspect);
 
   if (jsonData.contains("light"))
@@ -74,17 +74,23 @@ void ft::JsonParser::saveSceneToFile(const ft::Scene::pointer &scene,
 
   nlohmann::json jsonData = _ignored;
 
-  auto cam = scene->getCamera();
-  auto eye = cam->getEyePosition();
-  auto tar = cam->getTargetPosition();
-  auto up = cam->getUpDirection();
+  for (auto &cam : scene->getAllCameras()) {
 
-  jsonData["camera"]["eyePosition"] = {eye.x, eye.y, eye.z};
-  jsonData["camera"]["target"] = {tar.x, tar.y, tar.z};
-  jsonData["camera"]["upDirection"] = {up.x, up.y, up.z};
-  jsonData["camera"]["fov"] = cam->getFov();
-  jsonData["camera"]["near"] = cam->getNearZ();
-  jsonData["camera"]["far"] = cam->getFarZ();
+    auto eye = cam->getEyePosition();
+    auto tar = cam->getTargetPosition();
+    auto up = cam->getUpDirection();
+
+    nlohmann::json camData;
+
+    camData["eyePosition"] = {eye.x, eye.y, eye.z};
+    camData["target"] = {tar.x, tar.y, tar.z};
+    camData["upDirection"] = {up.x, up.y, up.z};
+    camData["fov"] = cam->getFov();
+    camData["near"] = cam->getNearZ();
+    camData["far"] = cam->getFarZ();
+
+    jsonData["cameras"].push_back(camData);
+  }
 
   auto lc = scene->getUBO().lightColor;
   auto ld = scene->getUBO().lightDirection;
@@ -220,47 +226,48 @@ void ft::JsonParser::loadCamera(const Scene::pointer &scene,
                                 nlohmann::json &data, float aspect) {
   (void)scene;
   (void)data;
-  std::cout << "loading camera" << std::endl;
+  std::cout << "loading cameras" << std::endl;
 
-  auto cam = data["camera"];
+  for (auto &cam : data["cameras"]) {
 
-  CameraBuilder builder;
+    CameraBuilder builder;
 
-  if (cam.contains("eyePosition")) {
-    auto eye = cam["eyePosition"];
-    builder.setEyePosition({eye[0], eye[1], eye[2]});
-  } else {
-    builder.setEyePosition({5, -1, 0});
+    if (cam.contains("eyePosition")) {
+      auto eye = cam["eyePosition"];
+      builder.setEyePosition({eye[0], eye[1], eye[2]});
+    } else {
+      builder.setEyePosition({5, -1, 0});
+    }
+
+    if (cam.contains("target")) {
+      auto target = cam["target"];
+      builder.setTarget({target[0], target[1], target[2]});
+    } else {
+      builder.setTarget({1.0, -1.0, 0.0});
+    }
+
+    if (cam.contains("upDirection")) {
+      auto up = cam["upDirection"];
+      builder.setUpDirection({up[0], up[1], up[2]});
+    } else {
+      builder.setUpDirection({0.0, 1.0, 0.0});
+    }
+
+    if (cam.contains("fov")) {
+      builder.setFOV(cam["fov"]);
+    } else {
+      builder.setFOV(120.0f);
+    }
+
+    if (cam.contains("near") && cam.contains("far")) {
+      builder.setZNearFar(cam["near"], cam["far"]);
+    } else {
+      builder.setZNearFar(0.5f, 1000.0f);
+    }
+
+    builder.setAspect(aspect);
+    scene->addCamera(builder.build());
   }
-
-  if (cam.contains("target")) {
-    auto target = cam["target"];
-    builder.setTarget({target[0], target[1], target[2]});
-  } else {
-    builder.setTarget({1.0, -1.0, 0.0});
-  }
-
-  if (cam.contains("upDirection")) {
-    auto up = cam["upDirection"];
-    builder.setUpDirection({up[0], up[1], up[2]});
-  } else {
-    builder.setUpDirection({0.0, 1.0, 0.0});
-  }
-
-  if (cam.contains("fov")) {
-    builder.setFOV(cam["fov"]);
-  } else {
-    builder.setFOV(120.0f);
-  }
-
-  if (cam.contains("near") && cam.contains("far")) {
-    builder.setZNearFar(cam["near"], cam["far"]);
-  } else {
-    builder.setZNearFar(0.5f, 1000.0f);
-  }
-
-  builder.setAspect(aspect);
-  scene->setCamera(builder.build());
 }
 
 void ft::JsonParser::loadSkyBox(const Scene::pointer &scene,

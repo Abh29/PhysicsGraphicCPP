@@ -6,6 +6,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <ktx.h>
 #include <memory>
+#include <nlohmann/detail/value_t.hpp>
 #include <vulkan/vulkan_core.h>
 
 ft::Scene::Scene(ft::Device::pointer device,
@@ -678,14 +679,39 @@ void ft::Scene::addPointLightToTheScene(PointLightObject &pl) {
   _ubo.lights[_ubo.pLCount++] = pl;
 }
 
-ft::Camera::pointer ft::Scene::getCamera() const { return _camera; }
-
-void ft::Scene::setCamera(ft::Camera::pointer camera) {
-  _camera = std::move(camera);
-  _ubo.view = _camera->getViewMatrix();
-  _ubo.proj = _camera->getProjMatrix();
-  _ubo.eyePosition = _camera->getEyePosition();
+ft::Camera::pointer ft::Scene::getCamera() const {
+  if (_cameras.empty())
+    return nullptr;
+  return _cameras[_currentCamera];
 }
+
+void ft::Scene::addCamera(ft::Camera::pointer camera) {
+  _cameras.push_back(std::move(camera));
+  if (_cameras.size() == 1)
+    _currentCamera = 0;
+  _ubo.view = _cameras[_currentCamera]->getViewMatrix();
+  _ubo.proj = _cameras[_currentCamera]->getProjMatrix();
+  _ubo.eyePosition = _cameras[_currentCamera]->getEyePosition();
+}
+
+void ft::Scene::removeCurrentCamera() {
+  if (_cameras.size() <= 1 || _cameras.size() <= _currentCamera)
+    return;
+
+  _cameras.erase(_cameras.begin() + _currentCamera);
+  nextCamera();
+}
+
+void ft::Scene::nextCamera() {
+  _currentCamera = (_currentCamera + 1) % _cameras.size();
+  updateCameraUBO();
+}
+
+std::vector<ft::Camera::pointer> &ft::Scene::getAllCameras() {
+  return _cameras;
+}
+
+bool ft::Scene::hasCamera() const { return !_cameras.empty(); }
 
 void ft::Scene::setGeneralLight(glm::vec3 color, glm::vec3 direction,
                                 float ambient) {
@@ -697,9 +723,11 @@ void ft::Scene::setGeneralLight(glm::vec3 color, glm::vec3 direction,
 ft::UniformBufferObject &ft::Scene::getUBO() { return _ubo; }
 
 void ft::Scene::updateCameraUBO() {
-  _ubo.view = _camera->getViewMatrix();
-  _ubo.proj = _camera->getProjMatrix();
-  _ubo.eyePosition = _camera->getEyePosition();
+  if (_cameras.empty())
+    return;
+  _ubo.view = _cameras[_currentCamera]->getViewMatrix();
+  _ubo.proj = _cameras[_currentCamera]->getProjMatrix();
+  _ubo.eyePosition = _cameras[_currentCamera]->getEyePosition();
   for (auto &buffer : _ftUniformBuffers)
     buffer->copyToMappedData(&_ubo, sizeof(_ubo));
 }
@@ -824,6 +852,9 @@ void ft::Scene::toggleNormalDebug() {
 }
 
 void ft::Scene::showSelectedInfo() const {
+  std::cout << "cameras: " << _cameras.size() << "\n";
+  std::cout << "\tposition: " << glm::to_string(getCamera()->getEyePosition())
+            << "\n";
   _ftGizmo->printInfo();
   std::cout << "\t" << (_state.globalGizbo ? "global" : "local") << "\n";
   if (_state.lastSelect) {

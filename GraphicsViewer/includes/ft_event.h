@@ -36,6 +36,7 @@ public:
     Menue_Insert_SKYBOX,
     Menue_Insert_UBOX,
     Menue_Insert_USPHERE,
+    Menue_Insert_Camera,
 
     Menue_Edit_UNSELECTALL,
     Menue_Edit_UNHIDEALL,
@@ -44,6 +45,8 @@ public:
     Menue_Edit_POINTTOP,
     Menue_Edit_RECALCNORM,
     Menue_Edit_SHOWNORM,
+    Menue_Edit_NEXTCAMERA,
+    Menue_Edit_REMOVECAMERA,
   };
 
   virtual ~Event() = default;
