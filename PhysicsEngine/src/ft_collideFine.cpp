@@ -277,17 +277,10 @@ unsigned ft::CollisionDetector::boxAndBox(const CollisionBox &one,
                                           CollisionData *data) {
 
   glm::vec3 toCentre = two.getAxis(3) - one.getAxis(3);
-  std::cout << "toCenter: " << glm::to_string(toCentre) << std::endl;
 
   auto v = glm::isnan(toCentre);
-  if (v.x || v.y || v.z) {
-    std::cout << "one: " << glm::to_string(one.getAxis(3)) << std::endl;
-    std::cout << "two: " << glm::to_string(two.getAxis(3)) << std::endl;
-    std::cout << "one body: " << glm::to_string(one.body->getPosition())
-              << std::endl;
-    std::cout << "two body: " << glm::to_string(two.body->getPosition())
-              << std::endl;
-  }
+  if (v.x || v.y || v.z)
+    return 0;
 
   real_t pen = std::numeric_limits<real_t>::max();
   unsigned best = std::numeric_limits<unsigned>::max();

@@ -45,6 +45,8 @@ protected:
   void showToolsMenueFile();
   void showEditMenueFile();
 
+  void showAboutWindow(bool *p_open);
+
   Instance::pointer _ftInstance;
   PhysicalDevice::pointer _ftPhysicalDevice;
   Device::pointer _ftDevice;

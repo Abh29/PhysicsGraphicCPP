@@ -24,17 +24,17 @@ public:
   using raw_ptr = RigidBodyApplication *;
 
   RigidBodyApplication(uint32_t maxContacts = 256);
-  ~RigidBodyApplication() = default;
+  ~RigidBodyApplication() { delete _contacts; };
 
   void play();
   void pause();
 
 protected:
   const uint32_t _maxContacts;
-  std::vector<ft::Contact> _contacts;
+  ft::Contact::raw_ptr _contacts;
   ft::CollisionData _collisionData;
   ft::ContactResolver _resolver;
-  bool _pauseSimulation = true;
+  bool _pauseSimulation = false;
 };
 
 class SimpleRigidApplication : public RigidBodyApplication {

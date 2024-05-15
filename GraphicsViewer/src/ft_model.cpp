@@ -765,6 +765,44 @@ ft::Model &ft::Model::translate(const glm::vec3 &v, bool global) {
     n.second->state.updated = true;
   return *this;
 }
+ft::Model &ft::Model::scale(const glm::mat4 &scale) {
+
+  _objectState.scaling = scale;
+  _node->state.modelMatrix =
+      _objectState.translation * _objectState.rotation * _objectState.scaling;
+  _centroid = _node->state.modelMatrix * glm::vec4(_oldCentroid, 1.0f);
+  _node->state.updated = true;
+  for (auto &n : _allNodes)
+    n.second->state.updated = true;
+
+  return *this;
+}
+
+ft::Model &ft::Model::rotate(const glm::mat4 &rotation) {
+
+  _objectState.rotation = rotation;
+  _node->state.modelMatrix =
+      _objectState.translation * _objectState.rotation * _objectState.scaling;
+  _centroid = _node->state.modelMatrix * glm::vec4(_oldCentroid, 1.0f);
+  _node->state.updated = true;
+  for (auto &n : _allNodes)
+    n.second->state.updated = true;
+
+  return *this;
+}
+
+ft::Model &ft::Model::translate(const glm::mat4 &translate) {
+
+  _objectState.translation = translate;
+  _node->state.modelMatrix =
+      _objectState.translation * _objectState.rotation * _objectState.scaling;
+  _centroid = _node->state.modelMatrix * glm::vec4(_oldCentroid, 1.0f);
+  _node->state.updated = true;
+  for (auto &n : _allNodes)
+    n.second->state.updated = true;
+
+  return *this;
+}
 
 // private
 void ft::Model::drawNode(const CommandBuffer::pointer &commandBuffer,

@@ -58,6 +58,10 @@ ft::Gui::Gui(Instance::pointer instance, PhysicalDevice::pointer physicalDevice,
   ImGui_ImplVulkan_Init(&init_info, _ftRenderPass->getVKRenderPass());
 
   // load fonts
+  auto &io = ImGui::GetIO();
+  io.Fonts->AddFontFromFileTTF("misk/fonts/Roboto-Medium.ttf", 14.0f, nullptr,
+                               io.Fonts->GetGlyphRangesCyrillic());
+
   CommandBuffer::pointer commandBuffer =
       std::make_shared<CommandBuffer>(_ftDevice);
   commandBuffer->beginRecording(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -114,6 +118,8 @@ void ft::Gui::showGUI(uint32_t flags, bool *p_open) {
   showMainMenue();
   if (show_app_metrics)
     showMetrics(&show_app_metrics);
+  if (show_app_about)
+    showAboutWindow(&show_app_about);
 }
 
 void ft::Gui::render(ft::CommandBuffer::pointer commandBuffer) {
@@ -310,9 +316,9 @@ void ft::Gui::showExampleMenuFile() {
         std::make_unique<StandardEvent>(Event::EventType::Menue_File_SAVEAS));
   }
 
-  if (ImGui::MenuItem("Reload from save", nullptr, false, false)) {
-    _ftWindow->getEventListener()->pushEvent(
-        std::make_unique<StandardEvent>(Event::EventType::Menue_File_RELOAD));
+  if (ImGui::MenuItem("Reload from save", nullptr, false, true)) {
+    auto e = StandardEvent(Event::EventType::Menue_File_RELOAD);
+    _ftWindow->getEventListener()->fireInstante(e);
   }
 
   ImGui::Separator();
@@ -417,4 +423,48 @@ bool ft::Gui::isKeyCaptured() const {
 
 float ft::Gui::getFramerate() const {
   return ImGui::GetCurrentContext()->IO.Framerate;
+}
+
+void ft::Gui::showAboutWindow(bool *p_open) {
+  if (!ImGui::Begin("About", p_open, ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::End();
+    return;
+  }
+  IMGUI_DEMO_MARKER("Tools/About");
+  ImGui::Text("FtGraphics version: 1.0.0");
+  ImGui::Separator();
+
+  ImGui::Text(
+      u8"\tЭто демонстрационное приложение, демонстрирующее использование графического \n\
+серверного средства визуализации, основанного на Vulkan, и физического \n\
+серверного движка для динамического анализа твердых тел, основанного на \n\
+книге под названием 'Разработка игрового физического движка - Ян Миллингтон',\n\
+оно предназначено в качестве отправной точки с точки зрения специалиста по \n\
+компьютерной графике, демонстрирующего примеры алгоритмов и методик.\n\n");
+
+  ImGui::Text(
+      u8"\tРендерер поддерживает как obj, так и gif-файлы, а также текстуры в формате \n\
+png и ktx с различными конвейерами, а также пользовательскую систему для \n\
+многопоточной обработки событий.\n\n");
+
+  ImGui::Text(
+      u8"\tФизический движок поддерживает динамику твердого тела и физику \n\
+элементарных частиц (хотя и не показан в этой демонстрации) с акцентом \n\
+на простой и улучшаемый дизайн.\n\n");
+
+  ImGui::Text(
+      u8"\tЭта демонстрация сделана с использованием imgui для графического \n\
+интерфейса пользователя с реализацией как рендеринга, так и физических \n\
+аспектов проекта, в ней есть простое физическое приложение, \n\
+демонстрирующее взаимодействие сфер и плоскостей кубов.\n\n");
+
+  ImGui::Text(u8"Этот проект разработан Боутифор АбдЕлХак в рамках проекта ВКР "
+              u8"в КФУ.\n\n");
+
+  ImGui::Text(
+      u8"Исходный код этого проекта можно найти на моей странице на github: \n\
+https://github.com/Abh29/PhysicsGraphicCPP \n\
+Я приглашаю всех желающих читать, копировать, изменять и улучшать.\n\n");
+
+  ImGui::End();
 }

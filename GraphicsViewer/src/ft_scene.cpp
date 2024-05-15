@@ -1,5 +1,6 @@
 #include "../includes/ft_scene.h"
 #include <cstdint>
+#include <functional>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -31,7 +32,8 @@ void ft::Scene::drawInstancedObjs(const CommandBuffer::pointer &commandBuffer,
 
   _ftUniformBuffers[index]->copyToMappedData(&_ubo, sizeof(_ubo));
   // vertex and index buffers
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if (model->hasMaterial() || model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
     model->bind(commandBuffer, index);
@@ -54,7 +56,8 @@ void ft::Scene::drawSimpleObjs(const CommandBuffer::pointer &commandBuffer,
       &(system->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
 
   // vertex and index buffers
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if ((!model->hasFlag(ft::MODEL_SIMPLE_BIT) &&
          !model->hasFlag(ft::MODEL_SELECTED_BIT)) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_LINE_BIT |
@@ -92,7 +95,8 @@ void ft::Scene::drawSimpleObjsWithOutline(
 
   bool toggle = true;
 
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if ((!model->hasFlag(ft::MODEL_SIMPLE_BIT) &&
          !model->hasFlag(ft::MODEL_SELECTED_BIT)) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_LINE_BIT |
@@ -149,7 +153,8 @@ void ft::Scene::drawTexturedObjs(
                     system->getGraphicsPipeline()->getVKPipeline());
 
   // vertex and index buffers
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if (!model->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT) ||
         model->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_SELECTED_BIT |
@@ -180,7 +185,8 @@ void ft::Scene::draw2TexturedObjs(
                     system->getGraphicsPipeline()->getVKPipeline());
 
   // vertex and index buffers
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if (!model->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT) ||
         !model->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_SELECTED_BIT |
@@ -210,7 +216,8 @@ void ft::Scene::drawSkyBox(const ft::CommandBuffer::pointer &commandBuffer,
                     system->getGraphicsPipeline()->getVKPipeline());
 
   // vertex and index buffers
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if (!model->hasFlag(ft::MODEL_HAS_CUBE_TEXTURE_BIT) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
@@ -232,7 +239,8 @@ void ft::Scene::drawPickObjs(const ft::CommandBuffer::pointer &commandBuffer,
                              const ft::GraphicsPipeline::pointer &pipeline,
                              uint32_t index) {
   // vertex and index buffers
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if (model->hasFlag(ft::MODEL_HIDDEN_BIT) ||
         !model->hasFlag(ft::MODEL_SELECTABLE_BIT))
       continue;
@@ -271,7 +279,8 @@ void ft::Scene::drawOulines(const ft::CommandBuffer::pointer &commandBuffer,
       &(srdr->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
 
   // vertex and index buffers
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if (!model->hasFlag(ft::MODEL_SELECTED_BIT) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
@@ -294,7 +303,8 @@ void ft::Scene::drawPointsTopology(
       prdr->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
       &(srdr->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
 
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if (!model->hasFlag(ft::MODEL_POINT_BIT) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
@@ -319,7 +329,8 @@ void ft::Scene::drawLinesTopology(
       &(srdr->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
 
   // vertex and index buffers
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if (!model->hasFlag(ft::MODEL_LINE_BIT) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
@@ -348,7 +359,8 @@ void ft::Scene::drawNormals(const ft::CommandBuffer::pointer &commandBuffer,
       &(srdr->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
 
   // vertex and index buffers
-  for (auto &model : _models) {
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
     if (!model->hasFlag(ft::MODEL_HAS_NORMAL_DEBUG_BIT) ||
         model->hasFlag(ft::MODEL_HIDDEN_BIT))
       continue;
@@ -360,25 +372,27 @@ void ft::Scene::drawNormals(const ft::CommandBuffer::pointer &commandBuffer,
 
 // load
 
-ft::Model::pointer ft::Scene::addModelFromObj(const std::string &objectPath,
-                                              const ft::ObjectState &data) {
+ft::SceneObject::pointer
+ft::Scene::addModelFromObj(const std::string &objectPath,
+                           const ft::ObjectState &data) {
   Model::pointer model = std::make_shared<Model>(
       _ftDevice, objectPath, _ftUniformBuffers.size(), data.loadOptions);
   model->setState(data);
   model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
-  _models.push_back(model);
+  auto obj = std::make_shared<SceneObject>(model);
+  _objects.push_back(obj);
   SceneNode n;
   n._inputFile = objectPath;
   n._models.push_back(model);
   n._type = SceneNodeType::OBJ_SIMPLE;
   if ((data.loadOptions & ft::LOAD_OPTION_NO_SAVE) == 0)
     _sceneGraph.push_back(n);
-  return model;
+  return obj;
 }
 
 // load from gltf
 
-std::vector<ft::Model::pointer>
+std::vector<ft::SceneObject::pointer>
 ft::Scene::addModelFromGltf(const std::string &gltfPath,
                             const ft::ObjectState &data) {
 
@@ -392,7 +406,7 @@ ft::Scene::addModelFromGltf(const std::string &gltfPath,
 
   // load gltf scene
   tinygltf::Scene &scene = gltfInput.scenes[0];
-  std::vector<Model::pointer> out;
+  std::vector<SceneObject::pointer> out;
   SceneNode n;
   n._inputFile = gltfPath;
   n._type = SceneNodeType::GLTF_SIMPLE;
@@ -403,16 +417,17 @@ ft::Scene::addModelFromGltf(const std::string &gltfPath,
     if (model->empty())
       continue;
     model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
-    _models.push_back(model);
     model->setState(data);
-    out.push_back(model);
+    auto obj = std::make_shared<SceneObject>(model);
+    out.push_back(obj);
+    _objects.push_back(obj);
     n._models.push_back(model);
   }
   _sceneGraph.push_back(n);
   return out;
 }
 
-std::vector<ft::Model::pointer> ft::Scene::addDoubleTexturedFromGltf(
+std::vector<ft::SceneObject::pointer> ft::Scene::addDoubleTexturedFromGltf(
     const std::string &gltfPath, const DescriptorPool::pointer &pool,
     const DescriptorSetLayout::pointer &layout, const ft::ObjectState &data) {
 
@@ -474,7 +489,7 @@ std::vector<ft::Model::pointer> ft::Scene::addDoubleTexturedFromGltf(
 
   // load gltf scene
   tinygltf::Scene &scene = gltfInput.scenes[0];
-  std::vector<ft::Model::pointer> out;
+  std::vector<ft::SceneObject::pointer> out;
   SceneNode n;
   n._inputFile = gltfPath;
   n._type = SceneNodeType::GLTF_DOUBLE_TEX;
@@ -493,16 +508,17 @@ std::vector<ft::Model::pointer> ft::Scene::addDoubleTexturedFromGltf(
           (ft::MODEL_HAS_NORMAL_TEXTURE_BIT | ft::MODEL_HAS_COLOR_TEXTURE_BIT);
     }
     model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
-    out.push_back(model);
+    auto obj = std::make_shared<SceneObject>(model);
+    out.push_back(obj);
+    _objects.push_back(obj);
     n._models.push_back(model);
-    _models.push_back(model);
   }
 
   _sceneGraph.push_back(n);
   return out;
 }
 
-std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
+std::vector<ft::SceneObject::pointer> ft::Scene::addSingleTexturedFromGltf(
     const std::string &gltfPath, const DescriptorPool::pointer &pool,
     const DescriptorSetLayout::pointer &layout, const ft::ObjectState &data) {
 
@@ -554,7 +570,7 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
 
   // load gltf scene
   tinygltf::Scene &scene = gltfInput.scenes[0];
-  std::vector<ft::Model::pointer> out;
+  std::vector<ft::SceneObject::pointer> out;
   SceneNode n;
   n._inputFile = gltfPath;
   n._type = SceneNodeType::GLTF_SINGLE_TEX;
@@ -572,8 +588,9 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
       n->state.flags |= ft::MODEL_HAS_COLOR_TEXTURE_BIT;
     }
     model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
-    out.push_back(model);
-    _models.push_back(model);
+    auto obj = std::make_shared<SceneObject>(model);
+    out.push_back(obj);
+    _objects.push_back(obj);
     n._models.push_back(model);
   }
 
@@ -581,7 +598,7 @@ std::vector<ft::Model::pointer> ft::Scene::addSingleTexturedFromGltf(
   return out;
 }
 
-ft::Model::pointer ft::Scene::addCubeBox(
+ft::SceneObject::pointer ft::Scene::addCubeBox(
     const std::string &gltfModel, const std::string &ktxTexturePath,
     const DescriptorPool::pointer &pool,
     const DescriptorSetLayout::pointer &layout, const ft::ObjectState data) {
@@ -612,16 +629,16 @@ ft::Model::pointer ft::Scene::addCubeBox(
 
   // load gltf scene
   tinygltf::Scene &scene = gltfInput.scenes[0];
-  Model::pointer model;
+  SceneObject::pointer obj;
   SceneNode n;
   n._type = SceneNodeType::SKY_BOX;
   n._inputFile = gltfModel;
   n._texturePath = ktxTexturePath;
   for (int i : scene.nodes) {
     const tinygltf::Node node = gltfInput.nodes[i];
-    model = std::make_shared<Model>(_ftDevice, gltfInput, node,
-                                    _ftUniformBuffers.size(),
-                                    ft::LOAD_OPTION_NO_AABB | data.loadOptions);
+    auto model = std::make_shared<Model>(
+        _ftDevice, gltfInput, node, _ftUniformBuffers.size(),
+        ft::LOAD_OPTION_NO_AABB | data.loadOptions);
     if (model->empty())
       continue;
     auto rootNode = model->getAllNodes()[0];
@@ -629,7 +646,8 @@ ft::Model::pointer ft::Scene::addCubeBox(
     rootNode->state.flags |= ft::MODEL_HAS_CUBE_TEXTURE_BIT;
     model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
     model->setState(data);
-    _models.push_back(model);
+    obj = std::make_shared<SceneObject>(model);
+    _objects.push_back(obj);
     n._models.push_back(model);
     break;
   }
@@ -637,7 +655,7 @@ ft::Model::pointer ft::Scene::addCubeBox(
   std::cout << "skybox loaded" << std::endl;
   _sceneGraph.push_back(n);
   _state.hasSkyBox = true;
-  return model;
+  return obj;
 }
 
 // gizmo
@@ -658,16 +676,6 @@ bool ft::Scene::hasGizmo() const { return _ftGizmo != nullptr; }
 
 void ft::Scene::addPointLightToTheScene(PointLightObject &pl) {
   _ubo.lights[_ubo.pLCount++] = pl;
-}
-
-uint32_t ft::Scene::addObjectCopyToTheScene(uint32_t id,
-                                            ft::InstanceData data) {
-  data.normalMatrix = glm::inverseTranspose(data.model * _ubo.view);
-  for (auto &m : _models) {
-    if (m->findID(id))
-      return m->addCopy(data);
-  }
-  return -1;
 }
 
 ft::Camera::pointer ft::Scene::getCamera() const { return _camera; }
@@ -698,10 +706,13 @@ void ft::Scene::updateCameraUBO() {
 
 ft::PointLightObject *ft::Scene::getLights() { return _ubo.lights; }
 
-std::vector<ft::Model::pointer> ft::Scene::getModels() const { return _models; }
+std::vector<ft::SceneObject::pointer> &ft::Scene::getObjects() {
+  return _objects;
+}
 
 void ft::Scene::addMaterialToObj(uint32_t id, Material::pointer material) {
-  for (auto &m : _models) {
+  for (auto &obj : _objects) {
+    auto &m = obj->getModel();
     if (m->findID(id)) {
       m->addMaterial(std::move(material));
       break;
@@ -714,7 +725,8 @@ void ft::Scene::setMaterialPool(TexturePool::pointer pool) {
 }
 
 bool ft::Scene::select(uint32_t id) {
-  for (auto &m : _models) {
+  for (auto &obj : _objects) {
+    auto &m = obj->getModel();
     if (m->findID(id)) {
       if (!m->hasFlag(ft::MODEL_SELECTABLE_BIT))
         return false;
@@ -734,8 +746,8 @@ bool ft::Scene::select(uint32_t id) {
 }
 
 void ft::Scene::unselectAll() {
-  for (auto &m : _models) {
-    m->unselectAll();
+  for (auto &obj : _objects) {
+    obj->getModel()->unselectAll();
   }
   _state.lastSelect = nullptr;
 }
@@ -749,17 +761,19 @@ void ft::Scene::hideSelected() {
 }
 
 void ft::Scene::unhideSelected() {
-  for (auto &m : _models)
-    if (m->hasFlag(ft::MODEL_SELECTED_BIT))
-      m->unsetFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
+  for (auto &obj : _objects)
+    if (obj->getModel()->hasFlag(ft::MODEL_SELECTED_BIT))
+      obj->getModel()->unsetFlags(obj->getModel()->getID(),
+                                  ft::MODEL_HIDDEN_BIT);
 }
 
 void ft::Scene::unhideAll() {
-  for (auto &m : _models)
-    m->unsetFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
+  for (auto &obj : _objects)
+    obj->getModel()->unsetFlags(obj->getModel()->getID(), ft::MODEL_HIDDEN_BIT);
 }
 void ft::Scene::resetAll() {
-  for (auto &m : _models) {
+  for (auto &obj : _objects) {
+    auto &m = obj->getModel();
     m->unsetFlags(m->getID(), ft::MODEL_HIDDEN_BIT);
     m->unsetFlags(m->getID(), ft::MODEL_LINE_BIT);
     m->unsetFlags(m->getID(), ft::MODEL_POINT_BIT);
@@ -768,25 +782,30 @@ void ft::Scene::resetAll() {
 }
 
 void ft::Scene::toggleLinesTopo() {
-  for (auto &m : _models)
+  for (auto &obj : _objects) {
+    auto &m = obj->getModel();
     if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
       m->toggleFlags(m->getID(), ft::MODEL_LINE_BIT);
       m->unsetFlags(m->getID(), ft::MODEL_POINT_BIT);
       m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
     }
+  }
 }
 
 void ft::Scene::togglePointsTopo() {
-  for (auto &m : _models)
+  for (auto &obj : _objects) {
+    auto &m = obj->getModel();
     if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
       m->toggleFlags(m->getID(), ft::MODEL_POINT_BIT);
       m->unsetFlags(m->getID(), ft::MODEL_LINE_BIT);
       m->unsetFlags(m->getID(), ft::MODEL_SELECTED_BIT);
     }
+  }
 }
 
 void ft::Scene::calculateNormals() {
-  for (auto &m : _models) {
+  for (auto &obj : _objects) {
+    auto &m = obj->getModel();
     if (m->hasFlag(ft::MODEL_SELECTED_BIT)) {
       m->reshade();
       m->updateVertexBuffer();
@@ -860,30 +879,17 @@ std::vector<ft::Scene::SceneNode> &ft::Scene::getSceneGraph() {
   return _sceneGraph;
 }
 
-//
-// void ft::Scene::addRigidBodyToModel(const Model::pointer &model,
-//                                     const RigidBody::pointer &rigid) {
-//   _scenePhysics.push_back({model, rigid, false});
-//   model->setFlags(model->getID(), ft::MODEL_HAS_RIGID_BODY_BIT);
-// }
-//
-// // todo: this can be made concurent !
-// void ft::Scene::updateSceneObjects() {
-//   for (auto &n : _scenePhysics) {
-//     if (n._sync)
-//       continue;
-//     n.backwardTransform();
-//     // n._sync = true;
-//   }
-// }
-//
-// void ft::Scene::RigidModel::forwardTransform() {
-//   _rigid->setPosition(_model->getCentroid());
-//   _rigid->setOrientation(glm::quat_cast(_model->getState().rotation));
-// }
-//
-// void ft::Scene::RigidModel::backwardTransform() {
-//   _model->getState().translation =
-//       glm::translate(glm::mat4(1.0f), _rigid->getPosition());
-//   _model->getState().rotation = glm::mat4_cast(_rigid->getOrientation());
-// }
+// todo: this can be made concurent !
+void ft::Scene::updateSceneObjects(float duration,
+                                   ft::ThreadPool::pointer &pool) {
+
+  std::vector<std::future<void>> tasks;
+  for (auto &obj : _objects) {
+    tasks.push_back(
+        pool->addTask(std::bind(&SceneObject::update, *obj, duration)));
+  }
+
+  // wait for all tasks
+  for (auto &t : tasks)
+    t.wait();
+}

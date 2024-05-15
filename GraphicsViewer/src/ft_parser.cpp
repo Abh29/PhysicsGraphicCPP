@@ -383,7 +383,7 @@ void ft::JsonParser::loadModels(const Scene::pointer &scene,
 
     if (fileType.compare("obj") == 0) {
 
-      auto m = scene->addModelFromObj(modelPath, s);
+      auto m = scene->addModelFromObj(modelPath, s)->getModel();
       m->setFlags(m->getID(), flags);
 
       if (flags & ft::MODEL_HAS_COLOR_TEXTURE_BIT) {
@@ -406,13 +406,13 @@ void ft::JsonParser::loadModels(const Scene::pointer &scene,
       }
     } else if (fileType.compare("gltf") == 0) {
 
-      std::vector<ft::Model::pointer> m;
+      std::vector<ft::SceneObject::pointer> m;
 
       if (flags & ft::MODEL_SIMPLE_BIT) {
         m = scene->addModelFromGltf(modelPath, s);
         for (const auto &i : m) {
-          i->setState(s);
-          i->setFlags(i->getID(), flags);
+          i->getModel()->setState(s);
+          i->getModel()->setFlags(i->getModel()->getID(), flags);
         }
 
       } else if (flags & ft::MODEL_HAS_COLOR_TEXTURE_BIT &&
@@ -422,8 +422,8 @@ void ft::JsonParser::loadModels(const Scene::pointer &scene,
             _ftTexturedRdrSys->getDescriptorSetLayout(), s);
 
         for (const auto &i : m) {
-          i->setState(s);
-          i->setFlags(i->getID(), flags);
+          i->getModel()->setState(s);
+          i->getModel()->setFlags(i->getModel()->getID(), flags);
         }
 
       } else if (flags & (ft::MODEL_HAS_COLOR_TEXTURE_BIT |
@@ -434,8 +434,8 @@ void ft::JsonParser::loadModels(const Scene::pointer &scene,
             _ft2TexturedRdrSys->getDescriptorSetLayout(), s);
 
         for (const auto &i : m) {
-          i->setState(s);
-          i->setFlags(i->getID(), flags);
+          i->getModel()->setState(s);
+          i->getModel()->setFlags(i->getModel()->getID(), flags);
         }
       }
 
@@ -448,12 +448,13 @@ void ft::JsonParser::loadModels(const Scene::pointer &scene,
 
             if (subM.contains("transformation") ||
                 subM.contains("basicColor")) {
-              getStateFromJsonSnippet(subM, m[index]->getState());
+              getStateFromJsonSnippet(subM, m[index]->getModel()->getState());
             }
 
             if (subM.contains("flags")) {
               auto subFlags = getFlagsFromJsonSnippet(subM);
-              m[index]->overrideFlags(m[index]->getID(), subFlags);
+              m[index]->getModel()->overrideFlags(m[index]->getModel()->getID(),
+                                                  subFlags);
             }
           }
         }

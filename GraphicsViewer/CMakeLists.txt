@@ -56,7 +56,7 @@ add_custom_target(Shaders DEPENDS ${SPIRV_BINARY_FILES})
 # ${CMAKE_CURRENT_BINARY_DIR}) add_custom_target(Texture)
 
 # copy model folder to build
-file(COPY assets DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
+file(COPY assets misk DESTINATION ${CMAKE_CURRENT_BINARY_DIR})
 add_custom_target(Assets)
 
 # include_directories(external/ktx/other_include) set(KTX_DIR
@@ -124,6 +124,7 @@ add_executable(
   src/ft_physicsApp.cpp
   src/ft_rigidObject.cpp
   includes/ft_sceneObject.h
+  src/ft_component.cpp
   )
 
 target_link_libraries(ftGraphics imgui ftPhysics nlohmann_json::nlohmann_json)

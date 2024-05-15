@@ -1,5 +1,6 @@
 #include "../includes/ft_physicsApp.h"
 #include "ft_collideFine.h"
+#include "ft_contacts.h"
 #include <cstdint>
 #include <glm/fwd.hpp>
 
@@ -53,9 +54,9 @@
 //
 
 ft::RigidBodyApplication::RigidBodyApplication(uint32_t maxContacts)
-    : _maxContacts(maxContacts), _contacts(maxContacts),
-      _resolver(maxContacts * 8) {
-  _collisionData.contacts = _contacts.data();
+    : _maxContacts(maxContacts), _resolver(maxContacts * 8) {
+  _contacts = new ft::Contact[maxContacts];
+  _collisionData.contactArray = _contacts;
 }
 
 void ft::RigidBodyApplication::play() { _pauseSimulation = false; }
@@ -159,30 +160,26 @@ void ft::SimpleRigidApplication::generateContacts() {
   }
 }
 
-inline std::vector<ft::RigidBox::pointer> &
-ft::SimpleRigidApplication::getBoxes() {
+std::vector<ft::RigidBox::pointer> &ft::SimpleRigidApplication::getBoxes() {
   return _boxes;
 }
-inline std::vector<ft::RigidBall::pointer> &
-ft::SimpleRigidApplication::getBalls() {
+
+std::vector<ft::RigidBall::pointer> &ft::SimpleRigidApplication::getBalls() {
   return _balls;
 };
 
-inline void
-ft::SimpleRigidApplication::addRigidBox(const RigidBox::pointer &box) {
+void ft::SimpleRigidApplication::addRigidBox(const RigidBox::pointer &box) {
   _boxes.push_back(box);
 }
 
-inline void
-ft::SimpleRigidApplication::addRigidBall(const RigidBall::pointer &ball) {
+void ft::SimpleRigidApplication::addRigidBall(const RigidBall::pointer &ball) {
   _balls.push_back(ball);
 }
 
-inline void ft::SimpleRigidApplication::removeRigidBox(RigidBox::pointer box) {
+void ft::SimpleRigidApplication::removeRigidBox(RigidBox::pointer box) {
   _boxes.erase(std::find(_boxes.begin(), _boxes.end(), box));
 }
 
-inline void
-ft::SimpleRigidApplication::removeRigidBall(RigidBall::pointer ball) {
+void ft::SimpleRigidApplication::removeRigidBall(RigidBall::pointer ball) {
   _balls.erase(std::find(_balls.begin(), _balls.end(), ball));
 }

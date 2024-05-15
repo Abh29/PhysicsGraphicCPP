@@ -133,6 +133,10 @@ public:
   Model &rotate(const glm::vec3 &v, float a, bool global = false);
   Model &translate(const glm::vec3 &v, bool global = false);
 
+  Model &scale(const glm::mat4 &scale);
+  Model &rotate(const glm::mat4 &rotation);
+  Model &translate(const glm::mat4 &translate);
+
   // getters
   std::string getPath() const;
   void setPath(const std::string &path);

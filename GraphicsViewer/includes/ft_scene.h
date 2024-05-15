@@ -15,6 +15,7 @@
 #include "ft_sceneObject.h"
 #include "ft_swapChain.h"
 #include "ft_texture.h"
+#include "ft_threads.h"
 #include "ft_tools.h"
 #include "ft_vertex.h"
 #include <cstdint>
@@ -91,36 +92,35 @@ public:
                    const NormDebugRdrSys::pointer &, uint32_t index);
 
   // add objects to the scene
-  Model::pointer addModelFromObj(const std::string &objectPath,
-                                 const ft::ObjectState &data);
+  SceneObject::pointer addModelFromObj(const std::string &objectPath,
+                                       const ft::ObjectState &data);
 
-  std::vector<Model::pointer> addDoubleTexturedFromGltf(
+  std::vector<SceneObject::pointer> addDoubleTexturedFromGltf(
       const std::string &, const DescriptorPool::pointer &,
       const DescriptorSetLayout::pointer &, const ft::ObjectState &);
 
-  std::vector<Model::pointer> addSingleTexturedFromGltf(
+  std::vector<SceneObject::pointer> addSingleTexturedFromGltf(
       const std::string &, const DescriptorPool::pointer &,
       const DescriptorSetLayout::pointer &, const ft::ObjectState &);
 
-  std::vector<Model::pointer> addModelFromGltf(const std::string &,
-                                               const ft::ObjectState &data);
+  std::vector<SceneObject::pointer>
+  addModelFromGltf(const std::string &, const ft::ObjectState &data);
 
   uint32_t addObjectCopyToTheScene(uint32_t id, InstanceData data);
 
-  Model::pointer addCubeBox(const std::string &gltfModel,
-                            const std::string &ktxTexture,
-                            const DescriptorPool::pointer &pool,
-                            const DescriptorSetLayout::pointer &layout,
-                            const ft::ObjectState data);
+  SceneObject::pointer addCubeBox(const std::string &gltfModel,
+                                  const std::string &ktxTexture,
+                                  const DescriptorPool::pointer &pool,
+                                  const DescriptorSetLayout::pointer &layout,
+                                  const ft::ObjectState data);
 
   ft::Gizmo::pointer loadGizmo(const std::string &gltfModel);
   ft::Gizmo::pointer getGizmo() const;
   bool hasGizmo() const;
 
-  // scene physics
-  void addRigidBodyToModel(const Model::pointer &model,
-                           const RigidBody::pointer &rigid);
-  void updateSceneObjects();
+  // scene update
+  // todo: use concurency here!
+  void updateSceneObjects(float duration, ft::ThreadPool::pointer &pool);
 
   // set properties of the scene
   void addMaterialToObj(uint32_t id, Material::pointer texture);
@@ -130,7 +130,7 @@ public:
   void setGeneralLight(glm::vec3 color, glm::vec3 direction, float ambient);
   void updateCameraUBO();
   PointLightObject *getLights();
-  [[nodiscard]] std::vector<Model::pointer> getModels() const;
+  [[nodiscard]] std::vector<SceneObject::pointer> &getObjects();
   void setMaterialPool(TexturePool::pointer pool);
   bool select(uint32_t id);
   void unselectAll();
@@ -161,7 +161,7 @@ private:
   };
 
   Device::pointer _ftDevice;
-  std::vector<Model::pointer> _models;
+  std::vector<SceneObject::pointer> _objects;
   std::vector<Buffer::pointer> _ftUniformBuffers;
   Camera::pointer _camera;
   UniformBufferObject _ubo;

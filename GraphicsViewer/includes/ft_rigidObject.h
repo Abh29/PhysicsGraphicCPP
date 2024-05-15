@@ -12,13 +12,21 @@ public:
   using pointer = std::shared_ptr<RigidBall>;
   using raw_ptr = RigidBall *;
 
+  RigidBall() { body = new ft::RigidBody; }
+
+  ~RigidBall() { delete body; }
+
   void setState(const glm::vec3 &position, const glm::quat &orientation,
                 const float radius, const glm::vec3 &velocity);
 
-private:
+  inline void setIsUpdated(bool updated) { _isUpdated = updated; }
+  inline bool isUpdated() const { return _isUpdated; }
+
+protected:
   glm::mat3 getMatrixFromInertiaTensor(float ix, float iy, float iz,
                                        float ixy = 0, float ixz = 0,
                                        float iyz = 0);
+  bool _isUpdated = true;
 };
 
 class RigidBox : public ft::CollisionBox {
@@ -26,18 +34,24 @@ public:
   using pointer = std::shared_ptr<RigidBox>;
   using raw_ptr = RigidBox *;
 
+  RigidBox() { body = new RigidBody; }
+  ~RigidBox() { delete body; }
+
   void setState(const glm::vec3 &position, const glm::quat &orientation,
                 const glm::vec3 &extents, const glm::vec3 &velocity);
 
   inline void setOverlap(bool overlap) { _isOverlapping = overlap; }
   inline bool isOverlapping() const { return _isOverlapping; }
+  inline void setIsUpdated(bool updated) { _isUpdated = updated; }
+  inline bool isUpdated() const { return _isUpdated; }
 
-private:
+protected:
   glm::mat3 getMatrixFromInertiaTensor(float ix, float iy, float iz,
                                        float ixy = 0, float ixz = 0,
                                        float iyz = 0);
 
   bool _isOverlapping = false;
+  bool _isUpdated = true;
 };
 
 }; // namespace ft

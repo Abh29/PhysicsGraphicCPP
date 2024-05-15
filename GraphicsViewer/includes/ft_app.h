@@ -77,6 +77,7 @@ private:
   ft::GlobalState _ftGlobalState = {};
 
   ft::SimpleRigidApplication::pointer _ftPhysicsApplication;
+  bool _play = false;
 };
 
 } // namespace ft

@@ -19,14 +19,15 @@ public:
 
   friend class Scene;
 
-  SceneObject(const ft::Model::pointer &model) : _model(model) {}
+  explicit SceneObject(const ft::Model::pointer &model) : _model(model) {}
 
-  void update(float duration) {
+  inline void update(float duration) {
     for (auto &c : _components)
       c->update(duration);
   };
 
-  ft::Model::pointer getModel() const { return _model; };
+  inline ft::Model::pointer getModel() const { return _model; };
+  inline ft::Model::pointer &getModel() { return _model; }
 
   template <typename T> T *getComponent() {
     for (auto &c : _components) {
@@ -37,10 +38,11 @@ public:
     return nullptr;
   };
 
-  template <typename T, typename... Args> T *addComponent(Args &&...args) {
+  template <typename T, typename... Args>
+  std::shared_ptr<T> addComponent(Args &&...args) {
     auto c = std::make_shared<T>(std::forward<Args>(args)...);
     _components.push_back(c);
-    return c.get();
+    return c;
   };
 
   std::vector<Component::pointer> &getAllComponents() { return _components; }

@@ -5,6 +5,7 @@
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
+#include <glm/gtc/quaternion.hpp>
 #include <ios>
 #include <memory>
 #include <thread>
@@ -45,12 +46,17 @@ ft::Application::~Application() = default;
 
 void ft::Application::run() {
 
+  float duration = 0.1f;
   while (!_ftWindow->shouldClose()) {
     _ftWindow->pollEvents();
     _ftGui->newFrame();
     _ftGui->showGUI();
-    //  _ftGui->showDemo();
-    _ftPhysicsApplication->update(1.0f / _ftGui->getFramerate());
+    _ftGui->showDemo();
+    duration = 1.0f / _ftGui->getFramerate();
+    if (_play) {
+      _ftPhysicsApplication->update(duration);
+      _ftScene->updateSceneObjects(duration, _ftThreadPool);
+    }
     drawFrame();
     checkEventQueue();
 #ifdef SHOW_FRAME_RATE
@@ -137,6 +143,34 @@ void ft::Application::initEventListener() {
           default:
             break;
           }
+
+          // todo: test this
+          if (m->hasFlag(ft::MODEL_HAS_RIGID_BODY_BIT)) {
+            auto objs = _ftScene->getObjects();
+            SceneObject::pointer obj = nullptr;
+            for (auto &i : objs) {
+              if (i->getModel().get() == m) {
+                obj = i;
+                break;
+              }
+            }
+
+            if (obj.get()) {
+              RigidBallComponent::raw_ptr rball = nullptr;
+              RigidBoxComponent::raw_ptr rbox = nullptr;
+
+              rball = obj->getComponent<RigidBallComponent>();
+              if (rball) {
+                rball->backwardUpdate(1.0f);
+              }
+
+              rbox = obj->getComponent<RigidBoxComponent>();
+              if (rbox) {
+                rbox->backwardUpdate(1.0f);
+              }
+            }
+          }
+
         } else {
           _ftScene->getCamera()->forward((float)yOff * 3);
         }
@@ -197,6 +231,34 @@ void ft::Application::initEventListener() {
           default:
             break;
           }
+
+          // todo: test this
+          if (m->hasFlag(ft::MODEL_HAS_RIGID_BODY_BIT)) {
+            auto objs = _ftScene->getObjects();
+            SceneObject::pointer obj = nullptr;
+            for (auto &i : objs) {
+              if (i->getModel().get() == m) {
+                obj = i;
+                break;
+              }
+            }
+
+            if (obj.get()) {
+              RigidBallComponent::raw_ptr rball = nullptr;
+              RigidBoxComponent::raw_ptr rbox = nullptr;
+
+              rball = obj->getComponent<RigidBallComponent>();
+              if (rball) {
+                rball->backwardUpdate(1.0f);
+              }
+
+              rbox = obj->getComponent<RigidBoxComponent>();
+              if (rbox) {
+                rbox->backwardUpdate(1.0f);
+              }
+            }
+          }
+
           _ftScene->updateCameraUBO();
           _ftMousePicker->notifyUpdatedView();
         }
@@ -223,8 +285,23 @@ void ft::Application::initEventListener() {
         _ftJsonParser->saveSceneToFile(_ftScene, "assets/ft_scene.json");
       });
 
-  _ftEventListener->addCallbackForEventType(Event::EventType::Menue_File_RELOAD,
-                                            [&](ft::Event &ev) { (void)ev; });
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_File_RELOAD, [&](ft::Event &ev) {
+        (void)ev;
+        std::cout << "reload scene from " << _scenePath << std::endl;
+
+        vkDeviceWaitIdle(_ftDevice->getVKDevice());
+        _ftScene.reset();
+        createScene();
+        if (!_scenePath.empty()) {
+          _ftJsonParser->parseSceneFile(
+              _ftScene, _scenePath, _ftRenderer->getSwapChain()->getAspect());
+          _ftScene->updateCameraUBO();
+          _ftMousePicker->notifyUpdatedView();
+        } else {
+          std::cout << "scene file empty!" << std::endl;
+        }
+      });
 
   _ftEventListener->addCallbackForEventType(Event::EventType::Menue_File_SAVEAS,
                                             [&](ft::Event &ev) { (void)ev; });
@@ -246,9 +323,20 @@ void ft::Application::initEventListener() {
         try {
 
           auto unit_box =
-              _ftScene->addModelFromObj("assets/models/cube.mtl.obj", data);
-          unit_box->setFlags(unit_box->getID(),
-                             ft::MODEL_SELECTABLE_BIT | ft::MODEL_SIMPLE_BIT);
+              _ftScene->addModelFromObj("misk/models/cube.mtl.obj", data);
+          unit_box->getModel()->setFlags(unit_box->getModel()->getID(),
+                                         ft::MODEL_SELECTABLE_BIT |
+                                             ft::MODEL_SIMPLE_BIT);
+
+          RigidBox::pointer box = std::make_shared<RigidBox>();
+          box->setState({}, {1.0f, 0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f},
+                        {0.0f, 1.0f, 0.0f});
+
+          _ftPhysicsApplication->addRigidBox(box);
+          unit_box->addComponent<RigidBoxComponent>(unit_box->getModel(), box);
+          unit_box->getModel()->setFlags(unit_box->getModel()->getID(),
+                                         ft::MODEL_HAS_RIGID_BODY_BIT);
+
         } catch (std::exception &e) {
           std::cerr
               << "cant load model, make sure it exists in the assets folder !"
@@ -264,10 +352,23 @@ void ft::Application::initEventListener() {
         try {
 
           auto unit_sphere =
-              _ftScene->addModelFromObj("assets/models/sphere.mtl.obj", data);
-          unit_sphere->setFlags(unit_sphere->getID(),
-                                ft::MODEL_SIMPLE_BIT |
-                                    ft::MODEL_SELECTABLE_BIT);
+              _ftScene->addModelFromObj("misk/models/sphere.mtl.obj", data);
+          unit_sphere->getModel()->setFlags(unit_sphere->getModel()->getID(),
+                                            ft::MODEL_SIMPLE_BIT |
+                                                ft::MODEL_SELECTABLE_BIT);
+
+          RigidBall::pointer ball = std::make_shared<RigidBall>();
+          ball->setState(
+              {}, glm::quat_cast(unit_sphere->getModel()->getState().rotation),
+              1.0f, {0.0f, 1.0f, 0.0f});
+
+          _ftPhysicsApplication->addRigidBall(ball);
+
+          unit_sphere->addComponent<RigidBallComponent>(unit_sphere->getModel(),
+                                                        ball);
+          unit_sphere->getModel()->setFlags(unit_sphere->getModel()->getID(),
+                                            ft::MODEL_HAS_RIGID_BODY_BIT);
+
         } catch (std::exception &e) {
           std::cerr
               << "cant load model, make sure it exists in the assets folder !"
@@ -412,21 +513,21 @@ void ft::Application::createScene() {
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.f, 0.0f, 0.9f};
   data.loadOptions = LOAD_OPTION_NO_SAVE;
-  _ftScene->addModelFromObj("assets/models/axis.obj", data);
+  _ftScene->addModelFromObj("misk/models/axis.obj", data);
 
   // Y
   data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
                               glm::vec3(1.0f, 0.0f, 0.0f));
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.0f, 0.9f, 0.0f};
-  _ftScene->addModelFromObj("assets/models/axis.obj", data);
+  _ftScene->addModelFromObj("misk/models/axis.obj", data);
 
   // X
   data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
                               glm::vec3(0.0f, 0.0f, 1.0f));
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.9f, 0.0f, 0.0f};
-  _ftScene->addModelFromObj("assets/models/axis.obj", data);
+  _ftScene->addModelFromObj("misk/models/axis.obj", data);
   data.loadOptions = 0;
 #endif
 #if SHOW_PLANE
@@ -680,8 +781,10 @@ void ft::Application::updateScene(int key) {
     _ftScene->showSelectedInfo();
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_U)) {
     _ftPhysicsApplication->play();
+    _play = true;
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_O)) {
     _ftPhysicsApplication->pause();
+    _play = false;
   }
 
   _ftScene->updateCameraUBO();
