@@ -1,5 +1,4 @@
 cmake_minimum_required(VERSION 3.9)
-
 project(
   ftPhysics
   VERSION 1.0.1
@@ -39,7 +38,7 @@ install(
 
 # Install the header files
 set(PHYSICS_HEADERS
-    ftPhysics.h
+    includes/ftPhysics.h
     includes/ft_body.h
     includes/ft_collideCoarse.h
     includes/ft_collideFine.h

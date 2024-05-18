@@ -1,6 +1,7 @@
 #ifndef FT_PHYSICS_APPLICATION
 #define FT_PHYSICS_APPLICATION
 
+#include "ft_collideFine.h"
 #include "ft_headers.h"
 #include "ft_rigidObject.h"
 
@@ -52,6 +53,8 @@ public:
   void addRigidBall(const RigidBall::pointer &ball);
   void removeRigidBox(RigidBox::pointer box);
   void removeRigidBall(RigidBall::pointer ball);
+  void addCollisionPlane(const CollisionPlane::pointer &plane);
+  void removeCollisionPlane(CollisionPlane::pointer plane);
 
 protected:
   void generateContacts();
@@ -59,7 +62,7 @@ protected:
 
   std::vector<ft::RigidBox::pointer> _boxes;
   std::vector<ft::RigidBall::pointer> _balls;
-  ft::CollisionPlane _plane;
+  std::vector<ft::CollisionPlane::pointer> _planes;
 };
 
 } // namespace ft

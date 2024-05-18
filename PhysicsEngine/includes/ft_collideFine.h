@@ -3,6 +3,7 @@
 
 #include "ft_contacts.h"
 #include <glm/fwd.hpp>
+#include <memory>
 
 namespace ft {
 
@@ -15,6 +16,9 @@ class CollisionDetector;
  */
 class CollisionPrimitive {
 public:
+  using pointer = std::shared_ptr<CollisionPrimitive>;
+  using raw_ptr = CollisionPrimitive *;
+
   friend class IntersectionTests;
   friend class CollisionDetector;
 
@@ -54,6 +58,9 @@ protected:
  */
 class CollisionSphere : public CollisionPrimitive {
 public:
+  using pointer = std::shared_ptr<CollisionSphere>;
+  using raw_ptr = CollisionSphere *;
+
   /**
    * The radius of the sphere.
    */
@@ -67,6 +74,9 @@ public:
  */
 class CollisionPlane {
 public:
+  using pointer = std::shared_ptr<CollisionPlane>;
+  using raw_ptr = CollisionPlane *;
+
   /**
    * The plane normal
    */
@@ -84,6 +94,9 @@ public:
  */
 class CollisionBox : public CollisionPrimitive {
 public:
+  using pointer = std::shared_ptr<CollisionBox>;
+  using raw_ptr = CollisionBox *;
+
   /**
    * Holds the half-sizes of the box along each of its local axes.
    */

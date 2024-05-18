@@ -1,4 +1,5 @@
 #include "../includes/ft_rendering_systems.h"
+#include "../includes/ft_tools.h"
 #include <glm/fwd.hpp>
 #include <vulkan/vulkan_core.h>
 
@@ -59,8 +60,10 @@ void ft::InstanceRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/InstanceRdrSys.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/InstanceRdrSys.frag.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "InstanceRdrSys.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "InstanceRdrSys.frag.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
 
@@ -225,8 +228,10 @@ void ft::SimpleRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/SimpleRdrSys.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/SimpleRdrSys.frag.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "SimpleRdrSys.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "SimpleRdrSys.frag.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
 
@@ -391,8 +396,10 @@ void ft::OneTextureRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/OneTextureRdrSys.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/OneTextureRdrSys.frag.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "OneTextureRdrSys.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "OneTextureRdrSys.frag.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
 
@@ -551,8 +558,10 @@ void ft::TwoTextureRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/TwoTextureRdrSys.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/TwoTextureRdrSys.frag.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "TwoTextureRdrSys.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "TwoTextureRdrSys.frag.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
 
@@ -713,8 +722,10 @@ void ft::PickingRdrSys::createGraphicsPipeline(
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/Picker.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/Picker.frag.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "Picker.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "Picker.frag.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
 
@@ -860,8 +871,10 @@ void ft::SkyBoxRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/SkyBoxRdrSys.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/SkyBoxRdrSys.frag.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "SkyBoxRdrSys.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "SkyBoxRdrSys.frag.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
 
@@ -1000,8 +1013,10 @@ void ft::OutlineRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/OutlineRdrSys.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/OutlineRdrSys.frag.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "OutlineRdrSys.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "OutlineRdrSys.frag.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
 
@@ -1145,8 +1160,10 @@ void ft::PointRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/SimpleRdrSys.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/SimpleRdrSys.frag.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "SimpleRdrSys.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "SimpleRdrSys.frag.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
 
@@ -1295,8 +1312,10 @@ void ft::LineRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/SimpleRdrSys.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/SimpleRdrSys.frag.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "SimpleRdrSys.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "SimpleRdrSys.frag.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
 
@@ -1448,9 +1467,12 @@ void ft::NormDebugRdrSys::createGraphicsPipeline() {
   ft::PipelineConfig pipelineConfig{};
 
   // shader modules
-  pipelineConfig.vertShaderPath = "shaders/NormDebugRdrSys.vert.spv";
-  pipelineConfig.fragShaderPath = "shaders/NormDebugRdrSys.frag.spv";
-  pipelineConfig.geomShaderPath = "shaders/NormDebugRdrSys.geom.spv";
+  pipelineConfig.vertShaderPath =
+      ft::tools::getShadersPath() + "NormDebugRdrSys.vert.spv";
+  pipelineConfig.fragShaderPath =
+      ft::tools::getShadersPath() + "NormDebugRdrSys.frag.spv";
+  pipelineConfig.geomShaderPath =
+      ft::tools::getShadersPath() + "NormDebugRdrSys.geom.spv";
   pipelineConfig.vertShaderEntryPoint = "main";
   pipelineConfig.fragShaderEntryPoint = "main";
   pipelineConfig.geomShaderEntryPoint = "main";

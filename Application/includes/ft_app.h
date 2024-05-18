@@ -8,13 +8,15 @@
 #include "ft_device.h"
 #include "ft_event.h"
 #include "ft_gui.h"
+#include "ft_headers.h"
 #include "ft_instance.h"
-#include "ft_parser.h"
+#include "ft_jsonParser.h"
 #include "ft_physicalDevice.h"
 #include "ft_physicsApp.h"
 #include "ft_picker.h"
 #include "ft_renderer.h"
 #include "ft_rendering_systems.h"
+#include "ft_rigidComponent.h"
 #include "ft_scene.h"
 #include "ft_surface.h"
 #include "ft_texture.h"
@@ -22,7 +24,6 @@
 #include "ft_window.h"
 
 namespace ft {
-
 class Application {
 public:
   static constexpr uint32_t W_WIDTH = 800;
@@ -33,6 +34,8 @@ public:
 
   void run();
   void setScenePath(const std::string &path);
+
+  static std::string getMiscPath() { return std::string(TOSTRING(MISC_DIR)); }
 
 private:
   void initEventListener();

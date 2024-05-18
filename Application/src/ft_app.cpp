@@ -6,9 +6,7 @@
 #include <glm/fwd.hpp>
 #include <glm/geometric.hpp>
 #include <glm/gtc/quaternion.hpp>
-#include <ios>
 #include <memory>
-#include <thread>
 #include <vulkan/vulkan_core.h>
 
 #define SHOW_AXIS 1
@@ -538,7 +536,8 @@ void ft::Application::createScene() {
   //                         .setAspect(_ftRenderer->getSwapChain()->getAspect())
   //                         .build());
   // _ftScene->setGeneralLight({1.0f, 1.0f, 1.0f}, {0.0, 2.5f, 0.0f}, 0.2f);
-  auto gizmo = _ftScene->loadGizmo("assets/models/gizmo.gltf");
+  auto gizmo =
+      _ftScene->loadGizmo(ft::Application::getMiscPath() + "models/gizmo.gltf");
   ft::ObjectState data{};
   (void)data;
   uint32_t id;
@@ -550,21 +549,24 @@ void ft::Application::createScene() {
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.f, 0.0f, 0.9f};
   data.loadOptions = LOAD_OPTION_NO_SAVE;
-  _ftScene->addModelFromObj("misk/models/axis.obj", data);
+  _ftScene->addModelFromObj(ft::Application::getMiscPath() + "models/axis.obj",
+                            data);
 
   // Y
   data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
                               glm::vec3(1.0f, 0.0f, 0.0f));
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.0f, 0.9f, 0.0f};
-  _ftScene->addModelFromObj("misk/models/axis.obj", data);
+  _ftScene->addModelFromObj(ft::Application::getMiscPath() + "models/axis.obj",
+                            data);
 
   // X
   data.rotation = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f),
                               glm::vec3(0.0f, 0.0f, 1.0f));
   data.scaling = glm::scale(glm::mat4(1.0f), {0.01f, 1.0f, 0.01f});
   data.color = {0.9f, 0.0f, 0.0f};
-  _ftScene->addModelFromObj("misk/models/axis.obj", data);
+  _ftScene->addModelFromObj(ft::Application::getMiscPath() + "models/axis.obj",
+                            data);
   data.loadOptions = 0;
 #endif
 #if SHOW_PLANE

@@ -4,9 +4,6 @@
 #include "ft_component.h"
 #include "ft_headers.h"
 #include "ft_model.h"
-#include <memory>
-#include <utility>
-#include <vector>
 
 namespace ft {
 
@@ -31,6 +28,7 @@ public:
 
   template <typename T> T *getComponent() {
     for (auto &c : _components) {
+      // auto& t = *c;
       if (typeid(*c) == typeid(T))
         return dynamic_cast<T *>(c.get());
     }

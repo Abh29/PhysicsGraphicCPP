@@ -1,57 +1,7 @@
 #include "../includes/ft_physicsApp.h"
 #include "ft_collideFine.h"
 #include "ft_contacts.h"
-#include <cstdint>
-#include <glm/fwd.hpp>
-
-// class PhysicsApplication {
-// public:
-//   using pointer = std::shared_ptr<PhysicsApplication>;
-//   using raw_ptr = PhysicsApplication *;
-//
-//   virtual ~PhysicsApplication() = default;
-//   virtual void update() = 0;
-// };
-//
-// class MassAggregateApplication : public PhysicsApplication {};
-//
-// class RigidBodyApplication : public PhysicsApplication {
-// public:
-//   using pointer = std::shared_ptr<RigidBodyApplication>;
-//   using raw_ptr = RigidBodyApplication *;
-//
-//   RigidBodyApplication(uint32_t maxContacts = 256);
-//   ~RigidBodyApplication() = default;
-//
-//   void play();
-//   void pause();
-//
-// protected:
-//   constexpr uint32_t _maxContacts;
-//   std::vector<ft::Contact> _contacts;
-//   ft::CollisionData _collisionData;
-//   ft::ContactResolver _resolver;
-//   bool _pauseSimulation = true;
-// };
-//
-// class SimpleRigidApplication : public RigidBodyApplication {
-//
-// public:
-//   using pointer = std::shared_ptr<SimpleRigidApplication>;
-//   using raw_ptr = SimpleRigidApplication *;
-//
-//   SimpleRigidApplication(uint32_t maxContacts = 256);
-//
-// protected:
-//   void generateContacts();
-//   void updateObjects();
-//
-//   std::vector<ft::RigidBox::pointer> _boxes;
-//   std::vector<ft::RigidBall::pointer> _balls;
-//   ft::CollisionPlane _plane;
-// };
-//
-//
+#include "ft_headers.h"
 
 ft::RigidBodyApplication::RigidBodyApplication(uint32_t maxContacts)
     : _maxContacts(maxContacts), _resolver(maxContacts * 8) {
@@ -66,8 +16,10 @@ void ft::RigidBodyApplication::pause() { _pauseSimulation = true; }
 
 ft::SimpleRigidApplication::SimpleRigidApplication(uint32_t maxContacts)
     : RigidBodyApplication(maxContacts) {
-  _plane.direction = glm::vec3(0.0f, 1.0f, 0.0);
-  _plane.offset = 0.0f;
+  auto p = std::make_shared<CollisionPlane>();
+  p->direction = glm::vec3(0.0f, 1.0f, 0.0f);
+  p->offset = 0.0f;
+  _planes.push_back(p);
 }
 
 void ft::SimpleRigidApplication::update(real_t duration) {
@@ -113,11 +65,15 @@ void ft::SimpleRigidApplication::generateContacts() {
   // first for the boxes
   for (auto &b : _boxes) {
 
+    if (b->isAsleep())
+      continue;
+
     if (!_collisionData.hasMoreContacts())
       return;
 
     // collision with the ground plane
-    ft::CollisionDetector::boxAndHalfSpace(*b, _plane, &_collisionData);
+    for (auto &p : _planes)
+      ft::CollisionDetector::boxAndHalfSpace(*b, *p, &_collisionData);
 
     // collision with other boxes
     for (auto &bb : _boxes) {
@@ -146,8 +102,12 @@ void ft::SimpleRigidApplication::generateContacts() {
     if (!_collisionData.hasMoreContacts())
       return;
 
+    if (b->isAsleep())
+      continue;
+
     // collision with the ground plane
-    ft::CollisionDetector::sphereAndHalfSpace(*b, _plane, &_collisionData);
+    for (auto &p : _planes)
+      ft::CollisionDetector::sphereAndHalfSpace(*b, *p, &_collisionData);
 
     // collision with other balls
     for (auto &ba : _balls) {
@@ -182,4 +142,14 @@ void ft::SimpleRigidApplication::removeRigidBox(RigidBox::pointer box) {
 
 void ft::SimpleRigidApplication::removeRigidBall(RigidBall::pointer ball) {
   _balls.erase(std::find(_balls.begin(), _balls.end(), ball));
+}
+
+void ft::SimpleRigidApplication::addCollisionPlane(
+    const ft::CollisionPlane::pointer &plane) {
+  _planes.push_back(plane);
+}
+
+void ft::SimpleRigidApplication::removeCollisionPlane(
+    ft::CollisionPlane::pointer plane) {
+  _planes.erase(std::find(_planes.begin(), _planes.end(), plane));
 }

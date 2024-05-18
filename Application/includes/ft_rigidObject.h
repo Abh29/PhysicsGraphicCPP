@@ -21,12 +21,15 @@ public:
 
   inline void setIsUpdated(bool updated) { _isUpdated = updated; }
   inline bool isUpdated() const { return _isUpdated; }
+  inline void setIsAsleep(bool asleep) { _isAsleep = asleep; }
+  inline bool isAsleep() const { return _isAsleep; }
 
 protected:
   glm::mat3 getMatrixFromInertiaTensor(float ix, float iy, float iz,
                                        float ixy = 0, float ixz = 0,
                                        float iyz = 0);
   bool _isUpdated = true;
+  bool _isAsleep = false;
 };
 
 class RigidBox : public ft::CollisionBox {
@@ -44,6 +47,8 @@ public:
   inline bool isOverlapping() const { return _isOverlapping; }
   inline void setIsUpdated(bool updated) { _isUpdated = updated; }
   inline bool isUpdated() const { return _isUpdated; }
+  inline void setIsAsleep(bool asleep) { _isAsleep = asleep; }
+  inline bool isAsleep() const { return _isAsleep; }
 
 protected:
   glm::mat3 getMatrixFromInertiaTensor(float ix, float iy, float iz,
@@ -52,6 +57,7 @@ protected:
 
   bool _isOverlapping = false;
   bool _isUpdated = true;
+  bool _isAsleep = false;
 };
 
 }; // namespace ft

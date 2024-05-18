@@ -9,6 +9,11 @@ namespace ft {
 
 #define NDEBUG
 
+#ifndef _TOSTRING
+#define STRINGIFY(x) #x
+#define TOSTRING(x) STRINGIFY(x)
+#endif // _TOSTRING
+
 static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
 constexpr int POINT_LIGHT_MAX_COUNT = 1;
 static constexpr uint32_t THREAD_POOL_SIZE = 10;

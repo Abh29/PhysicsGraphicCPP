@@ -1,7 +1,6 @@
 #ifndef FTGRAPHICS_FT_SCENE_H
 #define FTGRAPHICS_FT_SCENE_H
 
-#include "ft_body.h"
 #include "ft_buffer.h"
 #include "ft_camera.h"
 #include "ft_command.h"

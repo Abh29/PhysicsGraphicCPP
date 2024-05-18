@@ -1,4 +1,4 @@
-#include "../includes/ft_component.h"
+#include "../includes/ft_rigidComponent.h"
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/gtc/quaternion.hpp>
 

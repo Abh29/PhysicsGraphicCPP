@@ -1,6 +1,7 @@
 #ifndef FTGRAPHICS_FT_TOOLS_H
 #define FTGRAPHICS_FT_TOOLS_H
 
+#include "ft_defines.h"
 #include "ft_headers.h"
 #include <glm/fwd.hpp>
 #include <tuple>
@@ -12,6 +13,10 @@ struct tools {
   static bool fileExists(const std::string &filename) {
     std::ifstream f(filename.c_str());
     return !f.fail();
+  }
+
+  static std::string getShadersPath() {
+    return std::string(TOSTRING(SHADER_DIR));
   }
 
   static std::pair<float, glm::vec3>
