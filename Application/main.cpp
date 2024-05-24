@@ -17,8 +17,8 @@ int main(int argc, char **argv) {
     path = std::string(argv[1]);
   else {
     std::cout << "no input file was provided\n";
-    std::cout << "defaulting to misk/ft_scene.json" << std::endl;
-    path = std::string("misc/ft_scene.json");
+    std::cout << "defaulting to misc/ft_scene.json" << std::endl;
+    path = ft::Application::getMiscPath() + "ft_scene.json";
   }
 
   try {

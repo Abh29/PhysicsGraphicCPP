@@ -1,6 +1,13 @@
 #include "../includes/ft_gui.h"
 #include "../imgui/imgui_internal.h"
+#include "ft_scene.h"
+#include <cstdint>
+#include <glm/fwd.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <iomanip>
 #include <memory>
+#include <sstream>
+#include <string>
 
 ft::Gui::Gui(Instance::pointer instance, PhysicalDevice::pointer physicalDevice,
              Device::pointer device, Window::pointer window,
@@ -111,12 +118,14 @@ void ft::Gui::newFrame() {
 
 void ft::Gui::showDemo() { ImGui::ShowDemoWindow(); }
 
-void ft::Gui::showGUI(uint32_t flags, bool *p_open) {
+void ft::Gui::showGUI(const ft::Scene::pointer &scene, uint32_t flags,
+                      bool *p_open) {
   (void)flags;
   (void)p_open;
   showTitleBar();
-  showMainMenue();
+  showMainMenue(scene);
   if (show_app_metrics)
+
     showMetrics(&show_app_metrics);
   if (show_app_about)
     showAboutWindow(&show_app_about);
@@ -252,7 +261,8 @@ void ft::Gui::showTitleBar() {
   ImGui::End();
 }
 
-void ft::Gui::showMainMenue() {
+void ft::Gui::showMainMenue(const ft::Scene::pointer &scene) {
+  (void)scene;
   IM_ASSERT(ImGui::GetCurrentContext() != NULL &&
             "Missing dear imgui context. Refer to examples app!");
 
@@ -280,13 +290,126 @@ void ft::Gui::showMainMenue() {
     return;
   }
 
-  // Most "big" widgets share a common width settings by default. See
-  // 'Demo->Layout->Widgets Width' for details. e.g. Use 2/3 of the space for
-  // widgets and 1/3 for labels (right align)
-  // ImGui::PushItemWidth(-ImGui::GetWindowWidth() * 0.35f);
-  // e.g. Leave a fixed amount of width for labels (by passing a negative
-  // value), the rest goes to widgets.
   ImGui::PushItemWidth(ImGui::GetFontSize() * -12);
+
+  // Object Inspector
+  // if (ImGui::CollapsingHeader("Object Inspector")) {
+  //   static uint32_t selectedObjectIndex = 0;
+  //   ImGui::Text("Objects in Scene:");
+
+  //   for (uint32_t i = 0; i < scene->getObjects().size(); i++) {
+  //     if (ImGui::Selectable("object name", selectedObjectIndex == i)) {
+  //       selectedObjectIndex = i;
+  //     }
+  //   }
+
+  //   glm::vec3 v;
+  //   if (selectedObjectIndex < scene->getObjects().size()) {
+  //     auto &obj = scene->getObjects()[selectedObjectIndex];
+  //     ImGui::Text("Selected Object: %s", obj->getModel()->getPath().c_str());
+  //     ImGui::SliderFloat3("Position", glm::value_ptr(v), -100.0f, 100.0f);
+  //     ImGui::SliderFloat3("Rotation", glm::value_ptr(v), -180.0f, 180.0f);
+  //     ImGui::SliderFloat3("Scale", glm::value_ptr(v), 0.1f, 10.0f);
+  //   }
+  // }
+
+  // Scene Controls
+  if (ImGui::CollapsingHeader("Scene Controls")) {
+    ImGui::Text("Camera Settings:");
+    auto &cams = scene->getAllCameras();
+    float aspect = scene->getCamera()->getAspect();
+    uint32_t index = 0;
+
+    for (auto &cam : cams) {
+      auto &pos = cam->getEyePosition();
+      ImGui::SetNextItemOpen(scene->getCamera() == cam);
+      float fov = cam->getFov();
+      // float aspect = cam->getAspect();
+
+      if (ImGui::TreeNode(
+              std::string("camera " + std::to_string(index++) + ":").c_str())) {
+
+        ImGui::Text("Eye Position: ");
+        ImGui::BeginDisabled(true); // Begin disabled section
+        ImGui::PushItemWidth(-FLT_MIN);
+        ImGui::DragFloat3("##eye", glm::value_ptr(pos));
+        ImGui::PopItemWidth();
+        ImGui::EndDisabled(); // End disabled section
+
+        ImGui::Text("Field Of View: ");
+        ImGui::PushItemWidth(-FLT_MIN);
+        ImGui::SliderFloat("##fov", &fov, 30.0f, 120.0f, "%.1f");
+        ImGui::PopItemWidth();
+
+        ImGui::TreePop();
+
+        if (fov != cam->getFov()) {
+          cam->setFov(fov);
+          scene->updateCameraUBO();
+        }
+      }
+    }
+
+    ImGui::Text("Asspect: ");
+    ImGui::BeginDisabled(true); // Begin disabled section
+    ImGui::PushItemWidth(-FLT_MIN);
+    ImGui::DragFloat("##aspect", &aspect);
+    ImGui::EndDisabled(); // End disabled section
+
+    ImGui::Text("Lighting Settings:");
+    ImGui::PushItemWidth(-FLT_MIN);
+    if (ImGui::ColorEdit3("##lightColor",
+                          glm::value_ptr(scene->getUBO().lightColor)))
+      scene->updateCameraUBO();
+    if (ImGui::SliderFloat("##ambient", &(scene->getUBO().ambient), 0.0f, 1.0f,
+                           "%.2f"))
+      scene->updateCameraUBO();
+
+    ImGui::Text("Light position: ");
+    if (ImGui::DragFloat3("##position",
+                          glm::value_ptr(scene->getUBO().lightDirection)))
+      scene->updateCameraUBO();
+    // Add more lighting controls as needed
+  }
+
+  // Simulation Controls
+  if (ImGui::CollapsingHeader("Simulation Controls")) {
+    if (ImGui::Button("Play")) { /* Play simulation */
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Pause")) { /* Pause simulation */
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("Reset")) { /* Reset simulation */
+    }
+    // Add more simulation controls as needed
+  }
+
+  // Performance Metrics
+  if (ImGui::CollapsingHeader("Performance Metrics")) {
+    ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+    // Add more performance metrics as needed
+  }
+
+  // Debugging Tools
+  if (ImGui::CollapsingHeader("Debugging Tools")) {
+    static bool showBoundingBoxes = false;
+    ImGui::Checkbox("Show Bounding Boxes", &showBoundingBoxes);
+    // Add more debugging tools as needed
+  }
+
+  // Settings and Preferences
+  if (ImGui::CollapsingHeader("Settings and Preferences")) {
+    static bool darkTheme = true;
+    if (ImGui::Checkbox("Dark Theme", &darkTheme)) {
+      if (darkTheme) {
+        ImGui::StyleColorsDark();
+      } else {
+        ImGui::StyleColorsLight();
+      }
+    }
+    // Add more settings and preferences as needed
+  }
 
   // End of ShowDemoWindow()
   ImGui::PopItemWidth();
@@ -348,6 +471,14 @@ void ft::Gui::showInsertMenueFile() {
   }
 
   ImGui::Separator();
+
+  if (ImGui::MenuItem("Collision Plane", nullptr, false)) {
+
+    auto e = StandardEvent(Event::EventType::Menue_Insert_USPHERE);
+    _ftWindow->getEventListener()->fireInstante(e);
+    // _ftWindow->getEventListener()->pushEvent(
+    //     std::make_unique<StandardEvent>(Event::EventType::Menue_Insert_UBOX));
+  }
 
   if (ImGui::MenuItem("Unit Cube")) {
 
@@ -485,3 +616,87 @@ https://github.com/Abh29/PhysicsGraphicCPP \n\
 
   ImGui::End();
 }
+
+// void ft::Gui::showSideBar(const ft::Scene::pointer &scene) {
+//
+//   (void)scene;
+//   ImGui::Begin("Sidebar");
+//
+//   // Object Inspector
+//   if (ImGui::CollapsingHeader("Object Inspector")) {
+//     static uint32_t selectedObjectIndex = 0;
+//     ImGui::Text("Objects in Scene:");
+//
+//     for (uint32_t i = 0; i < scene->getObjects().size(); i++) {
+//       if (ImGui::Selectable("object name", selectedObjectIndex == i)) {
+//         selectedObjectIndex = i;
+//       }
+//     }
+//
+//     glm::vec3 v;
+//     if (selectedObjectIndex < scene->getObjects().size()) {
+//       auto &obj = scene->getObjects()[selectedObjectIndex];
+//       ImGui::Text("Selected Object: %s", obj->getModel()->getPath().c_str());
+//       ImGui::SliderFloat3("Position", glm::value_ptr(v), -100.0f, 100.0f);
+//       ImGui::SliderFloat3("Rotation", glm::value_ptr(v), -180.0f, 180.0f);
+//       ImGui::SliderFloat3("Scale", glm::value_ptr(v), 0.1f, 10.0f);
+//     }
+//   }
+//
+//   float fov = scene->getCamera()->getFov();
+//   // Scene Controls
+//   if (ImGui::CollapsingHeader("Scene Controls")) {
+//     ImGui::Text("Camera Settings:");
+//     ImGui::SliderFloat3("Camera Position",
+//                         glm::value_ptr(scene->getCamera()->getEyePosition()),
+//                         -100.0f, 100.0f);
+//
+//     ImGui::SliderFloat("Field of View", &fov, 30.0f, 120.0f);
+//
+//     ImGui::Text("Lighting Settings:");
+//     ImGui::ColorEdit3("Ambient Light",
+//                       glm::value_ptr(scene->getUBO().lightDirection));
+//     // Add more lighting controls as needed
+//   }
+//
+//   // Simulation Controls
+//   if (ImGui::CollapsingHeader("Simulation Controls")) {
+//     if (ImGui::Button("Play")) { /* Play simulation */
+//     }
+//     ImGui::SameLine();
+//     if (ImGui::Button("Pause")) { /* Pause simulation */
+//     }
+//     ImGui::SameLine();
+//     if (ImGui::Button("Reset")) { /* Reset simulation */
+//     }
+//     // Add more simulation controls as needed
+//   }
+//
+//   // Performance Metrics
+//   if (ImGui::CollapsingHeader("Performance Metrics")) {
+//     ImGui::Text("FPS: %.1f", ImGui::GetIO().Framerate);
+//     // Add more performance metrics as needed
+//   }
+//
+//   // Debugging Tools
+//   if (ImGui::CollapsingHeader("Debugging Tools")) {
+//     static bool showBoundingBoxes = false;
+//     ImGui::Checkbox("Show Bounding Boxes", &showBoundingBoxes);
+//     // Add more debugging tools as needed
+//   }
+//
+//   // Settings and Preferences
+//   if (ImGui::CollapsingHeader("Settings and Preferences")) {
+//     static bool darkTheme = true;
+//     if (ImGui::Checkbox("Dark Theme", &darkTheme)) {
+//       if (darkTheme) {
+//         ImGui::StyleColorsDark();
+//       } else {
+//         ImGui::StyleColorsLight();
+//       }
+//     }
+//     // Add more settings and preferences as needed
+//   }
+//
+//   ImGui::End();
+// }

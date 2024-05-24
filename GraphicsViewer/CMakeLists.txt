@@ -19,6 +19,8 @@ file(
   GLSL_SOURCE_FILES
   shaders/shader.vert
   shaders/shader.frag
+  shaders/MinimalRdrSys.vert
+  shaders/MinimalRdrSys.frag
   shaders/SimpleRdrSys.vert
   shaders/SimpleRdrSys.frag
   shaders/InstanceRdrSys.vert

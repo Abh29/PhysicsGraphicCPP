@@ -31,6 +31,7 @@ public:
   float getAspect() const;
 
   void hardSet(glm::vec3 eye, glm::vec3 target, glm::vec3 up);
+  void setFov(float fov);
   void updateAspect(float aspect);
 
   void hRotate(float deg);
@@ -44,7 +45,7 @@ public:
   void translateSide(float step);
   void translate(glm::vec3 v);
 
-private:
+protected:
   glm::vec3 _eyePosition;
   glm::vec3 _targetPosition;
   glm::vec3 _upDirection;

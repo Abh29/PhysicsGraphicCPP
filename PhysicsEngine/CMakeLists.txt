@@ -10,9 +10,6 @@ add_compile_options(-Wall -Werror -Wextra -pg -O3)
 
 add_link_options(-lGL -lGLEW -ldl -lpthread -pg -O3)
 
-cmake_minimum_required(VERSION 3.10)
-project(ftPhysics)
-
 # Create the shared library
 set(PHYSICS_SOURCES
     src/ft_body.cpp

@@ -36,6 +36,7 @@ public:
     Menue_Insert_SKYBOX,
     Menue_Insert_UBOX,
     Menue_Insert_USPHERE,
+    Menue_Insert_UPLANE,
     Menue_Insert_Camera,
 
     Menue_Edit_UNSELECTALL,

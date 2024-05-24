@@ -7,7 +7,6 @@
 #include <nlohmann/json_fwd.hpp>
 #include <ostream>
 #include <stdexcept>
-#include <tinygltf/json.hpp>
 
 ft::JsonParser::JsonParser(const Device::pointer &device,
                            const TexturePool::pointer &mPool,

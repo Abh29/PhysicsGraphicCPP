@@ -1,263 +1,281 @@
 {
-	"cameras": [
-		{
-			"eyePosition": [
-				5.0,
-				1.0,
-				0.0
-			],
-			"target": [
-				1.0,
-				1.0,
-				0.0
-			],
-			"upDirection": [
-				0.0,
-				-1.0,
-				0.0
-			],
-			"fov": 120,
-			"near": 0.5,
-			"far": 1000.0
-		}
-	],
-	"light": {
-		"color": [
-			1.0,
-			1.0,
-			1.0
-		],
-		"direction": [
-			0.0,
-			2.5,
-			0.0
-		],
-		"ambient": 0.2
-	},
-	"skyBox": {
-		"path": "assets/models/sphere.gltf",
-		"texture": "assets/textures/cubemap_vulkan.ktx",
-		"scaling": [
-			400.0,
-			400.0,
-			400.0
-		],
-		"basicColor": [
-			1.0,
-			1.0,
-			1.0
-		]
-	},
-	"models": [
-		{
-			"name": "plane",
-			"path": "assets/models/plane.mtl.obj",
-			"type": "obj",
-			"ignore": true,
-			"transformation": {
-				"translation": [
-					0.0,
-					0.0,
-					0.0
-				],
-				"rotation": [
-					90.0,
-					0.0,
-					1.0,
-					0.0
-				],
-				"scaling": [
-					300.0,
-					3.0,
-					300.0
-				]
-			},
-			"basicColor": [
-				1.0,
-				1.0,
-				1.0
-			],
-			"flags": {
-				"selectable": false,
-				"hidden": false,
-				"simple": true
-			}
-		},
-		{
-			"name": "helmet",
-			"path": "assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
-			"type": "gltf",
-			"ignore": true,
-			"transformation": {
-				"translation": [
-					5.0,
-					0.45,
-					10.0
-				],
-				"rotation": [
-					180.0,
-					1.0,
-					0.0,
-					0.0
-				],
-				"scaling": [
-					1.0,
-					1.0,
-					1.0
-				]
-			},
-			"basicColor": [
-				0.0,
-				0.0,
-				0.0
-			],
-			"flags": {
-				"selectable": true,
-				"hidden": true,
-				"simple": false,
-				"hasTexture": true,
-				"hasNormalTexture": false
-			}
-		},
-		{
-			"name": "sponza",
-			"path": "assets/models/sponza/sponza.gltf",
-			"type": "gltf",
-			"ignore": true,
-			"transformation": {
-				"translation": [
-					0.0,
-					0.0,
-					0.0
-				],
-				"rotation": [
-					180.0,
-					1.0,
-					0.0,
-					0.0
-				],
-				"scaling": [
-					0.025,
-					0.025,
-					0.025
-				]
-			},
-			"basicColor": [
-				0.0,
-				0.0,
-				0.0
-			],
-			"flags": {
-				"selectable": true,
-				"hidden": false,
-				"simple": false,
-				"hasTexture": true,
-				"hasNormalTexture": true
-			}
-		},
-		{
-			"name": "viking",
-			"path": "assets/models/viking_room.obj",
-			"texturePath": "assets/textures/viking_room.png",
-			"type": "obj",
-			"ignore": true,
-			"transformation": {
-				"translation": [
-					0.0,
-					0.0,
-					0.0
-				],
-				"rotation": [
-					90.0,
-					1.0,
-					0.0,
-					0.0
-				],
-				"scaling": [
-					1.0,
-					1.0,
-					1.0
-				]
-			},
-			"basicColor": [
-				0.0,
-				0.9,
-				0.2
-			],
-			"flags": {
-				"selectable": true,
-				"hidden": false,
-				"simple": false,
-				"hasTexture": true
-			}
-		},
-		{
-			"name": "venus",
-			"path": "assets/models/venus.gltf",
-			"type": "gltf",
-			"ignore": true,
-			"transformation": {
-				"translation": [
-					4.0,
-					4.0,
-					-5.7
-				],
-				"rotation": [
-					180.0,
-					0.0,
-					1.0,
-					1.0
-				],
-				"scaling": [
-					1.0,
-					1.0,
-					1.0
-				]
-			},
-			"basicColor": [
-				0.5,
-				0.7,
-				0.2
-			],
-			"flags": {
-				"selectable": true,
-				"hidden": false,
-				"simple": true
-			}
-		},
-		{
-			"name": "car",
-			"path": "assets/models/car.obj",
-			"type": "obj",
-			"ignore": true,
-			"transformation": {
-				"translation": [
-					0.0,
-					0.0,
-					3.0
-				],
-				"rotation": [
-					180.0,
-					1.0,
-					0.0,
-					0.0
-				],
-				"scaling": [
-					0.005,
-					0.005,
-					0.005
-				]
-			},
-			"basicColor": [
-				0.9,
-				0.9,
-				0.5
-			],
-			"flags": {
-				"selectable": true,
-				"hidden": false,
-				"simple": true
-			}
-		}
-	]
+    "cameras": [
+        {
+            "eyePosition": [
+                29.0,
+                1.0,
+                0.0
+            ],
+            "far": 1000.0,
+            "fov": 60.0,
+            "near": 0.5,
+            "target": [
+                28.0,
+                1.0,
+                0.0
+            ],
+            "upDirection": [
+                0.0,
+                -1.0,
+                0.0
+            ]
+        }
+    ],
+    "light": {
+        "ambient": 0.20000000298023224,
+        "color": [
+            0.8500000238418579,
+            0.8999999761581421,
+            1.0
+        ],
+        "direction": [
+            0.0,
+            2.5,
+            0.0
+        ]
+    },
+    "models": [
+        {
+            "basicColor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "flags": {
+                "hasNormalTexture": false,
+                "hasTexture": true,
+                "hidden": true,
+                "selectable": true,
+                "simple": false
+            },
+            "ignore": true,
+            "name": "helmet",
+            "path": "assets/models/FlightHelmet/glTF/FlightHelmet.gltf",
+            "transformation": {
+                "rotation": [
+                    180.0,
+                    1.0,
+                    0.0,
+                    0.0
+                ],
+                "scaling": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "translation": [
+                    5.0,
+                    0.45,
+                    10.0
+                ]
+            },
+            "type": "gltf"
+        },
+        {
+            "basicColor": [
+                0.0,
+                0.0,
+                0.0
+            ],
+            "flags": {
+                "hasNormalTexture": true,
+                "hasTexture": true,
+                "hidden": false,
+                "selectable": true,
+                "simple": false
+            },
+            "ignore": true,
+            "name": "sponza",
+            "path": "assets/models/sponza/sponza.gltf",
+            "transformation": {
+                "rotation": [
+                    180.0,
+                    1.0,
+                    0.0,
+                    0.0
+                ],
+                "scaling": [
+                    0.025,
+                    0.025,
+                    0.025
+                ],
+                "translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "type": "gltf"
+        },
+        {
+            "basicColor": [
+                0.9,
+                0.9,
+                0.5
+            ],
+            "flags": {
+                "hidden": false,
+                "selectable": true,
+                "simple": true
+            },
+            "ignore": true,
+            "name": "car",
+            "path": "assets/models/car.obj",
+            "transformation": {
+                "rotation": [
+                    180.0,
+                    1.0,
+                    0.0,
+                    0.0
+                ],
+                "scaling": [
+                    0.005,
+                    0.005,
+                    0.005
+                ],
+                "translation": [
+                    0.0,
+                    0.0,
+                    3.0
+                ]
+            },
+            "type": "obj"
+        },
+        {
+            "basicColor": [
+                1.0,
+                1.0,
+                1.0
+            ],
+            "flags": {
+                "hasLineTopology": false,
+                "hasNormalDebug": false,
+                "hasNormalTexture": false,
+                "hasPointTopology": false,
+                "hasTexture": false,
+                "hidden": false,
+                "selectable": false,
+                "simple": true
+            },
+            "ignore": false,
+            "loadOptions": 0,
+            "name": "plane.mtl.obj",
+            "path": "assets/models/plane.mtl.obj",
+            "transformation": {
+                "rotation": [
+                    90.0,
+                    -0.0,
+                    1.0,
+                    -0.0
+                ],
+                "scaling": [
+                    300.0,
+                    3.0,
+                    300.0
+                ],
+                "translation": [
+                    0.0,
+                    0.0,
+                    0.0
+                ]
+            },
+            "type": "obj"
+        },
+        {
+            "basicColor": [
+                0.0,
+                0.8999999761581421,
+                0.8999999761581421
+            ],
+            "flags": {
+                "hasLineTopology": false,
+                "hasNormalDebug": false,
+                "hasNormalTexture": false,
+                "hasPointTopology": false,
+                "hasTexture": true,
+                "hidden": false,
+                "selectable": true,
+                "simple": false
+            },
+            "ignore": false,
+            "loadOptions": 0,
+            "name": "viking_room.obj",
+            "path": "assets/models/viking_room.obj",
+            "texturePath": "assets/textures/viking_room.png",
+            "transformation": {
+                "rotation": [
+                    90.0,
+                    -1.0,
+                    -0.0,
+                    -0.0
+                ],
+                "scaling": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "translation": [
+                    0.0,
+                    1.5000001192092896,
+                    0.0
+                ]
+            },
+            "type": "obj"
+        },
+        {
+            "basicColor": [
+                0.5,
+                0.699999988079071,
+                0.699999988079071
+            ],
+            "flags": {
+                "hasLineTopology": false,
+                "hasNormalDebug": false,
+                "hasNormalTexture": false,
+                "hasPointTopology": false,
+                "hasTexture": false,
+                "hidden": false,
+                "selectable": true,
+                "simple": true
+            },
+            "ignore": false,
+            "loadOptions": 0,
+            "name": "venus.gltf",
+            "path": "assets/models/venus.gltf",
+            "transformation": {
+                "rotation": [
+                    93.84098052978516,
+                    0.9351131319999695,
+                    0.2505628168582916,
+                    -0.2505628764629364
+                ],
+                "scaling": [
+                    1.0,
+                    1.0,
+                    1.0
+                ],
+                "translation": [
+                    4.0,
+                    5.499998569488525,
+                    -5.699999809265137
+                ]
+            },
+            "type": "gltf"
+        }
+    ],
+    "skyBox": {
+        "basicColor": [
+            1.0,
+            1.0,
+            1.0
+        ],
+        "ignore": false,
+        "path": "assets/models/sphere.gltf",
+        "scaling": [
+            400.0,
+            400.0,
+            400.0
+        ],
+        "texture": "assets/textures/cubemap_vulkan.ktx"
+    }
 }

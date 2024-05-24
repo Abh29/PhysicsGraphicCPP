@@ -46,6 +46,7 @@ private:
   void drawFrame();
   void checkEventQueue();
   void handleEven(Event::uniq_ptr e);
+  void test();
 
   EventListener::pointer _ftEventListener;
   Window::pointer _ftWindow;
@@ -58,6 +59,7 @@ private:
   Gui::pointer _ftGui;
   Scene::pointer _ftScene;
   Renderer::pointer _ftRenderer;
+  MinimalRdrSys::pointer _ftMinimalRdrSys;
   SimpleRdrSys::pointer _ftSimpleRdrSys;
   OneTextureRdrSys::pointer _ftTexturedRdrSys;
   TwoTextureRdrSys::pointer _ft2TexturedRdrSys;

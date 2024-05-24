@@ -18,6 +18,7 @@
 #include "ft_tools.h"
 #include "ft_vertex.h"
 #include <cstdint>
+#include <glm/fwd.hpp>
 #include <memory>
 
 namespace ft {
@@ -50,6 +51,10 @@ public:
   void drawInstancedObjs(const CommandBuffer::pointer &commandBuffer,
                          const GraphicsPipeline::pointer &pipeline,
                          uint32_t index);
+
+  void drawMinimalObjs(const CommandBuffer::pointer &,
+                       const GraphicsPipeline::pointer &,
+                       const MinimalRdrSys::pointer &, uint32_t index);
 
   void drawSimpleObjs(const CommandBuffer::pointer &,
                       const GraphicsPipeline::pointer &,
@@ -120,6 +125,14 @@ public:
   void nextCamera();
   std::vector<Camera::pointer> &getAllCameras();
   bool hasCamera() const;
+  void updateCameraUBO();
+
+  // scene light
+  void setGeneralLight(glm::vec3 color, glm::vec3 direction, float ambient);
+  void addPointLightToTheScene(PointLightObject &pl);
+  PointLightObject *getLights();
+  glm::vec3 &getLightColor();
+  glm::vec3 &getLightPosition();
 
   ft::Gizmo::pointer loadGizmo(const std::string &gltfModel);
   ft::Gizmo::pointer getGizmo() const;
@@ -127,13 +140,9 @@ public:
 
   // scene update
   void updateSceneObjects(float duration, ft::ThreadPool::pointer &pool);
-  void updateCameraUBO();
 
   // set properties of the scene
   void addMaterialToObj(uint32_t id, Material::pointer texture);
-  void addPointLightToTheScene(PointLightObject &pl);
-  void setGeneralLight(glm::vec3 color, glm::vec3 direction, float ambient);
-  PointLightObject *getLights();
   [[nodiscard]] std::vector<SceneObject::pointer> &getObjects();
   void setMaterialPool(TexturePool::pointer pool);
   bool select(uint32_t id);
@@ -151,6 +160,8 @@ public:
   void toggleGizmo();
   bool isGlobalGizmo() const;
   bool hasSkyBox() const;
+
+  // ubo
   UniformBufferObject &getUBO();
 
   // testing features

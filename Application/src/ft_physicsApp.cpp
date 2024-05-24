@@ -5,8 +5,9 @@
 
 ft::RigidBodyApplication::RigidBodyApplication(uint32_t maxContacts)
     : _maxContacts(maxContacts), _resolver(maxContacts * 8) {
-  _contacts = new ft::Contact[maxContacts];
-  _collisionData.contactArray = _contacts;
+  // _contacts = new ft::Contact[maxContacts];
+  _contacts.resize(maxContacts);
+  _collisionData.contactArray = _contacts.data();
 }
 
 void ft::RigidBodyApplication::play() { _pauseSimulation = false; }

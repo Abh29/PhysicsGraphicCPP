@@ -51,6 +51,25 @@ private:
   std::vector<DescriptorSet::pointer> _ftDescriptorSets;
 };
 
+class MinimalRdrSys final : public RenderingSystem {
+
+public:
+  using pointer = std::shared_ptr<MinimalRdrSys>;
+
+  explicit MinimalRdrSys(Device::pointer, Renderer::pointer,
+                         DescriptorPool::pointer);
+  ~MinimalRdrSys() override = default;
+
+  void populateUBODescriptors(std::vector<Buffer::pointer> ubos);
+  [[nodiscard]] std::vector<DescriptorSet::pointer> getDescriptorSets() const;
+
+private:
+  void createDescriptors();
+  void createGraphicsPipeline();
+
+  std::vector<DescriptorSet::pointer> _ftDescriptorSets;
+};
+
 class SimpleRdrSys final : public RenderingSystem {
 
 public:

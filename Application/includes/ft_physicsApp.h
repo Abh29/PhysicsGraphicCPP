@@ -2,6 +2,7 @@
 #define FT_PHYSICS_APPLICATION
 
 #include "ft_collideFine.h"
+#include "ft_contacts.h"
 #include "ft_headers.h"
 #include "ft_rigidObject.h"
 
@@ -25,14 +26,15 @@ public:
   using raw_ptr = RigidBodyApplication *;
 
   RigidBodyApplication(uint32_t maxContacts = 256);
-  ~RigidBodyApplication() { delete _contacts; };
+  ~RigidBodyApplication(){/*delete _contacts;*/};
 
   void play();
   void pause();
 
 protected:
   const uint32_t _maxContacts;
-  ft::Contact::raw_ptr _contacts;
+  // ft::Contact::raw_ptr _contacts;
+  std::vector<ft::Contact> _contacts;
   ft::CollisionData _collisionData;
   ft::ContactResolver _resolver;
   bool _pauseSimulation = false;

@@ -1,4 +1,5 @@
 #include "../includes/ft_app.h"
+#include "ft_rendering_systems.h"
 #include <chrono>
 #include <exception>
 #include <functional>
@@ -48,7 +49,7 @@ void ft::Application::run() {
   while (!_ftWindow->shouldClose()) {
     _ftWindow->pollEvents();
     _ftGui->newFrame();
-    _ftGui->showGUI();
+    _ftGui->showGUI(_ftScene);
     _ftGui->showDemo();
     duration = 1.0f / _ftGui->getFramerate();
     if (_play) {
@@ -281,7 +282,7 @@ void ft::Application::initEventListener() {
   _ftEventListener->addCallbackForEventType(
       Event::EventType::Menue_File_SAVE, [&](ft::Event &ev) {
         (void)ev;
-        _ftJsonParser->saveSceneToFile(_ftScene, "misk/ft_scene.json");
+        _ftJsonParser->saveSceneToFile(_ftScene, _scenePath);
       });
 
   _ftEventListener->addCallbackForEventType(
@@ -321,8 +322,8 @@ void ft::Application::initEventListener() {
         ft::ObjectState data{};
         try {
 
-          auto unit_box =
-              _ftScene->addModelFromObj("misk/models/cube.mtl.obj", data);
+          auto unit_box = _ftScene->addModelFromObj(
+              ft::Application::getMiscPath() + "models/cube.mtl.obj", data);
           unit_box->getModel()->setFlags(unit_box->getModel()->getID(),
                                          ft::MODEL_SELECTABLE_BIT |
                                              ft::MODEL_SIMPLE_BIT);
@@ -338,7 +339,7 @@ void ft::Application::initEventListener() {
 
         } catch (std::exception &e) {
           std::cerr
-              << "cant load model, make sure it exists in the assets folder !"
+              << "cant load model, make sure it exists in the misc folder !"
               << std::endl;
         }
       });
@@ -350,8 +351,8 @@ void ft::Application::initEventListener() {
         ft::ObjectState data{};
         try {
 
-          auto unit_sphere =
-              _ftScene->addModelFromObj("misk/models/sphere.mtl.obj", data);
+          auto unit_sphere = _ftScene->addModelFromObj(
+              ft::Application::getMiscPath() + "models/sphere.mtl.obj", data);
           unit_sphere->getModel()->setFlags(unit_sphere->getModel()->getID(),
                                             ft::MODEL_SIMPLE_BIT |
                                                 ft::MODEL_SELECTABLE_BIT);
@@ -370,7 +371,7 @@ void ft::Application::initEventListener() {
 
         } catch (std::exception &e) {
           std::cerr
-              << "cant load model, make sure it exists in the assets folder !"
+              << "cant load model, make sure it exists in the misc folder !"
               << std::endl;
         }
       });
@@ -492,6 +493,9 @@ void ft::Application::initApplication() {
   _ftSimpleRdrSys = std::make_shared<ft::SimpleRdrSys>(_ftDevice, _ftRenderer,
                                                        _ftDescriptorPool);
   _ftSimpleRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
+  _ftMinimalRdrSys = std::make_shared<ft::MinimalRdrSys>(_ftDevice, _ftRenderer,
+                                                         _ftDescriptorPool);
+  _ftMinimalRdrSys->populateUBODescriptors(_ftRenderer->getUniformBuffers());
   _ftTexturedRdrSys = std::make_shared<ft::OneTextureRdrSys>(
       _ftDevice, _ftRenderer, _ftDescriptorPool);
   _ft2TexturedRdrSys = std::make_shared<ft::TwoTextureRdrSys>(
@@ -721,6 +725,11 @@ void ft::Application::drawFrame() {
 
   _ftScene->drawSkyBox(commandBuffer, _ftSkyBoxRdrSys->getGraphicsPipeline(),
                        _ftSkyBoxRdrSys, _currentFrame);
+
+  _ftScene->drawMinimalObjs(commandBuffer,
+                            _ftMinimalRdrSys->getGraphicsPipeline(),
+                            _ftMinimalRdrSys, _currentFrame);
+
   _ftScene->drawSimpleObjs(commandBuffer,
                            _ftSimpleRdrSys->getGraphicsPipeline(),
                            _ftSimpleRdrSys, _currentFrame);
@@ -828,8 +837,10 @@ void ft::Application::updateScene(int key) {
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_O)) {
     _ftPhysicsApplication->pause();
     _play = false;
+  } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_X)) {
+    std::cout << "testing: " << std::endl;
+    test();
   }
-
   _ftScene->updateCameraUBO();
   _ftMousePicker->notifyUpdatedView();
 }
@@ -853,5 +864,43 @@ void ft::Application::checkEventQueue() {
       _ftEventListener->fireInstante(*e);
       delete e;
     });
+  }
+}
+
+void ft::Application::test() {
+  // auto p = std::make_shared<CollisionPlane>();
+  // p->direction = {1.0f, 0.0f, 0.0f};
+  // p->offset = 10.0f;
+  // _ftPhysicsApplication->addCollisionPlane(p);
+  //
+
+  // todo: test this
+  auto m = _ftScene->getSelectedModel();
+  if (!m)
+    return;
+  if (m->hasFlag(ft::MODEL_HAS_RIGID_BODY_BIT)) {
+    auto objs = _ftScene->getObjects();
+    SceneObject::pointer obj = nullptr;
+    for (auto &i : objs) {
+      if (i->getModel().get() == m) {
+        obj = i;
+        break;
+      }
+    }
+
+    if (obj.get()) {
+      RigidBallComponent::raw_ptr rball = nullptr;
+      RigidBoxComponent::raw_ptr rbox = nullptr;
+
+      rball = obj->getComponent<RigidBallComponent>();
+      if (rball) {
+        rball->getBall()->setIsAsleep(!rball->getBall()->isAsleep());
+      }
+
+      rbox = obj->getComponent<RigidBoxComponent>();
+      if (rbox) {
+        rbox->getBox()->setIsAsleep(!rbox->getBox()->isAsleep());
+      }
+    }
   }
 }

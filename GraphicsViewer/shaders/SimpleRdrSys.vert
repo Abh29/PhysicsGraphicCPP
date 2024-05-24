@@ -42,55 +42,26 @@ layout(location = 0) out vec3 fragColor;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec3 outLightVec;
 layout(location = 3) out vec3 outViewVec;
+layout(location = 4) out vec3 outLightColor;
+layout(location = 5) out vec3 FragPos;
+layout(location = 6) out float ambient;
 
-void main2() {
+
+void main()
+{
+    gl_PointSize = 2;
+    FragPos = vec3(push.modelMatrix * vec4(inPosition, 1.0));
+    outNormal = mat3(transpose(inverse(push.modelMatrix))) * normal; 
+    gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
+    outLightVec = ubo.lightDirection.xyz;
+    outLightColor = ubo.lightColor;
+    fragColor = inColor * push.baseColor;
+    ambient = ubo.ambient;
+}
+
+void simple_unshaded() {
     gl_PointSize = 2;
     gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0f);
     fragColor = inColor;
-}
-
-
-void main1() {
-    gl_PointSize = 2;
-//    vec4 worldPos = push.modelMatrix * vec4(inPosition, 1.0);
-//    vec3 worldNormal = mat3(transpose(inverse(push.modelMatrix))) * normal;
-//    vec3 viewDir = normalize(-vec3(ubo.view * worldPos));
-//
-////     Calculate diffuse reflection
-//    float diffuseStrength = max(dot(worldNormal, -ubo.lightDirection), 0.0);
-//    vec3 diffuse = diffuseStrength * ubo.lightColor * inColor;
-//
-////     Calculate ambient reflection
-//    vec3 ambient = ubo.ambient * inColor;
-
-    // Calculate final color by combining ambient and diffuse components
-//    fragColor = ambient + diffuse;
-    fragColor = inColor * push.baseColor;
-
-    gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
-}
-
-void main3() {
-    gl_PointSize = 2;
-    fragColor = inColor * push.baseColor; 
-    gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition.xyz, 1.0);
-    outNormal = mat3(push.modelMatrix) * normal;
-    vec4 pos = push.modelMatrix * vec4(inPosition, 1.0);
-    vec3 lPos = mat3(push.modelMatrix) * ubo.lightDirection;
-    outLightVec = lPos - pos.xyz;
-}
-
-void main() {
-	gl_PointSize = 2;
-	outNormal = normal;
-	fragColor = inColor * push.baseColor;
-	gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
-
-	vec4 pos = push.modelMatrix * vec4(inPosition, 1.0);
-	outNormal = mat3(push.modelMatrix) * normal;
-
-	vec3 lightPos = vec3(1.0f, 1.0f, 1.0f);
-	outLightVec = lightPos.xyz - pos.xyz;
-	outViewVec = -pos.xyz;		
 }
 

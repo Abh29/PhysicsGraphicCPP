@@ -42,6 +42,47 @@ void ft::Scene::drawInstancedObjs(const CommandBuffer::pointer &commandBuffer,
   }
 }
 
+void ft::Scene::drawMinimalObjs(const CommandBuffer::pointer &commandBuffer,
+                                const GraphicsPipeline::pointer &pipeline,
+                                const MinimalRdrSys::pointer &system,
+                                uint32_t index) {
+
+  // bind the graphics pipeline
+  vkCmdBindPipeline(commandBuffer->getVKCommandBuffer(),
+                    VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline->getVKPipeline());
+
+  vkCmdBindDescriptorSets(
+      commandBuffer->getVKCommandBuffer(), VK_PIPELINE_BIND_POINT_GRAPHICS,
+      system->getGraphicsPipeline()->getVKPipelineLayout(), 0, 1,
+      &(system->getDescriptorSets()[index]->getVKDescriptorSet()), 0, nullptr);
+
+  // vertex and index buffers
+  for (auto &obj : _objects) {
+    auto &model = obj->getModel();
+    if ((!model->hasFlag(ft::MODEL_HAS_ULTRA_SIMPLE_BIT) &&
+         !model->hasFlag(ft::MODEL_SELECTED_BIT)) ||
+        model->hasFlag(ft::MODEL_HIDDEN_BIT | ft::MODEL_LINE_BIT |
+                       ft::MODEL_POINT_BIT))
+      continue;
+    model->bind(commandBuffer, index);
+    model->draw(commandBuffer, pipeline);
+  }
+
+  if (_ftGizmo) {
+    if (_state.lastSelect) {
+      auto &m = _state.lastSelect;
+      _ftGizmo->bind(commandBuffer, index);
+      if (_state.globalGizbo) {
+        _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
+      } else {
+        _ftGizmo->resetTransform()
+            .at(_state.lastSelect->getCentroid())
+            .setRotation(m->getState().rotation);
+      }
+      _ftGizmo->draw(commandBuffer, pipeline);
+    }
+  }
+}
 void ft::Scene::drawSimpleObjs(const CommandBuffer::pointer &commandBuffer,
                                const GraphicsPipeline::pointer &pipeline,
                                const SimpleRdrSys::pointer &system,
@@ -66,21 +107,6 @@ void ft::Scene::drawSimpleObjs(const CommandBuffer::pointer &commandBuffer,
       continue;
     model->bind(commandBuffer, index);
     model->draw(commandBuffer, pipeline);
-  }
-
-  if (_ftGizmo) {
-    if (_state.lastSelect) {
-      auto &m = _state.lastSelect;
-      _ftGizmo->bind(commandBuffer, index);
-      if (_state.globalGizbo) {
-        _ftGizmo->resetTransform().at(_state.lastSelect->getCentroid());
-      } else {
-        _ftGizmo->resetTransform()
-            .at(_state.lastSelect->getCentroid())
-            .setRotation(m->getState().rotation);
-      }
-      _ftGizmo->draw(commandBuffer, pipeline);
-    }
   }
 }
 
@@ -734,6 +760,9 @@ void ft::Scene::updateCameraUBO() {
 
 ft::PointLightObject *ft::Scene::getLights() { return _ubo.lights; }
 
+glm::vec3 &ft::Scene::getLightColor() { return _ubo.lightColor; }
+glm::vec3 &ft::Scene::getLightPosition() { return _ubo.lightDirection; }
+
 std::vector<ft::SceneObject::pointer> &ft::Scene::getObjects() {
   return _objects;
 }
@@ -859,7 +888,7 @@ void ft::Scene::showSelectedInfo() const {
   std::cout << "\t" << (_state.globalGizbo ? "global" : "local") << "\n";
   if (_state.lastSelect) {
     auto &m = _state.lastSelect;
-    std::cout << "model" << m->getID() << ": "
+    std::cout << "model " << m->getID() << ": "
               << glm::to_string(m->getCentroid()) << "\n";
     std::cout << "\tvetices: " << _state.lastSelect->getVertices().size()
               << "\n";

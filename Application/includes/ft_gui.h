@@ -7,10 +7,12 @@
 #include "ft_headers.h"
 #include "ft_instance.h"
 #include "ft_renderPass.h"
+#include "ft_scene.h"
 #include "ft_window.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
+#include <cstdint>
 
 namespace ft {
 
@@ -28,7 +30,8 @@ public:
 
   void newFrame();
   void showDemo();
-  void showGUI(uint32_t flags = 0, bool *p_open = nullptr);
+  void showGUI(const ft::Scene::pointer &scene, uint32_t flags = 0,
+               bool *p_open = nullptr);
   void render(CommandBuffer::pointer commandBuffer);
   bool isGuiHovered() const;
   bool isMouseCaptured() const;
@@ -38,13 +41,12 @@ public:
 
 protected:
   void showMetrics(bool *p_open);
-  void showMainMenue();
+  void showMainMenue(const ft::Scene::pointer &scene);
   void showTitleBar();
   void showExampleMenuFile();
   void showInsertMenueFile();
   void showToolsMenueFile();
   void showEditMenueFile();
-
   void showAboutWindow(bool *p_open);
 
   Instance::pointer _ftInstance;

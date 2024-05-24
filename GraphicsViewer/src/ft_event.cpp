@@ -1,5 +1,4 @@
 #include "../includes/ft_event.h"
-#include <algorithm>
 #include <memory>
 #include <mutex>
 #include <utility>
