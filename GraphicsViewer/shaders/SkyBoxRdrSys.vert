@@ -12,14 +12,15 @@ struct PointLight {
 
 // uniform for camera infor and lights
 layout(binding = 0) uniform UniformBufferOject {
-    vec3            lightColor;
-    vec3            lightDirection;
-    float           ambient;
     mat4            view;
     mat4            proj;
     vec3            eyePosition;
+    vec3            lightColor;
+    vec3            lightDirection;
+    float           ambient;
+    float	    pointSize;
     uint            lightCount;
-    PointLight      lights[100];
+    PointLight      lights[10];
 } ubo;
 
 // push constanct for general lighting info
@@ -43,19 +44,6 @@ layout (location = 1) out vec3 outColor;
 layout (location = 2) out vec3 outUV;
 layout (location = 3) out vec3 outViewVec;
 layout (location = 4) out vec3 outLightVec;
-
-void main2() {
-//    outNormal = inNormal;
-//    outColor = inColor;
-//    outUV = inTexCoord;
-//    gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
-//
-//    vec4 pos = ubo.view * vec4(inPosition, 1.0);
-//    outNormal = mat3(ubo.view) * inNormal;
-//    vec3 lPos = mat3(ubo.view) * ubo.lightDirection.xyz;
-//    outLightVec = ubo.lightDirection.xyz - pos.xyz;
-//    outViewVec = ubo.eyePosition.xyz - pos.xyz;
-}
 
 
 void main() 

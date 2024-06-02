@@ -2,6 +2,7 @@
 #define FTGRAPHICS_FT_DEFINES_H
 
 #include "ft_headers.h"
+#include <array>
 #include <cstdint>
 #include <glm/fwd.hpp>
 
@@ -15,7 +16,7 @@ namespace ft {
 #endif // _TOSTRING
 
 static constexpr int MAX_FRAMES_IN_FLIGHT = 2;
-constexpr int POINT_LIGHT_MAX_COUNT = 1;
+constexpr int POINT_LIGHT_MAX_COUNT = 10;
 static constexpr uint32_t THREAD_POOL_SIZE = 10;
 
 struct QueueFamilyIndices {
@@ -35,20 +36,21 @@ struct PointLightObject {
   alignas(16) glm::vec3 position;
   alignas(16) glm::vec3 color;
   alignas(16) glm::vec3 attenuation; // (constant, linear, quadratic)
-  float intensity;
-  float radius;
-  float angle; // (0.0 to 180.0)
-  float exponent;
+  float ambient;
+  float diffuse;
+  float specular;
+  uint32_t on = 0u;
 };
 
 struct UniformBufferObject {
-  alignas(16) glm::vec3 lightColor;
-  alignas(16) glm::vec3 lightDirection;
-  alignas(4) float ambient;
   alignas(16) glm::mat4 view;
   alignas(16) glm::mat4 proj;
   alignas(16) glm::vec3 eyePosition;
-  alignas(4) uint32_t pLCount;
+  alignas(16) glm::vec3 lightColor;
+  alignas(16) glm::vec3 lightDirection;
+  alignas(4) float ambient;
+  alignas(4) float pointSize = 2.0f;
+  alignas(4) uint32_t pLCount = 0;
   alignas(16) PointLightObject lights[POINT_LIGHT_MAX_COUNT] = {};
 };
 

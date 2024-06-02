@@ -6,13 +6,9 @@ layout (line_strip, max_vertices = 6) out;
 
 // uniform for camera infor and lights
 layout(binding = 0) uniform UniformBufferOject {
-    vec3            lightColor;
-    vec3            lightDirection;
-    float           ambient;
     mat4            view;
     mat4            proj;
     vec3            eyePosition;
-    uint            lightCount;
 } ubo;
 
 

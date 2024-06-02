@@ -29,7 +29,7 @@ public:
     std::string name;
     glm::vec3 baseColor;
     glm::mat4 modelMatrix;
-    glm::mat4 normalMatrix;
+    // glm::mat4 normalMatrix;
     glm::mat4 updatedMatrix = glm::mat4(1.0f);
     bool updated = true;
   };

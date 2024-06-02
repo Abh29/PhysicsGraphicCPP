@@ -1,73 +1,75 @@
 #version 450
 
+struct PointLight {
+    vec3    position;
+    vec3    color;
+    vec3    attenuation;
+    float   ambient;
+    float   diffuse;
+    float   specular;
+    uint    on;
+};
+
+// uniform for camera infor and lights
+layout(binding = 0) uniform UniformBufferOject {
+    mat4            view;
+    mat4            proj;
+    vec3            eyePosition;
+    vec3            lightColor;
+    vec3            lightDirection;
+    float           ambient;
+    float	    pointSize;
+    uint            lightCount;
+    PointLight      lights[10];
+} ubo;
+
+
 layout(location = 0) in vec3 inColor;
 layout(location = 1) in vec3 inNormal;
-layout(location = 2) in vec3 inLightVec;
-layout(location = 3) in vec3 inViewVec;
-layout(location = 4) in vec3 lightColor;
-layout(location = 5) in vec3 FragPos;
-layout(location = 6) in float inAmbient;
+layout(location = 2) in vec3 inViewVec;
+layout(location = 3) in vec3 FragPos;
 
 
 layout(location = 0) out vec4 outColor;
 
-void main1() {
-    outColor = vec4(inColor, 1.0f);
-}
-
-
-
-void main2() 
-{
-	vec3 color;
-	vec3 N = normalize(inNormal);
-	vec3 L = normalize(inLightVec);
-	float intensity = dot(N,L);
-	if (intensity > 0.98)
-		color = inColor * 1.5;
-	else if  (intensity > 0.9)
-		color = inColor * 1.0;
-	else if (intensity > 0.5)
-		color = inColor * 0.6;
-	else if (intensity > 0.25)
-		color = inColor * 0.4;
-	else
-		color = inColor * 0.2;
-	// Desaturate a bit
-	color = vec3(mix(color, vec3(dot(vec3(0.2126,0.7152,0.0722), color)), 0.1));	
-	outColor.rgb = color;
-}
-
-// void main1() {
-// 	vec3 N = normalize(inNormal);
-// 	vec3 L = normalize(inLightVec);
-// 	vec3 V = normalize(inViewVec);
-// 	vec3 R = reflect(-L, N);
-// 	vec3 ambient = vec3(0.1);
-// 	vec3 diffuse = max(dot(N, L), 0.0) * vec3(1.0);
-// 	vec3 specular = pow(max(dot(R, V), 0.0), 16.0) * vec3(0.05);
-// 	outColor = vec4((ambient + diffuse) * inColor.rgb + specular, 1.0);		
-// }
-
 
 void main()
 {
-    // Ambient lighting
-    vec3 ambient = inAmbient * lightColor;
+    vec3 norm = normalize(inNormal);
+    vec3 viewDir = normalize(ubo.eyePosition - FragPos);
 
-    // Diffuse lighting
-    vec3 norm = normalize(inNormal); 
-    vec3 lightDir = normalize(inLightVec - FragPos);
-    float diff = max(dot(norm, lightDir), 0.0); 
-    vec3 diffuse = diff * lightColor;
+    // Base ambient lighting
+    vec3 ambient = ubo.ambient * ubo.lightColor * inColor;
+
+    // Initialize lighting components
+    vec3 diffuse = vec3(0.0);
+    vec3 specular = vec3(0.0);
+
+    // Iterate over each point light
+    for (int i = 0; i < ubo.lightCount ; ++i) {
+        PointLight light = ubo.lights[i];
+        if (light.on == 0) continue; // Skip if the light is off
+
+        // Calculate attenuation
+        float distance = length(light.position - FragPos);
+        float attenuation = 1.0 / (light.attenuation.x + light.attenuation.y * distance + light.attenuation.z * distance * distance);
+
+        // Ambient contribution from point light
+        ambient += light.ambient * attenuation * light.color;
+
+        // Diffuse contribution
+        vec3 lightDir = normalize(light.position - FragPos);
+        float diff = max(dot(norm, lightDir), 0.0);
+        diffuse += light.diffuse * diff * light.color * attenuation;
+
+        // Specular contribution
+        vec3 reflectDir = reflect(-lightDir, norm);
+        float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0); // Shininess factor
+        specular += light.specular * spec * light.color * attenuation;
+    }
 
     // Combine results
-    vec3 result = (ambient + diffuse) * inColor;
+    vec3 result = ambient * inColor + diffuse * inColor + specular;
     outColor = vec4(result, 1.0);
-}
-
-void simple_unshaded()
-{
-    outColor = vec4(inColor, 1.0f);
 }
 

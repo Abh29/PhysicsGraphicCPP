@@ -701,7 +701,9 @@ bool ft::Scene::hasGizmo() const { return _ftGizmo != nullptr; }
 
 // set
 
-void ft::Scene::addPointLightToTheScene(PointLightObject &pl) {
+void ft::Scene::addPointLightToTheScene(const PointLightObject &pl) {
+  if (_ubo.pLCount >= ft::POINT_LIGHT_MAX_COUNT)
+    return;
   _ubo.lights[_ubo.pLCount++] = pl;
 }
 

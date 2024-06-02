@@ -2,13 +2,9 @@
 
 // uniform for camera infor and lights
 layout(binding = 0) uniform UniformBufferOject {
-    vec3            lightColor;
-    vec3            lightDirection;
-    float           ambient;
     mat4            view;
     mat4            proj;
     vec3            eyePosition;
-    uint            lightCount;
 } ubo;
 
 // push constanct for general lighting info
@@ -30,7 +26,6 @@ layout(location = 4) in vec4 tangent;
 layout(location = 0) out vec3 fragColor;
 
 void main() {
-    gl_PointSize = 2;
     gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0f);
     fragColor = push.baseColor;
 }

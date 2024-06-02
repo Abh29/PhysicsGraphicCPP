@@ -37,6 +37,7 @@ public:
     SKY_BOX,
   };
 
+  // change this to sceneObject
   struct SceneNode {
     std::string _inputFile;
     std::vector<Model::pointer> _models;
@@ -129,7 +130,7 @@ public:
 
   // scene light
   void setGeneralLight(glm::vec3 color, glm::vec3 direction, float ambient);
-  void addPointLightToTheScene(PointLightObject &pl);
+  void addPointLightToTheScene(const PointLightObject &pl);
   PointLightObject *getLights();
   glm::vec3 &getLightColor();
   glm::vec3 &getLightPosition();

@@ -1,25 +1,10 @@
 #version 450
 
-struct PointLight {
-    vec3    position;
-    vec3    color;
-    vec3    attuniation;
-    float   intensity;
-    float   radius;
-    float   angle; // (0.0 to 180.0)
-    float   exponent;
-};
-
 // uniform for camera infor and lights
 layout(binding = 0) uniform UniformBufferOject {
-    vec3            lightColor;
-    vec3            lightDirection;
-    float           ambient;
     mat4            view;
     mat4            proj;
     vec3            eyePosition;
-    uint            lightCount;
-    PointLight      lights[100];
 } ubo;
 
 // push constanct for general lighting info
@@ -42,7 +27,6 @@ layout(location = 0) out uint fragColor;
 
 void main() {
     fragColor = push.modelID;
-    gl_PointSize = 2;
     gl_Position = ubo.proj * ubo.view * push.modelMatrix * vec4(inPosition, 1.0);
 }
 

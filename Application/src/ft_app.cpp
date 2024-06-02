@@ -1,7 +1,9 @@
 #include "../includes/ft_app.h"
+#include "ft_defines.h"
 #include "ft_rendering_systems.h"
 #include <chrono>
 #include <exception>
+#include <ft_random.h>
 #include <functional>
 #include <glm/ext/matrix_transform.hpp>
 #include <glm/fwd.hpp>
@@ -50,7 +52,7 @@ void ft::Application::run() {
     _ftWindow->pollEvents();
     _ftGui->newFrame();
     _ftGui->showGUI(_ftScene);
-    _ftGui->showDemo();
+    // _ftGui->showDemo();
     duration = 1.0f / _ftGui->getFramerate();
     if (_play) {
       _ftPhysicsApplication->update(duration);
@@ -104,7 +106,8 @@ void ft::Application::initEventListener() {
 
   _ftEventListener->addCallbackForEventType(
       Event::EventType::MOUSE_SCROLL, [&](ft::Event &ev) {
-        if (_ftGui->isGuiHovered() || !_ftScene->hasCamera())
+        if (_ftGui->isGuiHovered() || _ftGui->isMouseCaptured() ||
+            !_ftScene->hasCamera())
           return;
 
         auto &sev = dynamic_cast<ScrollEvent &>(ev);
@@ -396,6 +399,18 @@ void ft::Application::initEventListener() {
               << "cant load model, make sure it exists in the assets folder !"
               << std::endl;
         }
+      });
+
+  _ftEventListener->addCallbackForEventType(
+      Event::EventType::Menue_Insert_PLight, [&](ft::Event &ev) {
+        (void)ev;
+        PointLightObject pl = {};
+        pl.color = {1.0f, 1.0f, 1.0f};
+        pl.attenuation = {1.0f, 0.09f, 0.032f}; // const, linear, quad
+        pl.ambient = 0.1f;
+        pl.diffuse = 0.8f;
+        pl.specular = 0.5f;
+        _ftScene->addPointLightToTheScene(pl);
       });
 
   // edit
@@ -839,6 +854,7 @@ void ft::Application::updateScene(int key) {
     _play = false;
   } else if (key == _ftWindow->KEY(KeyboardKeys::KEY_X)) {
     std::cout << "testing: " << std::endl;
+    std::cout << "sizeof ubo: " << sizeof(ft::UniformBufferObject) << std::endl;
     test();
   }
   _ftScene->updateCameraUBO();
@@ -874,33 +890,80 @@ void ft::Application::test() {
   // _ftPhysicsApplication->addCollisionPlane(p);
   //
 
-  // todo: test this
-  auto m = _ftScene->getSelectedModel();
-  if (!m)
-    return;
-  if (m->hasFlag(ft::MODEL_HAS_RIGID_BODY_BIT)) {
-    auto objs = _ftScene->getObjects();
-    SceneObject::pointer obj = nullptr;
-    for (auto &i : objs) {
-      if (i->getModel().get() == m) {
-        obj = i;
-        break;
-      }
-    }
+  ft::Random rd;
 
-    if (obj.get()) {
-      RigidBallComponent::raw_ptr rball = nullptr;
-      RigidBoxComponent::raw_ptr rbox = nullptr;
+  for (int i = 0; i < 10; ++i) {
 
-      rball = obj->getComponent<RigidBallComponent>();
-      if (rball) {
-        rball->getBall()->setIsAsleep(!rball->getBall()->isAsleep());
-      }
+    // try {
 
-      rbox = obj->getComponent<RigidBoxComponent>();
-      if (rbox) {
-        rbox->getBox()->setIsAsleep(!rbox->getBox()->isAsleep());
-      }
+    //   ft::ObjectState data{};
+
+    //   auto trsl = rd.randomVector({-10.0f, 1.0f, -10.0f},
+    //   {10.f, 21.0f, 10.0f}); auto rotate = rd.randomQuaternion();
+    //   // auto scale = rd.randomVector({0.1f, 0.1f, 0.1f},
+    //   {3.0f, 3.0f, 3.0f}); auto scale = glm::vec3{1.0f, 1.0f, 1.0f}; auto
+    //   color = rd.randomVector({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f});
+
+    //   data.color = color;
+    //   data.scaling = glm::scale(glm::mat4(1.0f), scale);
+    //   data.rotation = glm::mat4_cast(rotate);
+    //   data.translation = glm::translate(glm::mat4(1.0f), trsl);
+
+    //   auto unit_box = _ftScene->addModelFromObj(
+    //       ft::Application::getMiscPath() + "models/cube.mtl.obj", data);
+    //   unit_box->getModel()->setFlags(unit_box->getModel()->getID(),
+    //                                  ft::MODEL_SELECTABLE_BIT |
+    //                                      ft::MODEL_SIMPLE_BIT);
+
+    //   RigidBox::pointer box = std::make_shared<RigidBox>();
+    //   box->setState(trsl, rotate, scale, {0.0f, 1.0f, 0.0f});
+
+    //   _ftPhysicsApplication->addRigidBox(box);
+    //   unit_box->addComponent<RigidBoxComponent>(unit_box->getModel(), box);
+    //   unit_box->getModel()->setFlags(unit_box->getModel()->getID(),
+    //                                  ft::MODEL_HAS_RIGID_BODY_BIT);
+
+    // } catch (std::exception &e) {
+    //   std::cerr << "cant load model, make sure it exists in the misc folder
+    //   !"
+    //             << std::endl;
+    // }
+
+    try {
+
+      ft::ObjectState data{};
+
+      auto trsl = rd.randomVector({-10.0f, 1.0f, -10.0f}, {10.f, 41.0f, 10.0f});
+      auto rotate = rd.randomQuaternion();
+      // auto scale = rd.randomVector({0.1f, 0.1f, 0.1f}, {3.0f, 3.0f, 3.0f});
+      float sc = rd.randomReal(1.0f, 3.0f);
+      auto scale = glm::vec3{sc, sc, sc};
+      auto color = rd.randomVector({0.0f, 0.0f, 0.0f}, {1.0f, 1.0f, 1.0f});
+
+      data.color = color;
+      data.scaling = glm::scale(glm::mat4(1.0f), scale);
+      data.rotation = glm::mat4_cast(rotate);
+      data.translation = glm::translate(glm::mat4(1.0f), trsl);
+
+      auto unit_sphere = _ftScene->addModelFromObj(
+          ft::Application::getMiscPath() + "models/sphere.mtl.obj", data);
+      unit_sphere->getModel()->setFlags(unit_sphere->getModel()->getID(),
+                                        ft::MODEL_SIMPLE_BIT |
+                                            ft::MODEL_SELECTABLE_BIT);
+
+      RigidBall::pointer ball = std::make_shared<RigidBall>();
+      ball->setState(trsl, rotate, sc, {0.0f, 1.0f, 0.0f});
+
+      _ftPhysicsApplication->addRigidBall(ball);
+
+      unit_sphere->addComponent<RigidBallComponent>(unit_sphere->getModel(),
+                                                    ball);
+      unit_sphere->getModel()->setFlags(unit_sphere->getModel()->getID(),
+                                        ft::MODEL_HAS_RIGID_BODY_BIT);
+
+    } catch (std::exception &e) {
+      std::cerr << "cant load model, make sure it exists in the misc folder!"
+                << std::endl;
     }
   }
 }

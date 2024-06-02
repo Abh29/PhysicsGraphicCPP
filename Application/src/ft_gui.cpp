@@ -1,5 +1,8 @@
 #include "../includes/ft_gui.h"
 #include "../imgui/imgui_internal.h"
+#include "../includes/ft_rigidComponent.h"
+#include "../includes/ft_rigidObject.h"
+#include "ft_defines.h"
 #include "ft_scene.h"
 #include <cstdint>
 #include <glm/fwd.hpp>
@@ -261,6 +264,23 @@ void ft::Gui::showTitleBar() {
   ImGui::End();
 }
 
+static void displayMat4(const glm::mat4 &m) {
+
+  ImGui::BeginDisabled(true);                // Begin disabled section
+  ImGui::Columns(4, "matrixColumns", false); // 4 columns for 4x4 matrix
+
+  for (int col = 0; col < 4; ++col) {
+    for (int row = 0; row < 4; ++row) {
+      // Display the matrix element
+      ImGui::Text("%f", m[col][row]);
+    }
+    ImGui::NextColumn();
+  }
+
+  ImGui::Columns(1);    // Reset to default
+  ImGui::EndDisabled(); // End disabled section
+}
+
 void ft::Gui::showMainMenue(const ft::Scene::pointer &scene) {
   (void)scene;
   IM_ASSERT(ImGui::GetCurrentContext() != NULL &&
@@ -292,29 +312,8 @@ void ft::Gui::showMainMenue(const ft::Scene::pointer &scene) {
 
   ImGui::PushItemWidth(ImGui::GetFontSize() * -12);
 
-  // Object Inspector
-  // if (ImGui::CollapsingHeader("Object Inspector")) {
-  //   static uint32_t selectedObjectIndex = 0;
-  //   ImGui::Text("Objects in Scene:");
-
-  //   for (uint32_t i = 0; i < scene->getObjects().size(); i++) {
-  //     if (ImGui::Selectable("object name", selectedObjectIndex == i)) {
-  //       selectedObjectIndex = i;
-  //     }
-  //   }
-
-  //   glm::vec3 v;
-  //   if (selectedObjectIndex < scene->getObjects().size()) {
-  //     auto &obj = scene->getObjects()[selectedObjectIndex];
-  //     ImGui::Text("Selected Object: %s", obj->getModel()->getPath().c_str());
-  //     ImGui::SliderFloat3("Position", glm::value_ptr(v), -100.0f, 100.0f);
-  //     ImGui::SliderFloat3("Rotation", glm::value_ptr(v), -180.0f, 180.0f);
-  //     ImGui::SliderFloat3("Scale", glm::value_ptr(v), 0.1f, 10.0f);
-  //   }
-  // }
-
   // Scene Controls
-  if (ImGui::CollapsingHeader("Scene Controls")) {
+  if (ImGui::CollapsingHeader("Scene Cameras")) {
     ImGui::Text("Camera Settings:");
     auto &cams = scene->getAllCameras();
     float aspect = scene->getCamera()->getAspect();
@@ -356,19 +355,267 @@ void ft::Gui::showMainMenue(const ft::Scene::pointer &scene) {
     ImGui::DragFloat("##aspect", &aspect);
     ImGui::EndDisabled(); // End disabled section
 
-    ImGui::Text("Lighting Settings:");
-    ImGui::PushItemWidth(-FLT_MIN);
-    if (ImGui::ColorEdit3("##lightColor",
-                          glm::value_ptr(scene->getUBO().lightColor)))
-      scene->updateCameraUBO();
-    if (ImGui::SliderFloat("##ambient", &(scene->getUBO().ambient), 0.0f, 1.0f,
-                           "%.2f"))
+    ImGui::Text("Point size: ");
+    if (ImGui::SliderFloat("##pointsize", &(scene->getUBO().pointSize), 0.0f,
+                           4.0f, "%.1f"))
       scene->updateCameraUBO();
 
+    ImGui::Separator();
+    if (ImGui::TreeNode("Projection Matrix: ")) {
+
+      auto &m = scene->getUBO().proj;
+      displayMat4(m);
+      ImGui::TreePop();
+    }
+
+    if (ImGui::TreeNode("View Matrix: ")) {
+
+      auto &m = scene->getUBO().view;
+      displayMat4(m);
+      ImGui::TreePop();
+    }
+
+    ImGui::Separator();
+  }
+
+  if (ImGui::CollapsingHeader("Scene Light")) {
+
+    ImGui::Text("Lighting Settings:");
+    ImGui::PushItemWidth(-FLT_MIN);
+    bool updated = false;
+    auto &ubo = scene->getUBO();
+
+    updated = ImGui::ColorEdit3("##lightColor", glm::value_ptr(ubo.lightColor));
+
+    updated |=
+        ImGui::SliderFloat("##ambient", &(ubo.ambient), 0.0f, 1.0f, "%.2f");
+
     ImGui::Text("Light position: ");
-    if (ImGui::DragFloat3("##position",
-                          glm::value_ptr(scene->getUBO().lightDirection)))
+    updated |=
+        ImGui::DragFloat3("##position", glm::value_ptr(ubo.lightDirection));
+
+    auto lights = scene->getLights();
+    for (uint32_t i = 0; i < ubo.pLCount; ++i) {
+
+      if (ImGui::TreeNode(
+              std::string("PointLight" + std::to_string(i) + ":").c_str())) {
+
+        updated |= ImGui::Checkbox("Active: ",
+                                   reinterpret_cast<bool *>(&(lights[i].on)));
+        ImGui::Text("Position: ");
+        ImGui::PushItemWidth(-FLT_MIN);
+        updated |= ImGui::DragFloat3("##pLPosition",
+                                     glm::value_ptr(lights[i].position));
+        ImGui::PopItemWidth();
+
+        ImGui::Text("Color: ");
+        ImGui::PushItemWidth(-FLT_MIN);
+        updated |=
+            ImGui::ColorEdit3("##pLColor", glm::value_ptr(lights[i].color));
+        ImGui::PopItemWidth();
+
+        ImGui::Text("constant:");
+        updated |= ImGui::SliderFloat("##pLconst", &(lights[i].attenuation.x),
+                                      0.5f, 1.5f, "%.2f");
+
+        ImGui::Text("linear:");
+        updated |= ImGui::SliderFloat("##pLlinear", &(lights[i].attenuation.y),
+                                      0.01f, 0.30f, "%.2f");
+
+        ImGui::Text("quadratic:");
+        updated |= ImGui::SliderFloat("##pLquad", &(lights[i].attenuation.z),
+                                      0.01f, 0.1f, "%.3f");
+
+        ImGui::Text("ambient:");
+        updated |= ImGui::SliderFloat("##pLambient", &(lights[i].ambient), 0.0f,
+                                      1.0f, "%.2f");
+
+        ImGui::Text("diffuse:");
+        updated |= ImGui::SliderFloat("##pLdiff", &(lights[i].diffuse), 0.0f,
+                                      1.0f, "%.2f");
+
+        ImGui::Text("specular:");
+        updated |= ImGui::SliderFloat("##pLspec", &(lights[i].specular), 0.0f,
+                                      1.0f, "%.2f");
+        ImGui::TreePop();
+      }
+    }
+
+    if (updated) {
       scene->updateCameraUBO();
+    }
+
+    // Add more lighting controls as needed
+  }
+
+  // objects
+
+  if (ImGui::CollapsingHeader("Scene Objects: ")) {
+
+    auto &graph = scene->getSceneGraph();
+
+    for (auto &gr : graph) {
+
+      ImGui::Text(
+          "%s",
+          (gr._inputFile.substr(gr._inputFile.find_last_of('/') + 1)).c_str());
+
+      for (auto &model : gr._models) {
+        if (model->hasFlag(ft::MODEL_SELECTED_BIT))
+          ImGui::SetNextItemOpen(true);
+        if (ImGui::TreeNode(
+                (std::string("Model ") + std::to_string(model->getID()))
+                    .c_str())) {
+
+          bool selected = model->hasFlag(ft::MODEL_SELECTED_BIT);
+          if (model->hasFlag(ft::MODEL_SELECTABLE_BIT) &&
+              ImGui::Checkbox("Selected", &selected)) {
+            scene->select(model->getID());
+          }
+
+          bool hidden = model->hasFlag(ft::MODEL_HIDDEN_BIT);
+          if (ImGui::Checkbox("Hide", &hidden)) {
+            if (hidden)
+              model->setFlags(model->getID(), ft::MODEL_HIDDEN_BIT);
+            else
+              model->unsetFlags(model->getID(), ft::MODEL_HIDDEN_BIT);
+          }
+
+          bool nDbg = model->hasFlag(ft::MODEL_HAS_NORMAL_DEBUG_BIT);
+          if (ImGui::Checkbox("Show Normals", &nDbg)) {
+            if (nDbg)
+              model->setFlags(model->getID(), ft::MODEL_HAS_NORMAL_DEBUG_BIT);
+            else
+              model->unsetFlags(model->getID(), ft::MODEL_HAS_NORMAL_DEBUG_BIT);
+          }
+
+          ImGui::BeginDisabled();
+          bool simple = model->hasFlag(ft::MODEL_SIMPLE_BIT);
+          ImGui::Checkbox("Simple", &simple);
+
+          bool cTex = model->hasFlag(ft::MODEL_HAS_COLOR_TEXTURE_BIT);
+          if (ImGui::Checkbox("Color Texture", &cTex)) {
+            if (!cTex) {
+              model->unsetFlags(model->getID(),
+                                ft::MODEL_HAS_COLOR_TEXTURE_BIT);
+              model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
+            } else {
+              model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
+              model->setFlags(model->getID(), ft::MODEL_HAS_COLOR_TEXTURE_BIT);
+            }
+          }
+
+          bool nTex = model->hasFlag(ft::MODEL_HAS_NORMAL_TEXTURE_BIT);
+          if (ImGui::Checkbox("Normal Texture", &nTex)) {
+            if (!nTex) {
+              model->unsetFlags(model->getID(),
+                                ft::MODEL_HAS_NORMAL_TEXTURE_BIT);
+              model->setFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
+            } else {
+              model->unsetFlags(model->getID(), ft::MODEL_SIMPLE_BIT);
+              model->setFlags(model->getID(), ft::MODEL_HAS_NORMAL_TEXTURE_BIT);
+            }
+          }
+          ImGui::EndDisabled();
+
+          if (ImGui::TreeNode("Transform")) {
+            displayMat4(model->getRootModelMatrix());
+            ImGui::TreePop();
+          }
+
+          if (model->getAllNodes().size() > 1) {
+
+            for (auto &n : model->getAllNodes()) {
+              if (ImGui::TreeNode((std::string("Node ") +
+                                   std::to_string(n->state.id) +
+                                   std::string(": "))
+                                      .c_str())) {
+
+                ImGui::PushItemWidth(-FLT_MIN);
+                ImGui::ColorEdit3("##NodeColor",
+                                  glm::value_ptr(n->state.baseColor));
+                bool hide = n->state.flags & ft::MODEL_HIDDEN_BIT;
+                if (ImGui::Checkbox("Hide: ", &hide)) {
+                  if (hide)
+                    n->state.flags |= ft::MODEL_HIDDEN_BIT;
+                  else
+                    n->state.flags &= ~ft::MODEL_HIDDEN_BIT;
+                }
+
+                ImGui::PopItemWidth();
+
+                for (auto &p : n->mesh) {
+                  if (ImGui::TreeNode("Primitive")) {
+                    (void)p;
+                    ImGui::Text("indices: %d\nmaterial index: %d", p.indexCount,
+                                p.materialIndex);
+                    ImGui::TreePop();
+                  }
+                }
+                ImGui::TreePop();
+              }
+            }
+          } else {
+
+            ImGui::PushItemWidth(-FLT_MIN);
+            ImGui::ColorEdit3(
+                "##BasicColor",
+                glm::value_ptr(model->getAllNodes()[0]->state.baseColor));
+            ImGui::PopItemWidth();
+          }
+
+          if (model->hasFlag(ft::MODEL_HAS_RIGID_BODY_BIT)) {
+            if (ImGui::TreeNode("Physics: ")) {
+
+              auto objs = scene->getObjects();
+              SceneObject::pointer obj = nullptr;
+              // todo change this to take the scene model from the graph
+              for (auto &i : objs) {
+                if (i->getModel() == model) {
+                  obj = i;
+                  break;
+                }
+              }
+
+              if (obj.get()) {
+                RigidBallComponent::raw_ptr rball = nullptr;
+                RigidBoxComponent::raw_ptr rbox = nullptr;
+
+                rball = obj->getComponent<RigidBallComponent>();
+                if (rball) {
+                  ImGui::Text("Sphere Collider");
+                  bool pause = rball->getPause();
+                  if (ImGui::Checkbox("pause", &pause)) {
+                    rball->setPause(pause);
+                  }
+
+                  // rball->backwardUpdate(1.0f);
+                }
+
+                rbox = obj->getComponent<RigidBoxComponent>();
+                if (rbox) {
+                  ImGui::Text("Cube Collider");
+                  bool pause = rbox->getPause();
+                  if (ImGui::Checkbox("pause", &pause)) {
+                    rbox->setPause(pause);
+                  }
+
+                  // rbox->backwardUpdate(1.0f);
+                }
+              }
+
+              ImGui::TreePop();
+            }
+          } else {
+            // todo: add physics component
+          }
+
+          ImGui::TreePop();
+        }
+      }
+
+      ImGui::Separator();
+    }
     // Add more lighting controls as needed
   }
 
@@ -497,8 +744,15 @@ void ft::Gui::showInsertMenueFile() {
     //     Event::EventType::Menue_Insert_USPHERE));
   }
 
+  ImGui::Separator();
+
   if (ImGui::MenuItem("Camera")) {
     auto e = StandardEvent(Event::EventType::Menue_Insert_Camera);
+    _ftWindow->getEventListener()->fireInstante(e);
+  }
+
+  if (ImGui::MenuItem("Point Light")) {
+    auto e = StandardEvent(Event::EventType::Menue_Insert_PLight);
     _ftWindow->getEventListener()->fireInstante(e);
   }
 }

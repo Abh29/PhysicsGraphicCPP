@@ -1,4 +1,5 @@
 #include "../includes/ft_jsonParser.h"
+#include "ft_defines.h"
 #include <cstdint>
 #include <fstream>
 #include <glm/ext/matrix_transform.hpp>
@@ -66,6 +67,7 @@ void ft::JsonParser::saveSceneToFile(const ft::Scene::pointer &scene,
 
   nlohmann::json jsonData = _ignored;
 
+  // cameras
   for (auto &cam : scene->getAllCameras()) {
 
     auto eye = cam->getEyePosition();
@@ -84,6 +86,7 @@ void ft::JsonParser::saveSceneToFile(const ft::Scene::pointer &scene,
     jsonData["cameras"].push_back(camData);
   }
 
+  // lights
   auto lc = scene->getUBO().lightColor;
   auto ld = scene->getUBO().lightDirection;
 
@@ -91,8 +94,23 @@ void ft::JsonParser::saveSceneToFile(const ft::Scene::pointer &scene,
   jsonData["light"]["direction"] = {ld.x, ld.y, ld.z};
   jsonData["light"]["ambient"] = scene->getUBO().ambient;
 
-  auto &g = scene->getSceneGraph();
+  for (uint32_t i = 0; i < scene->getUBO().pLCount; ++i) {
+    auto &l = scene->getUBO().lights[i];
+    nlohmann::json pl;
 
+    pl["position"] = {l.position.x, l.position.y, l.position.z};
+    pl["color"] = {l.color.x, l.color.y, l.color.z};
+    pl["attenuation"] = {l.attenuation.x, l.attenuation.y, l.attenuation.z};
+    pl["ambient"] = l.ambient;
+    pl["diffuse"] = l.diffuse;
+    pl["specular"] = l.specular;
+    pl["on"] = static_cast<bool>(l.on);
+
+    jsonData["light"]["pointLights"].push_back(pl);
+  }
+
+  // skybox
+  auto &g = scene->getSceneGraph();
   if (scene->hasSkyBox()) {
     Scene::SceneNode sn;
     for (auto &n : g) {
@@ -112,6 +130,7 @@ void ft::JsonParser::saveSceneToFile(const ft::Scene::pointer &scene,
     jsonData["skyBox"]["scaling"] = {m[0][0], m[1][1], m[2][2]};
   }
 
+  // models
   nlohmann::json jmodels;
   if (_ignored.contains("models")) {
     jsonData["models"] = _ignored["models"];
@@ -482,6 +501,37 @@ void ft::JsonParser::loadLights(const Scene::pointer &scene,
 
   if (light.contains("ambient"))
     ambient = light["ambient"];
+
+  if (light.contains("pointLights")) {
+    auto &pls = light["pointLights"];
+    for (auto &pl : pls) {
+      ft::PointLightObject l = {};
+
+      if (pl.contains("position"))
+        l.position = {pl["position"][0], pl["position"][1], pl["position"][2]};
+
+      if (pl.contains("color"))
+        l.color = {pl["color"][0], pl["color"][1], pl["color"][2]};
+
+      if (pl.contains("attenuation"))
+        l.attenuation = {pl["attenuation"][0], pl["attenuation"][1],
+                         pl["attenuation"][2]};
+
+      if (pl.contains("ambient"))
+        l.ambient = pl["ambient"];
+
+      if (pl.contains("diffuse"))
+        l.diffuse = pl["diffuse"];
+
+      if (pl.contains("specular"))
+        l.specular = pl["specular"];
+
+      if (pl.contains("on"))
+        l.on = static_cast<uint32_t>(pl["on"]);
+
+      scene->addPointLightToTheScene(l);
+    }
+  }
 
   scene->setGeneralLight(color, direction, ambient);
 }
